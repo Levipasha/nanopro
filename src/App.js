@@ -22,7 +22,7 @@ function App() {
     const name = formData.get('name');
     const email = formData.get('email');
     const message = formData.get('message');
-    alert(`Thank you, ${name}! Your message has been sent.`);
+    alert(`Thank you, ${name}! Your email ${email} and message "${message}" have been sent.`);
     e.target.reset();
   };
 
