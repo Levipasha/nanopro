@@ -1,29 +1,63 @@
 import './App.css';
 import Particles from './Particles';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
+import { API_URL } from './services/api';
 import gsap from 'gsap';
+import Profile from './pages/Profile';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import cardsImage from './create images this for my website cards.jpg';
 import idCardImage from './Gemini_Generated_Image_5xi8665xi8665xi8.png';
 import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import untitledDesignVideo from './Untitled design.mp4';
-import navbarLogo from './Black E-Tech Logo (1) bb.png';
+import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
+import navbarLogo from './Yxt (1).png';
 import mm from './mm.png';
 import untitledDesignOff from './off.png';
 import untitledDesignArtist from './artiest.png';
+import nfcProfileImage from './WhatsApp Image 2026-02-20 at 17.50.00.jpeg';
+import digitalIdImage from './Gemini_Generated_Image_p2l6f6p2l6f6p2l6.png';
+import smartBadgeImage from './Gemini_Generated_Image_u2zla8u2zla8u2zl.png';
+import customIntegrationImage from './Gemini_Generated_Image_ecaaffecaaffecaa.png';
 
 function App() {
   const galleryRef = useRef(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showNfcPopup, setShowNfcPopup] = useState(false);
+  const [showDigitalIdPopup, setShowDigitalIdPopup] = useState(false);
+  const [showSmartBadgePopup, setShowSmartBadgePopup] = useState(false);
+  const [showCustomIntegrationPopup, setShowCustomIntegrationPopup] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const name = formData.get('name');
     const email = formData.get('email');
     const message = formData.get('message');
-    alert(`Thank you, ${name}! Your email ${email} and message "${message}" have been sent.`);
-    e.target.reset();
+
+    try {
+      const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+      const response = await fetch(`${base}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, message }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(`Thank you, ${name}! Your message has been sent successfully.`);
+        e.target.reset();
+      } else {
+        alert(`Error: ${data.error || 'Failed to send message. Please try again.'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Failed to send message. Please check your connection and try again.');
+    }
   };
 
   useEffect(() => {
@@ -194,19 +228,29 @@ function App() {
 
   return (
     <div>
+      <Routes>
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/*" element={
+          <>
       <nav className="navbar">
         <div className="navbar-inner">
-          <a className="navbar-brand" href="#home">
+          <Link className="navbar-brand" to="/">
             <img className="navbar-logo" src={navbarLogo} alt="" />
             <span className="navbar-brandText">Nano Profiles</span>
-          </a>
-          <div className="navbar-links">
-            <a href="#home">Home</a>
-            <a href="#about">About</a>
-            <a href="#products">Products</a>
-            <a href="#services">Services</a>
-            <a href="#contact">Contact</a>
+          </Link>
+          <div className={`navbar-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+            <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
+            <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
+            <a href="#products" onClick={() => setMobileMenuOpen(false)}>Products</a>
+            <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
+            <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+            <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
           </div>
+          <button className={`hamburger-menu ${mobileMenuOpen ? 'active' : ''}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
       </nav>
 
@@ -265,7 +309,7 @@ function App() {
           </li>
           <li>
             <video
-              src={untitledDesignVideo}
+              src={corporateVideo}
               muted
               autoPlay
               loop
@@ -280,10 +324,6 @@ function App() {
           <li><img src={cardsImage} alt="" /></li>
           <li><img src={idCardImage} alt="" /></li>
         </ul>
-        <div className="actions">
-          <button className="prev" type="button">Prev</button>
-          <button className="next" type="button">Next</button>
-        </div>
       </section>
 
       <section id="about" className="info-section page-section">
@@ -312,7 +352,7 @@ function App() {
             <div className="product-card">
               <div className="product-card-inner">
                 <div className="product-card-front">
-                  <div className="product-cover school-cover" style={{backgroundImage: `url(${mm})`}}></div>
+                  <div className="product-cover school-cover rotating-logo" style={{backgroundImage: `url(${mm})`}}></div>
                   <h3>School</h3>
                   <p>Digital ID cards for students and staff</p>
                 </div>
@@ -348,6 +388,19 @@ function App() {
                 </div>
               </div>
             </div>
+            <div className="product-card">
+              <div className="product-card-inner">
+                <div className="product-card-front">
+                  <div className="product-cover nfc-cover"></div>
+                  <h3>NFC Profile</h3>
+                  <p>Smart digital identity system</p>
+                </div>
+                <div className="product-card-back">
+                  <h3>Why Better?</h3>
+                  <p>Instant profile access via NFC tap, secure verification, mobile-friendly interface, cloud-based updates.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -356,19 +409,19 @@ function App() {
         <div className="info-inner">
           <h2>Our Services</h2>
           <div className="services-grid">
-            <div className="service-card">
+            <div className="service-card" onClick={() => setShowNfcPopup(true)}>
               <h3>NFC Profile Cards</h3>
               <p>Tap-to-share profiles with secure data controls and clean design.</p>
             </div>
-            <div className="service-card">
+            <div className="service-card" onClick={() => setShowDigitalIdPopup(true)}>
               <h3>Digital ID & Verification</h3>
               <p>Identity scanning flows with encryption-ready storage patterns.</p>
             </div>
-            <div className="service-card">
+            <div className="service-card" onClick={() => setShowSmartBadgePopup(true)}>
               <h3>Smart Badges</h3>
               <p>Scan the badge to instantly view and verify your profile in real time.</p>
             </div>
-            <div className="service-card">
+            <div className="service-card" onClick={() => setShowCustomIntegrationPopup(true)}>
               <h3>Custom Integrations</h3>
               <p>Connect profiles with mobile apps, cloud sync, and business systems.</p>
             </div>
@@ -447,6 +500,7 @@ function App() {
             <a href="#about">About</a>
             <a href="#services">Services</a>
             <a href="#contact">Contact</a>
+            <Link to="/profile">Profile</Link>
           </div>
 
           <div className="footer-contact">
@@ -466,6 +520,167 @@ function App() {
           <p>&copy; 2026 Nano Profiles. All rights reserved. A product of <a href="https://www.skywebdev.xyz" target="_blank" rel="noreferrer">Skyweb IT Solutions Pvt Ltd</a></p>
         </div>
       </footer>
+
+      {/* NFC Profile Popup */}
+      {showNfcPopup && (
+        <div className="popup-overlay" onClick={() => setShowNfcPopup(false)}>
+          <div className="popup-content">
+            <div className="popup-text">
+              <h3>NFC Profile Cards</h3>
+              <p>NFC Profile is a smart digital identity system that instantly displays a user's verified profile when an NFC card or tag is tapped on a device. It securely presents key details such as name, class/role, contact information, blood group, and more in a clean, professional interface. Ideal for schools, colleges, enterprises, and events, it replaces traditional ID cards with a fast, secure, and modern tap-to-verify solution.</p>
+              <div className="popup-features">
+                <div className="feature">
+                  <span className="feature-icon">🔐</span>
+                  <span>Secure, real-time profile access via NFC tap</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🪪</span>
+                  <span>Digital ID card replacement</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">⚡</span>
+                  <span>Instant verification for organizations</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📱</span>
+                  <span>Mobile-friendly, responsive profile view</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">☁️</span>
+                  <span>Cloud-based, easy profile updates</span>
+                </div>
+              </div>
+              <p className="tagline">Just Tap & Verify.</p>
+              <button className="popup-close" onClick={() => setShowNfcPopup(false)}>
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Digital ID & Verification Popup */}
+      {showDigitalIdPopup && (
+        <div className="popup-overlay" onClick={() => setShowDigitalIdPopup(false)}>
+          <div className="popup-content">
+            <div className="popup-image">
+              <img src={digitalIdImage} alt="Digital ID & Verification" />
+            </div>
+            <div className="popup-text">
+              <h3>Digital ID & Verification</h3>
+              <p>Advanced digital identity verification system that provides secure, instant authentication through multiple verification methods. Our solution combines cutting-edge encryption with user-friendly interfaces to deliver reliable identity verification for modern organizations.</p>
+              <div className="popup-features">
+                <div className="feature">
+                  <span className="feature-icon">🔒</span>
+                  <span>Multi-layer security encryption</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">⚡</span>
+                  <span>Instant identity verification</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📊</span>
+                  <span>Real-time authentication tracking</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🌐</span>
+                  <span>Cross-platform compatibility</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🛡️</span>
+                  <span>Fraud detection & prevention</span>
+                </div>
+              </div>
+              <p className="tagline">Secure Identity, Instant Access.</p>
+              <button className="popup-close" onClick={() => setShowDigitalIdPopup(false)}>
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Smart Badges Popup */}
+      {showSmartBadgePopup && (
+        <div className="popup-overlay" onClick={() => setShowSmartBadgePopup(false)}>
+          <div className="popup-content">
+            <div className="popup-image">
+              <img src={smartBadgeImage} alt="Smart Badges" />
+            </div>
+            <div className="popup-text">
+              <h3>Smart Badges</h3>
+              <p>Revolutionary smart badge system that enables instant profile verification and access control through advanced NFC technology. Perfect for corporate environments, events, and secure facilities requiring real-time identity verification.</p>
+              <div className="popup-features">
+                <div className="feature">
+                  <span className="feature-icon">🎯</span>
+                  <span>Instant profile scanning</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🏢</span>
+                  <span>Access control integration</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon"></span>
+                  <span>Multi-factor authentication</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📊</span>
+                  <span>Analytics dashboard</span>
+                </div>
+              </div>
+              <p className="tagline">Smart Access, Secure Entry.</p>
+              <button className="popup-close" onClick={() => setShowSmartBadgePopup(false)}>
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Integrations Popup */}
+      {showCustomIntegrationPopup && (
+        <div className="popup-overlay" onClick={() => setShowCustomIntegrationPopup(false)}>
+          <div className="popup-content">
+            <div className="popup-image">
+              <img src={customIntegrationImage} alt="Custom Integrations" />
+            </div>
+            <div className="popup-text">
+              <h3>Custom Integrations</h3>
+              <p>Seamless integration solutions that connect your digital identity system with existing business applications, mobile platforms, and enterprise workflows. Our flexible API and development tools enable custom solutions tailored to your specific organizational needs.</p>
+              <div className="popup-features">
+                <div className="feature">
+                  <span className="feature-icon">🔗</span>
+                  <span>API integration capabilities</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📱</span>
+                  <span>Mobile app development</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">☁️</span>
+                  <span>Cloud synchronization</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🏭</span>
+                  <span>Enterprise system connectivity</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">⚙️</span>
+                  <span>Custom workflow automation</span>
+                </div>
+              </div>
+              <p className="tagline">Integrated Solutions, Seamless Operations.</p>
+              <button className="popup-close" onClick={() => setShowCustomIntegrationPopup(false)}>
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+          </>
+        }
+      />
+      </Routes>
     </div>
   );
 }
