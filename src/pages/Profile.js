@@ -61,7 +61,10 @@ function Profile() {
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
 
   const isLoggedIn = !!(user || otpUser);
-  const getFirebaseUser = () => (user ? { uid: user.uid, email: user.email || null } : null);
+  const getFirebaseUser = useCallback(
+    () => (user ? { uid: user.uid, email: user.email || null } : null),
+    [user]
+  );
 
   const loadMyProfiles = useCallback(async () => {
     if (user) {
