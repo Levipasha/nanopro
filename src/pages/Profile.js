@@ -91,7 +91,7 @@ function Profile() {
         setArtistsLoading(false);
       }
     }
-  }, [user, otpUser]);
+  }, [user, otpUser, getFirebaseUser]);
 
   useEffect(() => {
     const checkRedirect = async () => {
