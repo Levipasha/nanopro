@@ -25,7 +25,8 @@ const defaultForm = {
   instagramFollowers: '',
   instagramFollowing: '',
   instagramAccountBio: '',
-  artworkCount: ''
+  artworkCount: '',
+  profileTheme: 'mono'
 };
 
 const OTP_STORAGE_KEY = 'landing_otp_auth';
@@ -204,7 +205,8 @@ function Profile() {
       instagramFollowers: artist.instagramFollowers || '',
       instagramFollowing: artist.instagramFollowing || '',
       instagramAccountBio: artist.instagramAccountBio || '',
-      artworkCount: artist.artworkCount != null ? artist.artworkCount : ''
+      artworkCount: artist.artworkCount != null ? artist.artworkCount : '',
+      profileTheme: artist.profileTheme || 'mono'
     });
     setPhotoFile(null);
     setBgFile(null);
@@ -479,6 +481,26 @@ function Profile() {
                   <div className="profile-edit-field">
                     <label>Bio</label>
                     <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={3} placeholder="Short bio" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Profile theme</label>
+                    <div className="theme-choices-row">
+                      {[
+                        { id: 'mono', label: 'Mono Dark' },
+                        { id: 'classic', label: 'Classic Light' },
+                        { id: 'neon', label: 'Neon Glow' },
+                        { id: 'art', label: 'Art Red/Black' }
+                      ].map((theme) => (
+                        <button
+                          key={theme.id}
+                          type="button"
+                          className={`theme-pill ${formData.profileTheme === theme.id ? 'selected' : ''}`}
+                          onClick={() => setFormData((prev) => ({ ...prev, profileTheme: theme.id }))}
+                        >
+                          <span className="theme-pill-label">{theme.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </section>
 

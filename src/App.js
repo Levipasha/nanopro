@@ -1,7 +1,8 @@
 import './App.css';
 import Particles from './Particles';
 import { useEffect, useRef, useState } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { API_URL } from './services/api';
 import gsap from 'gsap';
 import Profile from './pages/Profile';
@@ -11,7 +12,7 @@ import idCardImage from './Gemini_Generated_Image_5xi8665xi8665xi8.png';
 import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
-import navbarLogo from './Yxt (1).png';
+import navbarLogo from './Yxt-nav.png';
 import mm from './mm.png';
 import untitledDesignOff from './off.png';
 import untitledDesignArtist from './artiest.png';
@@ -224,8 +225,16 @@ function App() {
     };
   }, []);
 
+  const location = useLocation();
+  const isProfile = location.pathname === '/profile';
+
   return (
     <div>
+      <Helmet>
+        <title>{isProfile ? 'Profile | Nano Profiles' : 'Nano Profiles - Smart Digital Identity Solutions'}</title>
+        <meta name="description" content={isProfile ? 'Manage your artist profiles and NFC settings.' : 'NFC-enabled digital identity solutions. Tap-to-share profiles, secure ID cards, smart badges. Just tap to trust.'} />
+        {isProfile && <meta name="robots" content="noindex, follow" />}
+      </Helmet>
       <Routes>
         <Route path="/profile" element={<Profile />} />
         <Route path="/*" element={
@@ -284,9 +293,6 @@ function App() {
 
       <section className="gallery page-section" ref={galleryRef}>
         <ul className="cards">
-          <li><img src={cardsImage} alt="" /></li>
-          <li><img src={idCardImage} alt="" /></li>
-          <li><img src={cardsImage} alt="" /></li>
           <li>
             <video
               src={nanoProfileVideo}
@@ -314,13 +320,34 @@ function App() {
               playsInline
             />
           </li>
-          <li><img src={idCardImage} alt="" /></li>
-          <li><img src={cardsImage} alt="" /></li>
-          <li><img src={idCardImage} alt="" /></li>
-          <li><img src={cardsImage} alt="" /></li>
-          <li><img src={idCardImage} alt="" /></li>
-          <li><img src={cardsImage} alt="" /></li>
-          <li><img src={idCardImage} alt="" /></li>
+          {/* Repeat videos to make the loop feel richer */}
+          <li>
+            <video
+              src={nanoProfileVideo}
+              muted
+              autoPlay
+              loop
+              playsInline
+            />
+          </li>
+          <li>
+            <video
+              src={digitalIdVideo}
+              muted
+              autoPlay
+              loop
+              playsInline
+            />
+          </li>
+          <li>
+            <video
+              src={corporateVideo}
+              muted
+              autoPlay
+              loop
+              playsInline
+            />
+          </li>
         </ul>
       </section>
 
@@ -383,19 +410,6 @@ function App() {
                 <div className="product-card-back">
                   <h3>Why Better?</h3>
                   <p>Instant work showcase, secure sharing, portable portfolio, enhanced networking at events.</p>
-                </div>
-              </div>
-            </div>
-            <div className="product-card">
-              <div className="product-card-inner">
-                <div className="product-card-front">
-                  <div className="product-cover nfc-cover"></div>
-                  <h3>NFC Profile</h3>
-                  <p>Smart digital identity system</p>
-                </div>
-                <div className="product-card-back">
-                  <h3>Why Better?</h3>
-                  <p>Instant profile access via NFC tap, secure verification, mobile-friendly interface, cloud-based updates.</p>
                 </div>
               </div>
             </div>

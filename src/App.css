@@ -152,8 +152,8 @@
  }
 
  .navbar-logo {
- 	width: 150px;
- 	height: 150px;
+ 	width: 48px;
+ 	height: 48px;
  	object-fit: contain;
  	display: block;
  }
@@ -293,24 +293,24 @@
 	position: absolute;
 	width: 18rem;
 	height: 22rem;
-	top: 40%;
+	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
  }
  
  .cards li {
- 	list-style: none;
- 	padding: 0;
- 	margin: 0;
- 	width: 14rem;
- 	height: 18rem;
- 	text-align: center;
- 	line-height: 18rem;
- 	font-size: 2rem;
- 	position: absolute;
- 	top: 0;
- 	left: 0;
- 	border-radius: 0.8rem;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	width: 14rem;
+	height: 18rem;
+	position: absolute;
+	top: 0;
+	left: 0;
+	border-radius: 0.8rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
  }
  
  .cards li img {
