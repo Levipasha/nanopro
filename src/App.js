@@ -11,7 +11,6 @@ import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
 import navbarLogo from './Yxt-nav.png';
-import mm from './mm.png';
 import customIntegrationImage from './ChatGPT Image Feb 26, 2026, 10_40_38 AM.png';
 import SchoolBadge3D from './SchoolBadge3D';
 import OfficeBadge3D from './OfficeBadge3D';
