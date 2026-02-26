@@ -12,11 +12,10 @@ import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
 import navbarLogo from './Yxt-nav.png';
 import mm from './mm.png';
-import untitledDesignOff from './off.png';
-import untitledDesignArtist from './artiest.png';
-import digitalIdImage from './Gemini_Generated_Image_p2l6f6p2l6f6p2l6.png';
-import smartBadgeImage from './Gemini_Generated_Image_u2zla8u2zla8u2zl.png';
-import customIntegrationImage from './Gemini_Generated_Image_ecaaffecaaffecaa.png';
+import customIntegrationImage from './ChatGPT Image Feb 26, 2026, 10_40_38 AM.png';
+import SchoolBadge3D from './SchoolBadge3D';
+import OfficeBadge3D from './OfficeBadge3D';
+import ArtistBadge3D from './ArtistBadge3D';
 
 function App() {
   const galleryRef = useRef(null);
@@ -351,20 +350,22 @@ function App() {
 
       <section id="about" className="info-section page-section">
         <div className="info-inner">
-          <h2>About Us</h2>
-          <p>
-            We are a professional technology company specializing in NFC-based digital ID cards and smart badges for
-            modern businesses. Our solution allows you to simply tap and instantly verify secure digital
-            identities—fast, reliable, and contactless. Designed for enterprises, institutions, and large
-            organizations, our NFC system replaces traditional ID cards with a smarter, more secure, and efficient
-            way to manage identity access and verification.
+          <h2>The Badge</h2>
+          <p className="about-badge-lead">
+            Tap an NFC badge and instantly view a secure digital profile—no app install, no typing. Our smart badges
+            and digital ID cards replace paper and plastic with a single tap. Fast, reliable, and contactless:
+            ideal for schools, offices, events, and enterprises. One tap to verify identity, share contact details,
+            or open a portfolio.
           </p>
-          <p>
-            With just one tap, you can check and validate digital profiles in real time, improving security,
-            reducing manual work, and enhancing the overall professional experience. We focus on innovation,
-            scalability, and enterprise-grade reliability to help businesses move toward a fully digital and
-            future-ready identity system.
-          </p>
+          <div className="about-us-sub">
+            <h3>About Us</h3>
+            <p>
+              We are a professional technology company specializing in NFC-based digital ID cards and smart badges
+              for modern businesses. Designed for enterprises, institutions, and large organizations, our system
+              delivers a smarter, more secure way to manage identity and access. We focus on innovation, scalability,
+              and enterprise-grade reliability to help you move toward a fully digital, future-ready identity system.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -375,7 +376,9 @@ function App() {
             <div className="product-card">
               <div className="product-card-inner">
                 <div className="product-card-front">
-                  <div className="product-cover school-cover rotating-logo" style={{backgroundImage: `url(${mm})`}}></div>
+                  <div className="product-cover school-cover">
+                    <SchoolBadge3D />
+                  </div>
                   <h3>School</h3>
                   <p>Digital ID cards for students and staff</p>
                 </div>
@@ -388,7 +391,9 @@ function App() {
             <div className="product-card">
               <div className="product-card-inner">
                 <div className="product-card-front">
-                  <div className="product-cover office-cover" style={{backgroundImage: `url(${untitledDesignOff})`}}></div>
+                  <div className="product-cover office-cover">
+                    <OfficeBadge3D />
+                  </div>
                   <h3>Office</h3>
                   <p>Professional NFC badges for employees</p>
                 </div>
@@ -401,7 +406,9 @@ function App() {
             <div className="product-card">
               <div className="product-card-inner">
                 <div className="product-card-front">
-                  <div className="product-cover artist-cover" style={{backgroundImage: `url(${untitledDesignArtist})`}}></div>
+                  <div className="product-cover artist-cover">
+                    <ArtistBadge3D />
+                  </div>
                   <h3>Artist</h3>
                   <p>Creative portfolios on NFC tags</p>
                 </div>
@@ -420,18 +427,30 @@ function App() {
           <h2>Our Services</h2>
           <div className="services-grid">
             <div className="service-card" onClick={() => setShowNfcPopup(true)}>
+              <div className="service-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M7 15h.01"/><path d="M12 15h.01"/></svg>
+              </div>
               <h3>NFC Profile Cards</h3>
               <p>Tap-to-share profiles with secure data controls and clean design.</p>
             </div>
             <div className="service-card" onClick={() => setShowDigitalIdPopup(true)}>
+              <div className="service-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
               <h3>Digital ID & Verification</h3>
               <p>Identity scanning flows with encryption-ready storage patterns.</p>
             </div>
             <div className="service-card" onClick={() => setShowSmartBadgePopup(true)}>
+              <div className="service-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
               <h3>Smart Badges</h3>
               <p>Scan the badge to instantly view and verify your profile in real time.</p>
             </div>
             <div className="service-card" onClick={() => setShowCustomIntegrationPopup(true)}>
+              <div className="service-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
               <h3>Custom Integrations</h3>
               <p>Connect profiles with mobile apps, cloud sync, and business systems.</p>
             </div>
@@ -447,35 +466,45 @@ function App() {
 
         <div className="contact-cards">
           <a className="contact-card" href="mailto:hello@nanoprofiles.com">
-            <div className="contact-icon">@</div>
+            <div className="contact-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
             <div className="contact-title">Email Us</div>
             <div className="contact-sub">Send us an email anytime</div>
             <div className="contact-value">hello@nanoprofiles.com</div>
           </a>
 
           <a className="contact-card" href="tel:+919121428210">
-            <div className="contact-icon">☎</div>
+            <div className="contact-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
             <div className="contact-title">Call Us</div>
             <div className="contact-sub">Mon–Fri from 9am to 6pm</div>
             <div className="contact-value">+91 91214 28210</div>
           </a>
 
           <a className="contact-card" href="#contact" onClick={(e) => e.preventDefault()}>
-            <div className="contact-icon">⌁</div>
+            <div className="contact-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
             <div className="contact-title">Visit Us</div>
             <div className="contact-sub">Come say hello</div>
             <div className="contact-value">Hyderabad, India</div>
           </a>
 
           <a className="contact-card" href="https://instagram.com" target="_blank" rel="noreferrer">
-            <div className="contact-icon">⟡</div>
+            <div className="contact-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </div>
             <div className="contact-title">Follow Us</div>
             <div className="contact-sub">Stay updated with our latest</div>
             <div className="contact-value">@nanoprofiles</div>
           </a>
 
           <a className="contact-card" href="https://wa.me/919121428210" target="_blank" rel="noreferrer">
-            <div className="contact-icon">✆</div>
+            <div className="contact-icon contact-icon-whatsapp" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </div>
             <div className="contact-title">WhatsApp Us</div>
             <div className="contact-sub">Chat with us directly</div>
             <div className="contact-value">Message Us</div>
@@ -535,34 +564,37 @@ function App() {
       {showNfcPopup && (
         <div className="popup-overlay" onClick={() => setShowNfcPopup(false)}>
           <div className="popup-content">
+            <div className="popup-image">
+              <img src="https://expondigital.ae/assets/images/resources/nfc-digital-card.png" alt="NFC Profile Cards" />
+            </div>
             <div className="popup-text">
               <h3>NFC Profile Cards</h3>
               <p>NFC Profile is a smart digital identity system that instantly displays a user's verified profile when an NFC card or tag is tapped on a device. It securely presents key details such as name, class/role, contact information, blood group, and more in a clean, professional interface. Ideal for schools, colleges, enterprises, and events, it replaces traditional ID cards with a fast, secure, and modern tap-to-verify solution.</p>
               <div className="popup-features">
                 <div className="feature">
-                  <span className="feature-icon">🔐</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
                   <span>Secure, real-time profile access via NFC tap</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">🪪</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
                   <span>Digital ID card replacement</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">⚡</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
                   <span>Instant verification for organizations</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">📱</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
                   <span>Mobile-friendly, responsive profile view</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">☁️</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span>
                   <span>Cloud-based, easy profile updates</span>
                 </div>
               </div>
               <p className="tagline">Just Tap & Verify.</p>
-              <button className="popup-close" onClick={() => setShowNfcPopup(false)}>
-                ✕
+              <button className="popup-close" onClick={() => setShowNfcPopup(false)} aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
@@ -574,36 +606,36 @@ function App() {
         <div className="popup-overlay" onClick={() => setShowDigitalIdPopup(false)}>
           <div className="popup-content">
             <div className="popup-image">
-              <img src={digitalIdImage} alt="Digital ID & Verification" />
+              <img src="https://www.shutterstock.com/image-photo/digital-identification-concept-electronic-id-600nw-2552860339.jpg" alt="Digital ID & Verification" />
             </div>
             <div className="popup-text">
               <h3>Digital ID & Verification</h3>
               <p>Advanced digital identity verification system that provides secure, instant authentication through multiple verification methods. Our solution combines cutting-edge encryption with user-friendly interfaces to deliver reliable identity verification for modern organizations.</p>
               <div className="popup-features">
                 <div className="feature">
-                  <span className="feature-icon">🔒</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
                   <span>Multi-layer security encryption</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">⚡</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
                   <span>Instant identity verification</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">📊</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
                   <span>Real-time authentication tracking</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">🌐</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
                   <span>Cross-platform compatibility</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">🛡️</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
                   <span>Fraud detection & prevention</span>
                 </div>
               </div>
               <p className="tagline">Secure Identity, Instant Access.</p>
-              <button className="popup-close" onClick={() => setShowDigitalIdPopup(false)}>
-                ✕
+              <button className="popup-close" onClick={() => setShowDigitalIdPopup(false)} aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
@@ -615,32 +647,32 @@ function App() {
         <div className="popup-overlay" onClick={() => setShowSmartBadgePopup(false)}>
           <div className="popup-content">
             <div className="popup-image">
-              <img src={smartBadgeImage} alt="Smart Badges" />
+              <img src="https://i.etsystatic.com/14793044/r/il/5a1578/5745450374/il_570xN.5745450374_qzk9.jpg" alt="Smart Badges" />
             </div>
             <div className="popup-text">
               <h3>Smart Badges</h3>
               <p>Revolutionary smart badge system that enables instant profile verification and access control through advanced NFC technology. Perfect for corporate environments, events, and secure facilities requiring real-time identity verification.</p>
               <div className="popup-features">
                 <div className="feature">
-                  <span className="feature-icon">🎯</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
                   <span>Instant profile scanning</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">🏢</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>
                   <span>Access control integration</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon"></span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
                   <span>Multi-factor authentication</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">📊</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
                   <span>Analytics dashboard</span>
                 </div>
               </div>
               <p className="tagline">Smart Access, Secure Entry.</p>
-              <button className="popup-close" onClick={() => setShowSmartBadgePopup(false)}>
-                ✕
+              <button className="popup-close" onClick={() => setShowSmartBadgePopup(false)} aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
@@ -659,29 +691,29 @@ function App() {
               <p>Seamless integration solutions that connect your digital identity system with existing business applications, mobile platforms, and enterprise workflows. Our flexible API and development tools enable custom solutions tailored to your specific organizational needs.</p>
               <div className="popup-features">
                 <div className="feature">
-                  <span className="feature-icon">🔗</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
                   <span>API integration capabilities</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">📱</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
                   <span>Mobile app development</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">☁️</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span>
                   <span>Cloud synchronization</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">🏭</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>
                   <span>Enterprise system connectivity</span>
                 </div>
                 <div className="feature">
-                  <span className="feature-icon">⚙️</span>
+                  <span className="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
                   <span>Custom workflow automation</span>
                 </div>
               </div>
               <p className="tagline">Integrated Solutions, Seamless Operations.</p>
-              <button className="popup-close" onClick={() => setShowCustomIntegrationPopup(false)}>
-                ✕
+              <button className="popup-close" onClick={() => setShowCustomIntegrationPopup(false)} aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
