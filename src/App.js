@@ -7,8 +7,6 @@ import { API_URL } from './services/api';
 import gsap from 'gsap';
 import Profile from './pages/Profile';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import cardsImage from './create images this for my website cards.jpg';
-import idCardImage from './Gemini_Generated_Image_5xi8665xi8665xi8.png';
 import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
