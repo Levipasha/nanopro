@@ -11,10 +11,12 @@ import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
 import navbarLogo from './Yxt-nav.png';
+import nanoProfileAvatar from './NANO PROfile.png';
 import customIntegrationImage from './ChatGPT Image Feb 26, 2026, 10_40_38 AM.png';
 import SchoolBadge3D from './SchoolBadge3D';
 import OfficeBadge3D from './OfficeBadge3D';
 import ArtistBadge3D from './ArtistBadge3D';
+import ProfileCard from './ProfileCard';
 
 function App() {
   const galleryRef = useRef(null);
@@ -364,6 +366,29 @@ function App() {
               delivers a smarter, more secure way to manage identity and access. We focus on innovation, scalability,
               and enterprise-grade reliability to help you move toward a fully digital, future-ready identity system.
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="digital-id" className="info-section page-section">
+        <div className="info-inner">
+          <h2>Digital ID of You</h2>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+            <ProfileCard
+              name="Your Digital ID"
+              title="Secure, Smart Identity"
+              handle="nanoprofiles"
+              status="Tap to view"
+              contactText="View Profile"
+              avatarUrl={nanoProfileAvatar}
+              showUserInfo={false}
+              enableTilt={true}
+              enableMobileTilt={false}
+              behindGlowColor="rgba(125, 190, 255, 0.67)"
+              iconUrl="/assets/demo/iconpattern.png"
+              behindGlowEnabled
+              innerGradient="linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)"
+            />
           </div>
         </div>
       </section>
