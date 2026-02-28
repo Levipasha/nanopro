@@ -18,13 +18,14 @@ if (!firebase.apps.length) {
 export const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
+// Use popup to avoid "missing initial state" with redirect (storage partitioning in Safari/Firefox/Brave).
+// Fall back to redirect only if popup is blocked.
 export const signInWithGoogle = async () => {
   try {
     const result = await auth.signInWithPopup(googleProvider);
     return result.user;
   } catch (error) {
-    console.error("Error signing in with Google Popup", error);
-    if (error.code === "auth/popup-blocked" || error.code === "auth/cancelled-popup-request") {
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
       return auth.signInWithRedirect(googleProvider);
     }
     throw error;

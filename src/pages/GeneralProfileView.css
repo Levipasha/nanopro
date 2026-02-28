@@ -1,0 +1,195 @@
+/* General Profile - Linktree style, light green theme */
+.gp-view {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.gp-layout {
+  padding: 0;
+}
+
+.gp-loading,
+.gp-error {
+  justify-content: center;
+  padding: 2rem;
+  color: #1a1a1a;
+}
+
+.gp-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0,0,0,0.2);
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: gp-spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes gp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.gp-error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.gp-error h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.gp-error p {
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Card - theme applied via inline style */
+.gp-card {
+  max-width: 420px;
+  width: 100%;
+  min-height: 100vh;
+  padding: 1.5rem 1.5rem 2rem;
+  position: relative;
+}
+
+.gp-card-themed {
+  /* bg and color set inline from theme */
+}
+
+/* Share button - top right */
+.gp-share-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.gp-share-btn:hover {
+  opacity: 0.7;
+}
+
+/* Profile photo - circular, centered */
+.gp-photo-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0 1rem;
+}
+
+.gp-avatar,
+.gp-avatar-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-avatar-placeholder {
+  background: rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+/* Username - @username */
+.gp-username {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: inherit;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+}
+
+/* Title / Tagline */
+.gp-title {
+  font-size: 0.9rem;
+  color: inherit;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+  opacity: 0.9;
+}
+
+/* Bio */
+.gp-bio {
+  font-size: 0.95rem;
+  color: inherit;
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Link buttons - light green bg, thin black border */
+.gp-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gp-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.gp-link:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.gp-link-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+.gp-link-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.gp-link-text {
+  flex: 1;
+  text-align: left;
+}
+
+/* Footer */
+.gp-footer {
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.gp-footer a {
+  color: inherit;
+  text-decoration: underline;
+}

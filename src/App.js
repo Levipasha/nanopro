@@ -6,15 +6,15 @@ import { Helmet } from 'react-helmet-async';
 import { API_URL } from './services/api';
 import gsap from 'gsap';
 import Profile from './pages/Profile';
+import GeneralProfileView from './pages/GeneralProfileView';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
-import navbarLogo from './Yxt-nav.png';
 import nanoProfileAvatar from './NANO PROfile.png';
 import customIntegrationImage from './ChatGPT Image Feb 26, 2026, 10_40_38 AM.png';
 import SchoolBadge3D from './SchoolBadge3D';
-import OfficeBadge3D from './OfficeBadge3D';
+import RestaurantBadge3D from './RestaurantBadge3D';
 import ArtistBadge3D from './ArtistBadge3D';
 import ProfileCard from './ProfileCard';
 
@@ -57,18 +57,34 @@ function App() {
     }
   };
 
+  const location = useLocation();
+  const isGalleryRoute = !['/profile', '/link'].some(p => location.pathname.startsWith(p));
+
   useEffect(() => {
+    if (!isGalleryRoute) return;
+
     gsap.registerPlugin(ScrollTrigger);
 
     const galleryEl = galleryRef.current;
     if (!galleryEl) return;
 
-    const ctx = gsap.context(() => {
-      gsap.to(galleryEl.querySelectorAll('img, video'), { opacity: 1, delay: 0.1 });
+    const sections = ['#home', '#about', '#products', '#services', '#contact'];
+
+    // Defer setup to ensure DOM/layout is ready (helps with Strict Mode and route transitions)
+    let ctx = null;
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!galleryRef.current) return;
+
+    ctx = gsap.context(() => {
+      const el = galleryRef.current;
+      if (!el) return;
+      gsap.to(el.querySelectorAll('img, video'), { opacity: 1, delay: 0.1 });
 
       const spacing = 0.1;
       const snap = gsap.utils.snap(spacing);
-      const cards = gsap.utils.toArray('.cards li');
+      const cards = gsap.utils.toArray('.cards li', el);
+      if (!cards.length) return;
 
       const buildSeamlessLoop = (items, itemSpacing) => {
         const overlap = Math.ceil(1 / itemSpacing);
@@ -158,14 +174,16 @@ function App() {
         }
       });
 
+      ScrollTrigger.refresh();
+
       const scrubTo = totalTime => {
         const wrapped = ((totalTime % loopDuration) + loopDuration) % loopDuration;
         const progress = wrapped / loopDuration;
         trigger.scroll(trigger.start + progress * (trigger.end - trigger.start));
       };
 
-      const nextBtn = galleryEl.querySelector('.next');
-      const prevBtn = galleryEl.querySelector('.prev');
+      const nextBtn = el.querySelector('.next');
+      const prevBtn = el.querySelector('.prev');
       const onNext = () => scrubTo(scrub.vars.totalTime + spacing);
       const onPrev = () => scrubTo(scrub.vars.totalTime - spacing);
 
@@ -182,8 +200,6 @@ function App() {
     }, galleryEl);
 
     // Navbar active states outside context
-    const sections = ['#home', '#about', '#products', '#services', '#contact'];
-
     setTimeout(() => {
       const navLinks = gsap.utils.toArray('.navbar-links a');
 
@@ -212,8 +228,12 @@ function App() {
       });
     }, 100);
 
+      });
+    });
+
     return () => {
-      ctx.revert();
+      cancelAnimationFrame(rafId);
+      if (ctx) ctx.revert();
       // Kill navbar triggers
       ScrollTrigger.getAll().forEach(trigger => {
         if (trigger.vars.trigger && sections.includes(trigger.vars.trigger)) {
@@ -221,26 +241,34 @@ function App() {
         }
       });
     };
-  }, []);
+  }, [isGalleryRoute]);
 
-  const location = useLocation();
   const isProfile = location.pathname === '/profile';
 
   return (
     <div>
       <Helmet>
         <title>{isProfile ? 'Profile | Nano Profiles' : 'Nano Profiles - Smart Digital Identity Solutions'}</title>
-        <meta name="description" content={isProfile ? 'Manage your artist profiles and NFC settings.' : 'NFC-enabled digital identity solutions. Tap-to-share profiles, secure ID cards, smart badges. Just tap to trust.'} />
+        <meta name="description" content={isProfile ? 'Manage your artist profiles and NFC settings.' : 'NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Contactless and secure. Just tap to trust.'} />
+        {!isProfile && (
+          <>
+            <meta property="og:title" content="Nano Profiles - Smart Digital Identity Solutions" />
+            <meta property="og:description" content="NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Just tap to trust." />
+            <meta property="og:url" content="https://nanoprofiles.com/" />
+            <meta name="twitter:title" content="Nano Profiles - Smart Digital Identity Solutions" />
+            <meta name="twitter:description" content="NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills. Just tap to trust." />
+          </>
+        )}
         {isProfile && <meta name="robots" content="noindex, follow" />}
       </Helmet>
       <Routes>
         <Route path="/profile" element={<Profile />} />
+        <Route path="/link/:username" element={<GeneralProfileView />} />
         <Route path="/*" element={
           <>
       <nav className="navbar">
         <div className="navbar-inner">
           <Link className="navbar-brand" to="/">
-            <img className="navbar-logo" src={navbarLogo} alt="" />
             <span className="navbar-brandText">Nano Profiles</span>
           </Link>
           <div className={`navbar-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -397,6 +425,17 @@ function App() {
         <div className="info-inner">
           <h2>Our Products</h2>
           <div className="products-grid">
+            <div className="product-card product-card-artist product-card-no-flip">
+              <div className="product-card-inner">
+                <div className="product-card-front">
+                  <div className="product-cover artist-cover">
+                    <ArtistBadge3D />
+                  </div>
+                  <h3>Artist</h3>
+                  <p>Creative portfolios on NFC tags</p>
+                </div>
+              </div>
+            </div>
             <div className="product-card">
               <div className="product-card-inner">
                 <div className="product-card-front">
@@ -416,29 +455,14 @@ function App() {
               <div className="product-card-inner">
                 <div className="product-card-front">
                   <div className="product-cover office-cover">
-                    <OfficeBadge3D />
+                    <RestaurantBadge3D />
                   </div>
-                  <h3>Office</h3>
-                  <p>Professional NFC badges for employees</p>
+                  <h3>Restaurant</h3>
+                  <p>Tap to get menu and bills</p>
                 </div>
                 <div className="product-card-back">
                   <h3>Why Better?</h3>
-                  <p>Professional look, quick access control, contactless check-in, secure employee data management.</p>
-                </div>
-              </div>
-            </div>
-            <div className="product-card">
-              <div className="product-card-inner">
-                <div className="product-card-front">
-                  <div className="product-cover artist-cover">
-                    <ArtistBadge3D />
-                  </div>
-                  <h3>Artist</h3>
-                  <p>Creative portfolios on NFC tags</p>
-                </div>
-                <div className="product-card-back">
-                  <h3>Why Better?</h3>
-                  <p>Instant work showcase, secure sharing, portable portfolio, enhanced networking at events.</p>
+                  <p>Tap to get menu and bills—contactless ordering, instant menu access, quick payment. No waiting, no paper.</p>
                 </div>
               </div>
             </div>
@@ -551,7 +575,6 @@ function App() {
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <img className="footer-logo" src={navbarLogo} alt="" />
             <div className="footer-brandText">Nano Profiles</div>
             <p>Smart digital identity solutions with NFC technology</p>
             <div className="footer-quote">Just tap to trust</div>

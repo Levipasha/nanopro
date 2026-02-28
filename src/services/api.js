@@ -62,4 +62,20 @@ export const landingArtistAPI = {
     request('POST', '/api/artist/verify-otp', { body: { email, otp } })
 };
 
+// General Profile (Linktree-like) API
+export const generalProfileAPI = {
+  getMine: (getIdToken, getFirebaseUser) =>
+    request('GET', '/api/general-profile/me', { getIdToken, getFirebaseUser }),
+  create: (body, getIdToken, getFirebaseUser) =>
+    request('POST', '/api/general-profile', { body, getIdToken, getFirebaseUser }),
+  update: (body, getIdToken, getFirebaseUser) =>
+    request('PUT', '/api/general-profile/me', { body, getIdToken, getFirebaseUser }),
+  getByUsername: (username) =>
+    request('GET', `/api/general-profile/u/${encodeURIComponent(username)}`),
+  uploadPhoto: async (file, getIdToken) => {
+    const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
+    return uploadPhoto(file, token);
+  }
+};
+
 export default landingArtistAPI;

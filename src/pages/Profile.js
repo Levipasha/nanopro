@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { signInWithGoogle, onAuthStateChanged, auth, logout, getGoogleRedirectResult, getIdToken } from '../firebase';
-import { landingArtistAPI } from '../services/api';
+import { landingArtistAPI, generalProfileAPI } from '../services/api';
+import PlatformIconSelect from '../components/PlatformIconSelect';
+import { GENERAL_THEMES } from '../constants/generalThemes';
 import './Profile.css';
+
+// Profile mode: 'choice' | 'artist' | 'general'
+const PROFILE_MODE_KEY = 'profile_mode';
 
 const defaultForm = {
   name: '',
@@ -32,6 +37,13 @@ const defaultForm = {
 const OTP_STORAGE_KEY = 'landing_otp_auth';
 
 function Profile() {
+  const [profileMode, setProfileMode] = useState(() => {
+    try {
+      return localStorage.getItem(PROFILE_MODE_KEY) || 'choice';
+    } catch (e) {
+      return 'choice';
+    }
+  });
   const [user, setUser] = useState(null);
   const [otpUser, setOtpUser] = useState(() => {
     try {
@@ -61,7 +73,28 @@ function Profile() {
   const [otpSendLoading, setOtpSendLoading] = useState(false);
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
 
+  // General profile (Linktree-like) state
+  const [generalProfile, setGeneralProfile] = useState(null);
+  const [generalProfileLoading, setGeneralProfileLoading] = useState(false);
+  const [generalStep, setGeneralStep] = useState('theme'); // 'theme' | 'create' | 'edit'
+  const [generalForm, setGeneralForm] = useState({
+    username: '',
+    name: '',
+    title: '',
+    bio: '',
+    photo: '',
+    theme: 'mint',
+    links: [{ title: '', url: '', platform: 'website', order: 0 }],
+    social: { instagram: '', twitter: '', youtube: '', spotify: '', tiktok: '', linkedin: '', pinterest: '' }
+  });
+  const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
+  const [generalSaving, setGeneralSaving] = useState(false);
+  const [generalSuccess, setGeneralSuccess] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+
   const isLoggedIn = !!(user || otpUser);
+  const isArtistMode = profileMode === 'artist';
+  const isGeneralMode = profileMode === 'general';
   const getFirebaseUser = useCallback(
     () => (user ? { uid: user.uid, email: user.email || null } : null),
     [user]
@@ -118,6 +151,155 @@ function Profile() {
   useEffect(() => {
     if (user || otpUser) loadMyProfiles();
   }, [user, otpUser, loadMyProfiles]);
+
+  const loadGeneralProfile = useCallback(async () => {
+    if (!user) return;
+    setGeneralProfileLoading(true);
+    setError('');
+    try {
+      const res = await generalProfileAPI.getMine(() => getIdToken(), getFirebaseUser);
+      const data = res.data;
+      if (data) {
+        setGeneralProfile(data);
+        setGeneralStep('edit');
+        setGeneralForm({
+          username: data.username || '',
+          name: data.name || '',
+          title: data.title || '',
+          bio: data.bio || '',
+          photo: data.photo || '',
+          theme: data.theme || 'mint',
+          links: (data.links && data.links.length) ? data.links : [{ title: '', url: '', platform: 'website', order: 0 }],
+          social: {
+            instagram: data.social?.instagram || '',
+            youtube: data.social?.youtube || '',
+            tiktok: data.social?.tiktok || '',
+            pinterest: data.social?.pinterest || '',
+            linkedin: data.social?.linkedin || '',
+            twitter: data.social?.twitter || '',
+            spotify: data.social?.spotify || ''
+          }
+        });
+      } else {
+        setGeneralStep('theme');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load profile.');
+    } finally {
+      setGeneralProfileLoading(false);
+    }
+  }, [user, getFirebaseUser]);
+
+  useEffect(() => {
+    if (isGeneralMode && user?.uid) loadGeneralProfile();
+  }, [isGeneralMode, user, loadGeneralProfile]);
+
+  const handleSelectArtistMode = () => {
+    setProfileMode('artist');
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) {}
+  };
+
+  const handleSelectGeneralMode = () => {
+    setProfileMode('general');
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) {}
+  };
+
+  const handleBackToChoice = () => {
+    setProfileMode('choice');
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) {}
+  };
+
+  const handleGeneralThemeSelect = (themeId) => {
+    setGeneralForm(prev => ({ ...prev, theme: themeId }));
+    setGeneralStep('create');
+  };
+
+  const handleGeneralCreate = async (e) => {
+    e.preventDefault();
+    if (!generalForm.username.trim()) {
+      setError('Username is required.');
+      return;
+    }
+    setGeneralSaving(true);
+    setError('');
+    setGeneralSuccess('');
+    try {
+      let photoUrl = generalForm.photo;
+      if (generalPhotoFile) {
+        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
+        photoUrl = up?.url || photoUrl;
+      }
+      const links = generalForm.links.filter(l => l.url.trim());
+      const res = await generalProfileAPI.create(
+        { ...generalForm, photo: photoUrl, links },
+        () => getIdToken(),
+        getFirebaseUser
+      );
+      setGeneralProfile(res.data);
+      setGeneralStep('edit');
+      setGeneralPhotoFile(null);
+      setGeneralSuccess('Profile created successfully!');
+      setTimeout(() => setGeneralSuccess(''), 4000);
+    } catch (err) {
+      setError(err.message || 'Failed to create profile.');
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
+  const handleGeneralUpdate = async (e) => {
+    e.preventDefault();
+    setGeneralSaving(true);
+    setError('');
+    setGeneralSuccess('');
+    try {
+      let photoUrl = generalForm.photo;
+      if (generalPhotoFile) {
+        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
+        photoUrl = up?.url || photoUrl;
+      }
+      const links = generalForm.links.filter(l => l.url.trim());
+      const res = await generalProfileAPI.update(
+        { ...generalForm, photo: photoUrl, links },
+        () => getIdToken(),
+        getFirebaseUser
+      );
+      setGeneralProfile(res.data);
+      setGeneralPhotoFile(null);
+      setGeneralSuccess('Profile saved successfully!');
+      setTimeout(() => setGeneralSuccess(''), 4000);
+    } catch (err) {
+      setError(err.message || 'Failed to save profile.');
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
+  const addLink = () => {
+    setGeneralForm(prev => ({
+      ...prev,
+      links: [...prev.links, { title: '', url: '', platform: 'website', order: prev.links.length }]
+    }));
+  };
+
+  const updateLink = (idx, field, value) => {
+    setGeneralForm(prev => ({
+      ...prev,
+      links: prev.links.map((l, i) => i === idx ? { ...l, [field]: value } : l)
+    }));
+  };
+
+  const removeLink = (idx) => {
+    setGeneralForm(prev => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const getProfileLink = () => {
+    const base = window.location.origin;
+    return `${base}/link/${generalProfile?.username || generalForm.username}`;
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -314,10 +496,48 @@ function Profile() {
     );
   }
 
-  if (!isLoggedIn) {
+  // Choice screen: Artist Profile vs General Profile
+  if (!isLoggedIn && profileMode === 'choice') {
     return (
       <div className="profile-page profile-login-wrap">
-        <div className="profile-login-card">
+        <div className="profile-login-card profile-choice-card">
+          <div className="profile-login-header">
+            <h1>Profile</h1>
+            <p>Choose how you want to manage your profile</p>
+          </div>
+          <div className="profile-choice-buttons">
+            <button type="button" onClick={handleSelectGeneralMode} className="profile-choice-btn profile-choice-general">
+              <span className="profile-choice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </span>
+              <span className="profile-choice-title">General Profile</span>
+              <span className="profile-choice-desc">Sign in, create a Linktree-style profile, select theme, and get your shareable link.</span>
+            </button>
+            <button type="button" onClick={handleSelectArtistMode} className="profile-choice-btn profile-choice-artist">
+              <span className="profile-choice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
+                  <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                </svg>
+              </span>
+              <span className="profile-choice-title">Artist Profile</span>
+              <span className="profile-choice-desc">Login to edit your NFC artist profiles. Use Google or verify with your profile email.</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Artist Profile login
+  if (!isLoggedIn && isArtistMode) {
+    return (
+      <div className="profile-page profile-login-wrap">
+        <div className="profile-login-card profile-login-card-no-flip">
+          <button type="button" onClick={handleBackToChoice} className="profile-back-btn">← Back</button>
           <div className="profile-login-header">
             <div className="profile-icon">
               <DotLottieReact
@@ -327,7 +547,7 @@ function Profile() {
                 style={{ width: '100%', height: '100%' }}
               />
             </div>
-            <h1>Profile</h1>
+            <h1>Artist Profile</h1>
             <p>Sign in with Google or verify with your profile email to access and edit your artist profiles</p>
           </div>
           <div className="profile-social-section">
@@ -394,6 +614,206 @@ function Profile() {
     );
   }
 
+  // General Profile login (Google only)
+  if (!isLoggedIn && isGeneralMode) {
+    return (
+      <div className="profile-page profile-login-wrap">
+        <div className="profile-login-card">
+          <button type="button" onClick={handleBackToChoice} className="profile-back-btn">← Back</button>
+          <div className="profile-login-header">
+            <div className="profile-icon">
+              <DotLottieReact
+                src="https://lottie.host/8ee04dfa-c385-45ce-b652-6a37f232bbe5/aXjGCND8pC.lottie"
+                loop
+                autoplay
+                style={{ width: '100%', height: '100%' }}
+              />
+            </div>
+            <h1>General Profile</h1>
+            <p>Sign in with Google to create your Linktree-style profile. Pick a theme, add your links, and get your shareable URL.</p>
+          </div>
+          <div className="profile-social-section">
+            <button type="button" onClick={handleGoogleLogin} className="profile-google-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              Continue with Google
+            </button>
+            {error && <div className="profile-error-msg">{error}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // General Profile: theme selection
+  if (isLoggedIn && isGeneralMode && generalStep === 'theme' && !generalProfileLoading) {
+    return (
+      <div className="profile-page profile-login-wrap">
+        <div className="profile-login-card profile-theme-card">
+          <button type="button" onClick={handleLogout} className="profile-back-btn">← Sign out</button>
+          <div className="profile-login-header">
+            <h1>Select a theme</h1>
+            <p>Pick the style that feels right - you can add your content later</p>
+          </div>
+          <div className="profile-theme-grid">
+            {GENERAL_THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`profile-theme-preview ${generalForm.theme === t.id ? 'selected' : ''}`}
+                onClick={() => handleGeneralThemeSelect(t.id)}
+                style={{ background: t.bg, color: t.text }}
+              >
+                <div className="profile-theme-avatar" />
+                <span className="profile-theme-name">{t.name}</span>
+                <span className="profile-theme-desc">{t.desc}</span>
+                <div className="profile-theme-icons">📷 ▶️ 🎵 📷</div>
+                <div className="profile-theme-links">
+                  <div className="profile-theme-link" />
+                  <div className="profile-theme-link" />
+                  <div className="profile-theme-link" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // General Profile: create or edit form
+  if (isLoggedIn && isGeneralMode && (generalStep === 'create' || generalStep === 'edit') && !generalProfileLoading) {
+    return (
+      <div className="profile-page profile-view-wrap">
+        <div className="profile-view-card profile-view-card-wide profile-general-card">
+          <div className="profile-view-header">
+            <button type="button" onClick={handleLogout} className="profile-back-btn">← Sign out</button>
+            <h1>{generalStep === 'create' ? 'Create your profile' : 'Edit your profile'}</h1>
+            {generalProfile && (
+              <div className="profile-link-display">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getProfileLink());
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2000);
+                  }}
+                  className={`profile-copy-link-btn ${linkCopied ? 'copied' : ''}`}
+                >
+                  {linkCopied ? '✓ Copied!' : 'Copy link'}
+                </button>
+              </div>
+            )}
+          </div>
+          <form onSubmit={generalStep === 'create' ? handleGeneralCreate : handleGeneralUpdate} className="profile-edit-form">
+            {error && <div className="profile-error-msg">{error}</div>}
+            {generalSuccess && <div className="profile-success-msg">{generalSuccess}</div>}
+            <div className="profile-edit-body">
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Theme</h4>
+                <div className="profile-edit-theme-grid">
+                  {GENERAL_THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`profile-edit-theme-btn ${generalForm.theme === t.id ? 'selected' : ''}`}
+                      onClick={() => setGeneralForm(prev => ({ ...prev, theme: t.id }))}
+                      style={{ background: t.bg, color: t.text }}
+                      title={t.label}
+                    >
+                      <span className="profile-edit-theme-label">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="profile-edit-field">
+                <label>Username (for your link)</label>
+                <input
+                  name="username"
+                  value={generalForm.username}
+                  onChange={(e) => setGeneralForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
+                  placeholder="myprofile"
+                  required
+                />
+              </div>
+              <div className="profile-edit-field">
+                <label>Name</label>
+                <input name="name" value={generalForm.name} onChange={(e) => setGeneralForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Your name" />
+              </div>
+              <div className="profile-edit-field">
+                <label>Title / Tagline</label>
+                <input name="title" value={generalForm.title} onChange={(e) => setGeneralForm(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g. Company owner" />
+              </div>
+              <div className="profile-edit-field">
+                <label>Bio</label>
+                <textarea name="bio" value={generalForm.bio} onChange={(e) => setGeneralForm(prev => ({ ...prev, bio: e.target.value }))} rows={2} placeholder="Short bio" />
+              </div>
+              <div className="profile-edit-field">
+                <label>Profile photo</label>
+                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
+                {(generalForm.photo || generalPhotoFile) && (
+                  <div className="profile-edit-photo-preview">
+                    <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" />
+                  </div>
+                )}
+              </div>
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Links</h4>
+                {generalForm.links.map((link, idx) => (
+                  <div key={idx} className="profile-edit-field profile-edit-link-block">
+                    <div className="profile-edit-link-row">
+                      <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
+                      <input placeholder="Title" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} />
+                      <button type="button" onClick={() => removeLink(idx)} className="profile-edit-remove">×</button>
+                    </div>
+                    <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                  </div>
+                ))}
+                <button type="button" onClick={addLink} className="profile-edit-add-link">+ Add link</button>
+              </div>
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Social</h4>
+                <div className="profile-edit-field">
+                  <label>Instagram</label>
+                  <input value={generalForm.social.instagram || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, instagram: e.target.value } }))} placeholder="@handle" />
+                </div>
+                <div className="profile-edit-field">
+                  <label>YouTube</label>
+                  <input value={generalForm.social.youtube || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, youtube: e.target.value } }))} placeholder="Channel or URL" />
+                </div>
+                <div className="profile-edit-field">
+                  <label>TikTok</label>
+                  <input value={generalForm.social.tiktok || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, tiktok: e.target.value } }))} placeholder="@handle" />
+                </div>
+                <div className="profile-edit-field">
+                  <label>Pinterest</label>
+                  <input value={generalForm.social.pinterest || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, pinterest: e.target.value } }))} placeholder="Profile URL or username" />
+                </div>
+              </div>
+            </div>
+            <div className="profile-edit-footer">
+              <button type="submit" disabled={generalSaving}>{generalSaving ? 'Saving…' : (generalStep === 'create' ? 'Create profile' : 'Save')}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // General Profile loading
+  if (isLoggedIn && isGeneralMode && generalProfileLoading) {
+    return (
+      <div className="profile-page profile-loading">
+        <p>Loading your profile...</p>
+      </div>
+    );
+  }
+
+  // Artist Profile (existing flow - logged in)
   const displayName = user?.displayName || user?.email || otpUser?.email || 'Profile';
   const displayEmail = user?.email || otpUser?.email || '';
   const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || otpUser?.email?.charAt(0) || '?';
