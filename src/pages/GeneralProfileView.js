@@ -105,6 +105,11 @@ function GeneralProfileView() {
         {/* Username - @username */}
         <h1 className="gp-username">@{profile.username}</h1>
 
+        {/* Tagline / Title */}
+        {profile.title && (
+          <p className="gp-title">{profile.title}</p>
+        )}
+
         {/* Bio */}
         {profile.bio && (
           <p className="gp-bio">{profile.bio}</p>

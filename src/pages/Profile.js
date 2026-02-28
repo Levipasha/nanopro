@@ -76,7 +76,7 @@ function Profile() {
   // General profile (Linktree-like) state
   const [generalProfile, setGeneralProfile] = useState(null);
   const [generalProfileLoading, setGeneralProfileLoading] = useState(false);
-  const [generalStep, setGeneralStep] = useState('theme'); // 'theme' | 'create' | 'edit'
+  const [generalStep, setGeneralStep] = useState('theme'); // 'theme' | 'create' | 'edit' | 'home'
   const [generalForm, setGeneralForm] = useState({
     username: '',
     name: '',
@@ -161,7 +161,7 @@ function Profile() {
       const data = res.data;
       if (data) {
         setGeneralProfile(data);
-        setGeneralStep('edit');
+        setGeneralStep('home');
         setGeneralForm({
           username: data.username || '',
           name: data.name || '',
@@ -236,10 +236,10 @@ function Profile() {
         getFirebaseUser
       );
       setGeneralProfile(res.data);
-      setGeneralStep('edit');
+      setGeneralStep('home');
       setGeneralPhotoFile(null);
       setGeneralSuccess('Profile created successfully!');
-      setTimeout(() => setGeneralSuccess(''), 4000);
+      setTimeout(() => setGeneralSuccess(''), 2500);
     } catch (err) {
       setError(err.message || 'Failed to create profile.');
     } finally {
@@ -267,7 +267,7 @@ function Profile() {
       setGeneralProfile(res.data);
       setGeneralPhotoFile(null);
       setGeneralSuccess('Profile saved successfully!');
-      setTimeout(() => setGeneralSuccess(''), 4000);
+      setTimeout(() => setGeneralSuccess(''), 2500);
     } catch (err) {
       setError(err.message || 'Failed to save profile.');
     } finally {
@@ -685,13 +685,44 @@ function Profile() {
     );
   }
 
+  // General Profile: home dashboard (Edit profile / Copy link)
+  if (isLoggedIn && isGeneralMode && generalStep === 'home' && !generalProfileLoading && generalProfile) {
+    return (
+      <div className="profile-page profile-login-wrap">
+        <div className="profile-login-card profile-general-home-card">
+          <button type="button" onClick={handleLogout} className="profile-back-btn">← Sign out</button>
+          <div className="profile-login-header">
+            <h1>Your profile</h1>
+            <p>@{generalProfile.username}</p>
+          </div>
+          <div className="profile-general-home-actions">
+            <button type="button" className="profile-general-home-btn" onClick={() => setGeneralStep('edit')}>
+              Edit profile
+            </button>
+            <button
+              type="button"
+              className={`profile-general-home-btn ${linkCopied ? 'copied' : ''}`}
+              onClick={() => {
+                navigator.clipboard.writeText(getProfileLink());
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+            >
+              {linkCopied ? '✓ Link copied!' : 'Copy link'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // General Profile: create or edit form
   if (isLoggedIn && isGeneralMode && (generalStep === 'create' || generalStep === 'edit') && !generalProfileLoading) {
     return (
       <div className="profile-page profile-view-wrap">
         <div className="profile-view-card profile-view-card-wide profile-general-card">
           <div className="profile-view-header">
-            <button type="button" onClick={handleLogout} className="profile-back-btn">← Sign out</button>
+            <button type="button" onClick={generalStep === 'create' ? () => setGeneralStep('theme') : () => setGeneralStep('home')} className="profile-back-btn">← Back</button>
             <h1>{generalStep === 'create' ? 'Create your profile' : 'Edit your profile'}</h1>
             {generalProfile && (
               <div className="profile-link-display">
@@ -709,9 +740,22 @@ function Profile() {
               </div>
             )}
           </div>
+          {generalSuccess && (
+            <div className="profile-success-overlay" role="dialog" aria-labelledby="profile-success-title" aria-live="polite" onClick={() => setGeneralSuccess('')}>
+              <div className="profile-success-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="profile-success-icon-wrap">
+                  <svg className="profile-success-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h2 id="profile-success-title" className="profile-success-title">Success</h2>
+                <p className="profile-success-message">Your profile has been saved successfully.</p>
+                <button type="button" className="profile-success-ok" onClick={() => setGeneralSuccess('')}>OK</button>
+              </div>
+            </div>
+          )}
           <form onSubmit={generalStep === 'create' ? handleGeneralCreate : handleGeneralUpdate} className="profile-edit-form">
             {error && <div className="profile-error-msg">{error}</div>}
-            {generalSuccess && <div className="profile-success-msg">{generalSuccess}</div>}
             <div className="profile-edit-body">
               <div className="profile-edit-section">
                 <h4 className="profile-edit-section-title">Theme</h4>
