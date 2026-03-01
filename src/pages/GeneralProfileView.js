@@ -39,7 +39,6 @@ function GeneralProfileView() {
       try {
         await navigator.share({
           title: `${profile?.name || 'Profile'} | Nano Profiles`,
-          text: `Check out ${profile?.name || 'this'} profile on Nano Profiles!`,
           url
         });
       } catch (err) {
