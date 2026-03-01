@@ -52,7 +52,7 @@ function Profile() {
         const data = JSON.parse(raw);
         if (data?.email && data?.token) return { email: data.email, token: data.token };
       }
-    } catch (e) {}
+    } catch (e) { }
     return null;
   });
   const [loading, setLoading] = useState(true);
@@ -84,8 +84,7 @@ function Profile() {
     bio: '',
     photo: '',
     theme: 'mint',
-    links: [{ title: '', url: '', platform: 'website', order: 0 }],
-    social: { instagram: '', twitter: '', youtube: '', spotify: '', tiktok: '', linkedin: '', pinterest: '' }
+    links: [{ title: '', url: '', platform: 'website', order: 0 }]
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
   const [generalSaving, setGeneralSaving] = useState(false);
@@ -169,16 +168,7 @@ function Profile() {
           bio: data.bio || '',
           photo: data.photo || '',
           theme: data.theme || 'mint',
-          links: (data.links && data.links.length) ? data.links : [{ title: '', url: '', platform: 'website', order: 0 }],
-          social: {
-            instagram: data.social?.instagram || '',
-            youtube: data.social?.youtube || '',
-            tiktok: data.social?.tiktok || '',
-            pinterest: data.social?.pinterest || '',
-            linkedin: data.social?.linkedin || '',
-            twitter: data.social?.twitter || '',
-            spotify: data.social?.spotify || ''
-          }
+          links: (data.links && data.links.length) ? data.links : [{ title: '', url: '', platform: 'website', order: 0 }]
         });
       } else {
         setGeneralStep('theme');
@@ -196,17 +186,17 @@ function Profile() {
 
   const handleSelectArtistMode = () => {
     setProfileMode('artist');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) {}
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
   };
 
   const handleSelectGeneralMode = () => {
     setProfileMode('general');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) {}
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
   };
 
   const handleBackToChoice = () => {
     setProfileMode('choice');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) {}
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) { }
   };
 
   const handleGeneralThemeSelect = (themeId) => {
@@ -558,7 +548,7 @@ function Profile() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
-              Continue with Google
+              <span>Continue with Google</span>
             </button>
 
             <div className="profile-otp-divider">
@@ -640,7 +630,7 @@ function Profile() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
-              Continue with Google
+              <span>Continue with Google</span>
             </button>
             {error && <div className="profile-error-msg">{error}</div>}
           </div>
@@ -721,24 +711,11 @@ function Profile() {
     return (
       <div className="profile-page profile-view-wrap">
         <div className="profile-view-card profile-view-card-wide profile-general-card">
-          <div className="profile-view-header">
-            <button type="button" onClick={generalStep === 'create' ? () => setGeneralStep('theme') : () => setGeneralStep('home')} className="profile-back-btn">← Back</button>
-            <h1>{generalStep === 'create' ? 'Create your profile' : 'Edit your profile'}</h1>
-            {generalProfile && (
-              <div className="profile-link-display">
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(getProfileLink());
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 2000);
-                  }}
-                  className={`profile-copy-link-btn ${linkCopied ? 'copied' : ''}`}
-                >
-                  {linkCopied ? '✓ Copied!' : 'Copy link'}
-                </button>
-              </div>
-            )}
+          <div className="profile-view-header profile-edit-view-header">
+            <div className="profile-edit-header-row">
+              <button type="button" onClick={generalStep === 'create' ? () => setGeneralStep('theme') : () => setGeneralStep('home')} className="profile-back-btn">← Back</button>
+            </div>
+            <h1 className="profile-edit-main-title">{generalStep === 'create' ? 'Create your profile' : 'Edit your profile'}</h1>
           </div>
           {generalSuccess && (
             <div className="profile-success-overlay" role="dialog" aria-labelledby="profile-success-title" aria-live="polite" onClick={() => setGeneralSuccess('')}>
@@ -798,45 +775,38 @@ function Profile() {
               </div>
               <div className="profile-edit-field">
                 <label>Profile photo</label>
-                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
-                {(generalForm.photo || generalPhotoFile) && (
-                  <div className="profile-edit-photo-preview">
-                    <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" />
-                  </div>
-                )}
+                <div className="profile-edit-photo-row">
+                  <label className="profile-edit-file-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>{generalPhotoFile ? 'Change photo' : 'Upload photo'}</span>
+                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
+                  </label>
+                  {(generalForm.photo || generalPhotoFile) && (
+                    <div className="profile-edit-photo-preview">
+                      <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="profile-edit-section">
                 <h4 className="profile-edit-section-title">Links</h4>
                 {generalForm.links.map((link, idx) => (
                   <div key={idx} className="profile-edit-field profile-edit-link-block">
-                    <div className="profile-edit-link-row">
+                    <div className="profile-edit-link-header">
                       <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
-                      <input placeholder="Title" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} />
-                      <button type="button" onClick={() => removeLink(idx)} className="profile-edit-remove">×</button>
+                      <button type="button" onClick={() => removeLink(idx)} className="profile-edit-remove" title="Remove link">×</button>
                     </div>
-                    <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                    <div className="profile-edit-link-fields">
+                      <input placeholder="Title (e.g. My Website)" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} className="profile-edit-link-title" />
+                      <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                    </div>
                   </div>
                 ))}
                 <button type="button" onClick={addLink} className="profile-edit-add-link">+ Add link</button>
-              </div>
-              <div className="profile-edit-section">
-                <h4 className="profile-edit-section-title">Social</h4>
-                <div className="profile-edit-field">
-                  <label>Instagram</label>
-                  <input value={generalForm.social.instagram || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, instagram: e.target.value } }))} placeholder="@handle" />
-                </div>
-                <div className="profile-edit-field">
-                  <label>YouTube</label>
-                  <input value={generalForm.social.youtube || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, youtube: e.target.value } }))} placeholder="Channel or URL" />
-                </div>
-                <div className="profile-edit-field">
-                  <label>TikTok</label>
-                  <input value={generalForm.social.tiktok || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, tiktok: e.target.value } }))} placeholder="@handle" />
-                </div>
-                <div className="profile-edit-field">
-                  <label>Pinterest</label>
-                  <input value={generalForm.social.pinterest || ''} onChange={(e) => setGeneralForm(prev => ({ ...prev, social: { ...prev.social, pinterest: e.target.value } }))} placeholder="Profile URL or username" />
-                </div>
               </div>
             </div>
             <div className="profile-edit-footer">
@@ -1079,41 +1049,41 @@ function Profile() {
                 <section className="profile-edit-section">
                   <h4 className="profile-edit-section-title">Slideshow / Gallery</h4>
                   <div className="profile-edit-gallery-wrap">
-                  {formData.gallery.length > 0 && (
-                    <ul className="profile-edit-gallery-list">
-                      {formData.gallery.map((item, idx) => (
-                        <li key={idx} className="profile-edit-gallery-item">
-                          <img src={item.url} alt="" className="profile-edit-gallery-thumb" />
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => setGalleryItemName(idx, e.target.value)}
-                            placeholder="Title"
-                            className="profile-edit-gallery-name"
-                          />
-                          <button type="button" onClick={() => removeGalleryItem(idx)} className="profile-edit-gallery-remove" aria-label="Remove">×</button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="profile-edit-gallery-add">
-                    <input
-                      type="text"
-                      value={newGalleryName}
-                      onChange={(e) => setNewGalleryName(e.target.value)}
-                      placeholder="Slide title (optional)"
-                      className="profile-edit-gallery-name-in"
-                    />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && setNewGalleryFile(e.target.files[0])}
-                    />
-                    <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
-                      {galleryUploading ? 'Uploading…' : 'Add to slideshow'}
-                    </button>
+                    {formData.gallery.length > 0 && (
+                      <ul className="profile-edit-gallery-list">
+                        {formData.gallery.map((item, idx) => (
+                          <li key={idx} className="profile-edit-gallery-item">
+                            <img src={item.url} alt="" className="profile-edit-gallery-thumb" />
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => setGalleryItemName(idx, e.target.value)}
+                              placeholder="Title"
+                              className="profile-edit-gallery-name"
+                            />
+                            <button type="button" onClick={() => removeGalleryItem(idx)} className="profile-edit-gallery-remove" aria-label="Remove">×</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="profile-edit-gallery-add">
+                      <input
+                        type="text"
+                        value={newGalleryName}
+                        onChange={(e) => setNewGalleryName(e.target.value)}
+                        placeholder="Slide title (optional)"
+                        className="profile-edit-gallery-name-in"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && setNewGalleryFile(e.target.files[0])}
+                      />
+                      <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
+                        {galleryUploading ? 'Uploading…' : 'Add to slideshow'}
+                      </button>
+                    </div>
                   </div>
-                </div>
                 </section>
               </div>
               <div className="profile-edit-footer">

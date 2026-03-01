@@ -4,6 +4,7 @@ import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
 import { getLinkIcon } from '../components/LinkIcons';
 import { getThemeById } from '../constants/generalThemes';
+import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
 
 function GeneralProfileView() {
@@ -12,6 +13,7 @@ function GeneralProfileView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imgError, setImgError] = useState(false);
+  const [showEnlarged, setShowEnlarged] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,8 +38,8 @@ function GeneralProfileView() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: profile?.name || 'Profile',
-          text: profile?.bio || '',
+          title: `${profile?.name || 'Profile'} | Nano Profiles`,
+          text: `Check out ${profile?.name || 'this'} profile on Nano Profiles!`,
           url
         });
       } catch (err) {
@@ -76,6 +78,25 @@ function GeneralProfileView() {
 
   return (
     <div className="gp-view gp-layout" style={{ background: theme.bg }}>
+      <Helmet>
+        <title>{`${profile?.name || 'Profile'} | Nano Profiles`}</title>
+        <meta name="description" content={profile?.title || profile?.bio || 'Smart Digital Identity Solutions'} />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:title" content={`${profile?.name || 'Profile'} | Nano Profiles`} />
+        <meta property="og:description" content={profile?.title || 'Smart Digital Identity Solutions'} />
+        <meta property="og:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={window.location.href} />
+        <meta name="twitter:title" content={`${profile?.name || 'Profile'} | Nano Profiles`} />
+        <meta name="twitter:description" content={profile?.title || 'Smart Digital Identity Solutions'} />
+        <meta name="twitter:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
+      </Helmet>
+
       <div className="gp-card gp-card-themed" style={{ background: theme.bg, color: theme.text }}>
         {/* Share button - top right */}
         <button type="button" onClick={handleShare} className="gp-share-btn" aria-label="Share">
@@ -94,6 +115,8 @@ function GeneralProfileView() {
               alt={profile.name}
               className="gp-avatar"
               onError={() => setImgError(true)}
+              onClick={() => setShowEnlarged(true)}
+              title="Click to enlarge"
             />
           ) : (
             <div className="gp-avatar-placeholder">
@@ -102,8 +125,13 @@ function GeneralProfileView() {
           )}
         </div>
 
+        {/* Name - Full Name */}
+        {profile.name && (
+          <h1 className="gp-name">{profile.name}</h1>
+        )}
+
         {/* Username - @username */}
-        <h1 className="gp-username">@{profile.username}</h1>
+        <p className="gp-username">@{profile.username}</p>
 
         {/* Tagline / Title */}
         {profile.title && (
@@ -135,6 +163,20 @@ function GeneralProfileView() {
         <div className="gp-footer">
           <span>Powered by <a href="https://nanoprofiles.com" target="_blank" rel="noopener noreferrer">NanoProfiles</a></span>
         </div>
+
+        {/* Photo Enlarge Modal */}
+        {showEnlarged && profile.photo && (
+          <div className="gp-photo-modal" onClick={() => setShowEnlarged(false)}>
+            <div className="gp-modal-overlay" />
+            <button className="gp-modal-close" onClick={() => setShowEnlarged(false)} aria-label="Close">×</button>
+            <img
+              src={fixImageUrl(profile.photo) || profile.photo}
+              alt={profile.name}
+              className="gp-modal-img"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

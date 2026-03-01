@@ -12,7 +12,17 @@ const PLATFORMS = [
   { value: 'linkedin', label: 'LinkedIn', icon: icons.linkedin },
   { value: 'spotify', label: 'Spotify', icon: icons.spotify },
   { value: 'facebook', label: 'Facebook', icon: icons.facebook },
-  { value: 'whatsapp', label: 'WhatsApp', icon: icons.whatsapp }
+  { value: 'whatsapp', label: 'WhatsApp', icon: icons.whatsapp },
+  { value: 'discord', label: 'Discord', icon: icons.discord },
+  { value: 'snapchat', label: 'Snapchat', icon: icons.snapchat },
+  { value: 'telegram', label: 'Telegram', icon: icons.telegram },
+  { value: 'reddit', label: 'Reddit', icon: icons.reddit },
+  { value: 'threads', label: 'Threads', icon: icons.threads },
+  { value: 'tumblr', label: 'Tumblr', icon: icons.tumblr },
+  { value: 'twitch', label: 'Twitch', icon: icons.twitch },
+  { value: 'medium', label: 'Medium', icon: icons.medium },
+  { value: 'quora', label: 'Quora', icon: icons.quora },
+  { value: 'github', label: 'GitHub', icon: icons.github }
 ];
 
 function PlatformIconSelect({ value, onChange }) {
@@ -29,7 +39,7 @@ function PlatformIconSelect({ value, onChange }) {
   }, [open]);
 
   return (
-    <div className="platform-icon-select" ref={ref}>
+    <div className={`platform-icon-select ${open ? 'is-open' : ''}`} ref={ref}>
       <button
         type="button"
         className="platform-icon-select-trigger"
