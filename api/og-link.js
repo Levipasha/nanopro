@@ -1,6 +1,7 @@
 /**
  * Returns HTML with Open Graph and Twitter Card meta for /link/:username.
- * Used when crawlers (WhatsApp, Telegram, etc.) request a profile link so the preview shows a card.
+ * Crawlers get profile image + name in the card. Set REACT_APP_API_URL (or API_URL)
+ * in Vercel to your backend so this can fetch profile data; otherwise the fallback is generic branding.
  */
 function absoluteImageUrl(url, apiBase) {
   if (!url || typeof url !== 'string') return null;
@@ -24,12 +25,10 @@ export default async function handler(req, res) {
   }
 
   const apiBase = process.env.REACT_APP_API_URL || process.env.API_URL || '';
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : (req.headers['x-forwarded-proto'] && req.headers['x-forwarded-host']
-        ? `${req.headers['x-forwarded-proto']}://${req.headers['x-forwarded-host']}`
-        : 'https://nanoprofiles.com');
-  const linkUrl = `${baseUrl.replace(/\/$/, '')}/link/${encodeURIComponent(username)}`;
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.VERCEL_URL || 'nanoprofiles.com';
+  const baseUrl = (host ? `${proto}://${host}` : 'https://nanoprofiles.com').replace(/\/$/, '');
+  const linkUrl = `${baseUrl}/link/${encodeURIComponent(username)}`;
 
   let profile = null;
   try {
@@ -49,9 +48,11 @@ export default async function handler(req, res) {
   const description = profile
     ? (profile.title || profile.bio || 'Smart Digital Identity Solutions')
     : 'Smart Digital Identity Solutions';
-  const image = profile
-    ? absoluteImageUrl(profile.photo, apiBase) || `${baseUrl}/favicon.png`
-    : `${baseUrl}/favicon.png`;
+  const image = profile && (profile.photo || profile.photoUrl)
+    ? absoluteImageUrl(profile.photo || profile.photoUrl, apiBase)
+    : null;
+  const imageUrl = image || `${baseUrl}/favicon.png`;
+  const imageAlt = profile ? escapeHtml(profile.name || 'Profile') : 'Nano Profiles';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -63,13 +64,18 @@ export default async function handler(req, res) {
   <meta property="og:url" content="${escapeHtml(linkUrl)}" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:image" content="${escapeHtml(image)}" />
+  <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+  <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+  <meta property="og:image:width" content="400" />
+  <meta property="og:image:height" content="400" />
+  <meta property="og:image:alt" content="${imageAlt}" />
   <meta property="og:site_name" content="Nano Profiles" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="${escapeHtml(linkUrl)}" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <meta name="twitter:image" content="${escapeHtml(image)}" />
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
+  <meta name="twitter:image:alt" content="${imageAlt}" />
   <meta http-equiv="refresh" content="0;url=${escapeHtml(linkUrl)}" />
   <link rel="canonical" href="${escapeHtml(linkUrl)}" />
 </head>
