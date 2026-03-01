@@ -23,7 +23,7 @@ export const fixImageUrl = (url) => {
 
   // Relative path - resolve against API/base
   if (trimmed.startsWith('/')) {
-    const base = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+    const base = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
     return `${base}${trimmed}`;
   }
 

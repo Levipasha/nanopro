@@ -875,7 +875,7 @@ function Profile() {
                   </div>
                   <div className="profile-artist-actions">
                     <a
-                      href={`${import.meta.env.VITE_NFC_FRONTEND_URL || window.location.origin}/artist/${artist.accessToken || artist.artistId}`}
+                      href={`${process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin}/artist/${artist.accessToken || artist.artistId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="profile-artist-view"
