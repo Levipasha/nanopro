@@ -1,9 +1,9 @@
 /**
  * Landing page API – same backend as nfcschoolbe.
  * Used for "My artist profiles" only (artists, not students).
- * Set REACT_APP_API_URL in .env (e.g. http://localhost:5000 or https://your-api.vercel.app).
+ * Set VITE_API_URL in .env (e.g. http://localhost:5000 or https://your-api.vercel.app).
  */
-export const API_URL = process.env.REACT_APP_API_URL || '';
+export const API_URL = import.meta.env.VITE_API_URL || '';
 
 async function request(method, path, { body, getIdToken, getFirebaseUser, headers: customHeaders = {} } = {}) {
   const headers = { 'Content-Type': 'application/json', ...customHeaders };
