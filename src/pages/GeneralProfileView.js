@@ -35,10 +35,12 @@ function GeneralProfileView() {
 
   const handleShare = async () => {
     const url = window.location.href;
+    const shareTitle = `${profile?.name || 'Profile'} | Nano Profiles`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${profile?.name || 'Profile'} | Nano Profiles`,
+          title: shareTitle,
+          text: `Check out ${profile?.name || 'this'} profile on Nano Profiles!`,
           url
         });
       } catch (err) {
@@ -76,7 +78,7 @@ function GeneralProfileView() {
   const theme = getThemeById(profile.theme || 'mint');
 
   return (
-    <div className="gp-view gp-layout" style={{ background: theme.bg }}>
+    <div className="gp-view gp-layout">
       <Helmet>
         <title>{`${profile?.name || 'Profile'} | Nano Profiles`}</title>
         <meta name="description" content={profile?.title || profile?.bio || 'Smart Digital Identity Solutions'} />
@@ -106,43 +108,39 @@ function GeneralProfileView() {
           </svg>
         </button>
 
-        {/* Profile photo - centered */}
-        <div className="gp-photo-wrap">
+        {/* Profile photo - full width header with overlay */}
+        <div className="gp-photo-header">
           {profile.photo && !imgError ? (
             <img
               src={fixImageUrl(profile.photo) || profile.photo}
               alt={profile.name}
-              className="gp-avatar"
+              className="gp-avatar-img"
               onError={() => setImgError(true)}
               onClick={() => setShowEnlarged(true)}
               title="Click to enlarge"
             />
           ) : (
-            <div className="gp-avatar-placeholder">
+            <div className="gp-avatar-placeholder gp-avatar-placeholder-header">
               {profile.name?.charAt(0) || '?'}
             </div>
           )}
+          <div className="gp-photo-overlay">
+            {profile.name && <h1 className="gp-name">{profile.name}</h1>}
+            {profile.title && (
+              <p className="gp-title-overlay">{profile.title}</p>
+            )}
+          </div>
         </div>
-
-        {/* Name - Full Name */}
-        {profile.name && (
-          <h1 className="gp-name">{profile.name}</h1>
-        )}
 
         {/* Username - @username */}
         <p className="gp-username">@{profile.username}</p>
-
-        {/* Tagline / Title */}
-        {profile.title && (
-          <p className="gp-title">{profile.title}</p>
-        )}
 
         {/* Bio */}
         {profile.bio && (
           <p className="gp-bio">{profile.bio}</p>
         )}
 
-        {/* Link buttons - light green bg, black border, icon + text */}
+        {/* Link buttons */}
         <div className="gp-links">
           {links.map((link, idx) => (
             <a

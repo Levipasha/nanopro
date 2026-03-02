@@ -12,10 +12,11 @@ import nanoProfileVideo from './nano profile.mp4';
 import digitalIdVideo from './digital id scan and check my info.mp4';
 import corporateVideo from './Blue and White Corporate Entrepreneurs\' Day Your Story (1).mp4';
 import nanoProfileAvatar from './NANO PROfile.png';
-import customIntegrationImage from './ChatGPT Image Feb 26, 2026, 10_40_38 AM.png';
+import nfcProfileImage from './image.jpg';
 import SchoolBadge3D from './SchoolBadge3D';
 import RestaurantBadge3D from './RestaurantBadge3D';
 import ArtistBadge3D from './ArtistBadge3D';
+import CustomizeBadge3D from './CustomizeBadge3D';
 import ProfileCard from './ProfileCard';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
   const [showDigitalIdPopup, setShowDigitalIdPopup] = useState(false);
   const [showSmartBadgePopup, setShowSmartBadgePopup] = useState(false);
   const [showCustomIntegrationPopup, setShowCustomIntegrationPopup] = useState(false);
+  const [productSlide, setProductSlide] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -245,6 +247,14 @@ function App() {
 
   const isProfile = location.pathname === '/profile';
 
+  const PRODUCT_SLIDES = 4;
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProductSlide((prev) => (prev + 1) % PRODUCT_SLIDES);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div>
       <Helmet>
@@ -272,12 +282,14 @@ function App() {
             <span className="navbar-brandText">Nano Profiles</span>
           </Link>
           <div className={`navbar-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-            <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
-            <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
-            <a href="#products" onClick={() => setMobileMenuOpen(false)}>Products</a>
-            <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
-            <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
-            <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
+            <div className="nav-segmented">
+              <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
+              <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
+              <a href="#products" onClick={() => setMobileMenuOpen(false)}>Products</a>
+              <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
+              <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+              <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={location.pathname === '/profile' ? 'active' : ''}>Profile</Link>
+            </div>
           </div>
           <button className={`hamburger-menu ${mobileMenuOpen ? 'active' : ''}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <span></span>
@@ -424,47 +436,67 @@ function App() {
       <section id="products" className="info-section page-section">
         <div className="info-inner">
           <h2>Our Products</h2>
-          <div className="products-grid">
-            <div className="product-card product-card-artist product-card-no-flip">
-              <div className="product-card-inner">
-                <div className="product-card-front">
+          <div className="products-slideshow">
+            <button type="button" className="products-slide-btn products-slide-prev" onClick={() => setProductSlide((p) => (p - 1 + PRODUCT_SLIDES) % PRODUCT_SLIDES)} aria-label="Previous">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18 4L18 20L6 12z"/></svg>
+            </button>
+            <div className="products-slide-track" style={{ transform: `translateX(-${productSlide * 100}%)` }}>
+              <div className={`product-slide ${productSlide === 0 ? 'is-current' : ''}`}>
+                <div className="product-slide-3d">
                   <div className="product-cover artist-cover">
                     <ArtistBadge3D />
                   </div>
-                  <h3>Artist</h3>
-                  <p>Creative portfolios on NFC tags</p>
+                </div>
+                <div className="product-slide-text">
+                  <h3 className="product-slide-title">Artist</h3>
+                  <div className="product-slide-divider" />
+                  <p className="product-slide-desc">Creative portfolios on NFC tags</p>
                 </div>
               </div>
-            </div>
-            <div className="product-card">
-              <div className="product-card-inner">
-                <div className="product-card-front">
+              <div className={`product-slide ${productSlide === 1 ? 'is-current' : ''}`}>
+                <div className="product-slide-3d">
                   <div className="product-cover school-cover">
                     <SchoolBadge3D />
                   </div>
-                  <h3>School</h3>
-                  <p>Digital ID cards for students and staff</p>
                 </div>
-                <div className="product-card-back">
-                  <h3>Why Better?</h3>
-                  <p>Instant verification, no physical wear, eco-friendly, integrated with school systems for seamless access.</p>
+                <div className="product-slide-text">
+                  <h3 className="product-slide-title">School</h3>
+                  <div className="product-slide-divider" />
+                  <p className="product-slide-desc">Digital ID cards for students and staff</p>
                 </div>
               </div>
-            </div>
-            <div className="product-card">
-              <div className="product-card-inner">
-                <div className="product-card-front">
+              <div className={`product-slide ${productSlide === 2 ? 'is-current' : ''}`}>
+                <div className="product-slide-3d">
                   <div className="product-cover office-cover">
                     <RestaurantBadge3D />
                   </div>
-                  <h3>Restaurant</h3>
-                  <p>Tap to get menu and bills</p>
                 </div>
-                <div className="product-card-back">
-                  <h3>Why Better?</h3>
-                  <p>Tap to get menu and bills—contactless ordering, instant menu access, quick payment. No waiting, no paper.</p>
+                <div className="product-slide-text">
+                  <h3 className="product-slide-title">Restaurant</h3>
+                  <div className="product-slide-divider" />
+                  <p className="product-slide-desc">Tap to get menu and bills</p>
                 </div>
               </div>
+              <div className={`product-slide ${productSlide === 3 ? 'is-current' : ''}`}>
+                <div className="product-slide-3d">
+                  <div className="product-cover customize-cover">
+                    <CustomizeBadge3D />
+                  </div>
+                </div>
+                <div className="product-slide-text">
+                  <h3 className="product-slide-title">Customize Cards</h3>
+                  <div className="product-slide-divider" />
+                  <p className="product-slide-desc">Design your own NFC cards</p>
+                </div>
+              </div>
+            </div>
+            <button type="button" className="products-slide-btn products-slide-next" onClick={() => setProductSlide((p) => (p + 1) % PRODUCT_SLIDES)} aria-label="Next">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6 4L6 20L18 12z"/></svg>
+            </button>
+            <div className="products-dots">
+              {[...Array(PRODUCT_SLIDES)].map((_, i) => (
+                <button key={i} type="button" className={`products-dot ${i === productSlide ? 'active' : ''}`} onClick={() => setProductSlide(i)} aria-label={`Go to slide ${i + 1}`} />
+              ))}
             </div>
           </div>
         </div>
@@ -610,9 +642,9 @@ function App() {
       {/* NFC Profile Popup */}
       {showNfcPopup && (
         <div className="popup-overlay" onClick={() => setShowNfcPopup(false)}>
-          <div className="popup-content">
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="popup-image">
-              <img src="https://expondigital.ae/assets/images/resources/nfc-digital-card.png" alt="NFC Profile Cards" />
+              <img src={nfcProfileImage} alt="NFC Profile Cards" />
             </div>
             <div className="popup-text">
               <h3>NFC Profile Cards</h3>
@@ -640,9 +672,9 @@ function App() {
                 </div>
               </div>
               <p className="tagline">Just Tap & Verify.</p>
-              <button className="popup-close" onClick={() => setShowNfcPopup(false)} aria-label="Close">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
+              <div className="popup-footer">
+                <button className="popup-close" onClick={() => setShowNfcPopup(false)} aria-label="Close">Close</button>
+              </div>
             </div>
           </div>
         </div>
@@ -651,12 +683,15 @@ function App() {
       {/* Digital ID & Verification Popup */}
       {showDigitalIdPopup && (
         <div className="popup-overlay" onClick={() => setShowDigitalIdPopup(false)}>
-          <div className="popup-content">
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="popup-image">
               <img src="https://www.shutterstock.com/image-photo/digital-identification-concept-electronic-id-600nw-2552860339.jpg" alt="Digital ID & Verification" />
             </div>
             <div className="popup-text">
-              <h3>Digital ID & Verification</h3>
+              <div className="popup-title-row">
+                <h3>Digital ID & Verification</h3>
+                <span className="popup-verified" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              </div>
               <p>Advanced digital identity verification system that provides secure, instant authentication through multiple verification methods. Our solution combines cutting-edge encryption with user-friendly interfaces to deliver reliable identity verification for modern organizations.</p>
               <div className="popup-features">
                 <div className="feature">
@@ -681,9 +716,9 @@ function App() {
                 </div>
               </div>
               <p className="tagline">Secure Identity, Instant Access.</p>
-              <button className="popup-close" onClick={() => setShowDigitalIdPopup(false)} aria-label="Close">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
+              <div className="popup-footer">
+                <button className="popup-close" onClick={() => setShowDigitalIdPopup(false)} aria-label="Close">Close</button>
+              </div>
             </div>
           </div>
         </div>
@@ -692,12 +727,15 @@ function App() {
       {/* Smart Badges Popup */}
       {showSmartBadgePopup && (
         <div className="popup-overlay" onClick={() => setShowSmartBadgePopup(false)}>
-          <div className="popup-content">
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="popup-image">
               <img src="https://i.etsystatic.com/14793044/r/il/5a1578/5745450374/il_570xN.5745450374_qzk9.jpg" alt="Smart Badges" />
             </div>
             <div className="popup-text">
-              <h3>Smart Badges</h3>
+              <div className="popup-title-row">
+                <h3>Smart Badges</h3>
+                <span className="popup-verified" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              </div>
               <p>Revolutionary smart badge system that enables instant profile verification and access control through advanced NFC technology. Perfect for corporate environments, events, and secure facilities requiring real-time identity verification.</p>
               <div className="popup-features">
                 <div className="feature">
@@ -729,12 +767,15 @@ function App() {
       {/* Custom Integrations Popup */}
       {showCustomIntegrationPopup && (
         <div className="popup-overlay" onClick={() => setShowCustomIntegrationPopup(false)}>
-          <div className="popup-content">
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="popup-image">
-              <img src={customIntegrationImage} alt="Custom Integrations" />
+              <img src="https://media.istockphoto.com/id/1498846229/photo/businessman-pressing-on-virtual-screen-and-select-customization.jpg?s=612x612&w=0&k=20&c=kTc-ValbAhNNWHudOl8f5q6v2sbNAA5UabWiVIxkcco=" alt="Custom Integrations" />
             </div>
             <div className="popup-text">
-              <h3>Custom Integrations</h3>
+              <div className="popup-title-row">
+                <h3>Custom Integrations</h3>
+                <span className="popup-verified" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+              </div>
               <p>Seamless integration solutions that connect your digital identity system with existing business applications, mobile platforms, and enterprise workflows. Our flexible API and development tools enable custom solutions tailored to your specific organizational needs.</p>
               <div className="popup-features">
                 <div className="feature">
@@ -759,9 +800,9 @@ function App() {
                 </div>
               </div>
               <p className="tagline">Integrated Solutions, Seamless Operations.</p>
-              <button className="popup-close" onClick={() => setShowCustomIntegrationPopup(false)} aria-label="Close">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
+              <div className="popup-footer">
+                <button className="popup-close" onClick={() => setShowCustomIntegrationPopup(false)} aria-label="Close">Close</button>
+              </div>
             </div>
           </div>
         </div>

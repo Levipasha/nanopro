@@ -370,13 +370,13 @@
   top: 3em;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
 .pc-details h3 {
   font-weight: 600;
   margin: 0;
   font-size: min(5svh, 3em);
-  margin: 0;
   background-image: linear-gradient(to bottom, #fff, #6f6fbe);
   background-size: 1em 1.5em;
   -webkit-text-fill-color: transparent;
@@ -386,11 +386,9 @@
 
 .pc-details p {
   font-weight: 600;
-  position: relative;
-  top: -12px;
-  white-space: nowrap;
-  font-size: 16px;
   margin: 0 auto;
+  white-space: nowrap;
+  font-size: 0.9em;
   width: min-content;
   background-image: linear-gradient(to bottom, #fff, #4a4ac0);
   background-size: 1em 1.5em;
@@ -433,6 +431,7 @@
 
   .pc-details {
     top: 2em;
+    gap: 10px;
   }
 
   .pc-details h3 {
@@ -440,7 +439,7 @@
   }
 
   .pc-details p {
-    font-size: 14px;
+    font-size: 0.85em;
   }
 
   .pc-user-info {
@@ -479,6 +478,7 @@
 
   .pc-details {
     top: 1.5em;
+    gap: 8px;
   }
 
   .pc-details h3 {
@@ -486,8 +486,7 @@
   }
 
   .pc-details p {
-    font-size: 12px;
-    top: -8px;
+    font-size: 0.8em;
   }
 
   .pc-user-info {
@@ -525,12 +524,16 @@
     max-height: 320px;
   }
 
+  .pc-details {
+    gap: 6px;
+  }
+
   .pc-details h3 {
     font-size: min(3svh, 1.5em);
   }
 
   .pc-details p {
-    font-size: 11px;
+    font-size: 0.75em;
   }
 
   .pc-user-info {
