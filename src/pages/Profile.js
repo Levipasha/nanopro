@@ -1296,8 +1296,6 @@ function Profile() {
         }
         payload.gallery = [...(payload.gallery || []), ...galleryUrls];
       }
-
-      const token = otpUser ? otpUser.token : (await getIdToken());
       if (otpUser) {
         await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
       } else {
