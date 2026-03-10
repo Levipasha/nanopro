@@ -119,7 +119,6 @@ function Login() {
         try {
             await landingArtistAPI.sendOtp(email, mode);
             setStep('otp');
-            setTempEmail(email);
             setSuccess('Code sent to your email!');
         } catch (err) {
             const msg = err.message || '';
