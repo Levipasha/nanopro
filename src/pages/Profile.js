@@ -694,7 +694,16 @@ function Profile() {
         handleSelectGeneralMode();
       }
     }
-  }, [myArtists, artistsLoading, generalProfile, generalProfileLoading, profileMode, profileLock]);
+  }, [
+    myArtists,
+    artistsLoading,
+    generalProfile,
+    generalProfileLoading,
+    profileMode,
+    profileLock,
+    handleSelectArtistMode,
+    handleSelectGeneralMode
+  ]);
 
 
   const handleGeneralThemeSelect = (themeId) => {
@@ -854,6 +863,8 @@ function Profile() {
     }
   };
 
+  // General Google login handler (currently only used in legacy flows)
+  // eslint-disable-next-line no-unused-vars
   const handleGoogleLogin = async () => {
     try {
       setError('');
@@ -863,6 +874,8 @@ function Profile() {
     }
   };
 
+  // Legacy OTP handlers (kept for future use)
+  // eslint-disable-next-line no-unused-vars
   const handleSendOtp = async (e) => {
     e.preventDefault();
     const email = otpEmail.trim();
@@ -883,6 +896,7 @@ function Profile() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     const email = otpEmail.trim();
@@ -930,6 +944,8 @@ function Profile() {
     navigate('/login');
   };
 
+  // Open artist edit drawer
+  // eslint-disable-next-line no-unused-vars
   const openEdit = (artist) => {
     setEditingArtist(artist);
     const gallery = Array.isArray(artist.gallery) ? artist.gallery : [];
