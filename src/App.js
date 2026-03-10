@@ -513,11 +513,17 @@ function App() {
                         <div className="landing-carousel-avatar">{p.initial}</div>
                         <div className="landing-carousel-name">{p.name}</div>
                         <div className="landing-carousel-handle">{p.handle}</div>
-                        <div className="landing-carousel-links">
+                        <div className="landing-carousel-links" aria-label="Social links (demo only)">
                           {p.links.map((linkId) => (
-                            <a key={linkId} href="#" className="landing-carousel-link" aria-label={linkId} onClick={(e) => e.preventDefault()}>
+                            <button
+                              key={linkId}
+                              type="button"
+                              className="landing-carousel-link"
+                              aria-label={linkId}
+                              onClick={(e) => e.preventDefault()}
+                            >
                               {icons[linkId] ? React.cloneElement(icons[linkId], { width: 14, height: 14 }) : icons.website}
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>

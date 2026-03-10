@@ -184,10 +184,16 @@ function Profile() {
   const [visiblePlatforms, setVisiblePlatforms] = useState([]);
   const [newGalleryName, setNewGalleryName] = useState('');
   const [saving, setSaving] = useState(false);
+  // Legacy OTP login state (currently unused, kept for future expansion)
+  // eslint-disable-next-line no-unused-vars
   const [otpEmail, setOtpEmail] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [otpCode, setOtpCode] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [otpStep, setOtpStep] = useState('idle');
+  // eslint-disable-next-line no-unused-vars
   const [otpSendLoading, setOtpSendLoading] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
 
   // General profile (Linktree-like) state
@@ -445,8 +451,8 @@ function Profile() {
 
   // Dashboard customization state
   const [activeTab, setActiveTab] = useState('profiles'); // 'profiles' | 'design' | 'preview' | 'link-art'
-  const [dashTheme, setDashTheme] = useState(() => localStorage.getItem('dash_theme') || 'aura');
-  const [dashFont, setDashFont] = useState(() => localStorage.getItem('dash_font') || 'outfit');
+  const [dashTheme] = useState(() => localStorage.getItem('dash_theme') || 'aura');
+  const [dashFont] = useState(() => localStorage.getItem('dash_font') || 'outfit');
   const [syncFonts, setSyncFonts] = useState(true);
   const [designSubTab, setDesignSubTab] = useState(null); // null | 'theme' | 'font' (used for artist design)
   const [generalDesignSubTab, setGeneralDesignSubTab] = useState('theme'); // 'theme' | 'font'
@@ -1753,7 +1759,7 @@ function Profile() {
                 <div className="neo-card-content">
                   <p className="neo-card-plan">Artist Profile</p>
                   <div className="neo-card-tagline">🎨 Portfolio & NFC</div>
-                  <ul className="neo-check-list" role="list">
+                  <ul className="neo-check-list">
                     <li className="neo-check-item">
                       <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
                       Art Gallery &amp; Portfolio
@@ -1779,7 +1785,7 @@ function Profile() {
                 <div className="neo-card-content">
                   <p className="neo-card-plan">General Profile</p>
                   <div className="neo-card-tagline">🔗 Link-in-Bio</div>
-                  <ul className="neo-check-list" role="list">
+                  <ul className="neo-check-list">
                     <li className="neo-check-item">
                       <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
                       Custom Links &amp; Socials
@@ -1803,7 +1809,7 @@ function Profile() {
                 <div className="neo-card-content">
                   <p className="neo-card-plan">Restaurant</p>
                   <div className="neo-card-tagline">🍽️ Tap to Order</div>
-                  <ul className="neo-check-list" role="list">
+                  <ul className="neo-check-list">
                     <li className="neo-check-item">
                       <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
                       Digital Menu (PDF)
@@ -4450,13 +4456,6 @@ function Profile() {
                             const localValue = pendingLinks[platform.id];
                             const currentValue = localValue !== undefined ? localValue : serverValue;
                             const isModified = localValue !== undefined && localValue !== serverValue;
-
-                            const getUrlDisplay = (val, id) => {
-                              if (!val) return 'Enter link or handle';
-                              if (id === 'instagram') return val.includes('http') ? val : `instagram.com/${val.replace('@', '')}`;
-                              if (id === 'whatsapp') return val.includes('wa.me') ? val : `wa.me/${val.replace('+', '').replace(/\s/g, '')}`;
-                              return val;
-                            };
 
                             return (
                               <div className="dash-link-card" key={platform.id}>

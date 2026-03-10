@@ -21,7 +21,6 @@ function Login() {
     const [success, setSuccess] = useState('');
     const [mode, setMode] = useState('login'); // 'login' | 'signup'
     const [showSignupLink, setShowSignupLink] = useState(false);
-    const [tempEmail, setTempEmail] = useState('');
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -118,7 +117,7 @@ function Login() {
         setShowSignupLink(false);
         setLoading(true);
         try {
-            const res = await landingArtistAPI.sendOtp(email, mode);
+            await landingArtistAPI.sendOtp(email, mode);
             setStep('otp');
             setTempEmail(email);
             setSuccess('Code sent to your email!');
