@@ -51,15 +51,21 @@ export const landingArtistAPI = {
     request('GET', '/api/artist/my-profiles', { getIdToken, getFirebaseUser }),
   getMyProfilesWithOtpToken: (otpToken) =>
     request('GET', '/api/artist/my-profiles', { headers: { Authorization: `Bearer ${otpToken}` } }),
+  createMyProfile: (body, getIdToken, getFirebaseUser) =>
+    request('POST', '/api/artist/my-profiles', { body, getIdToken, getFirebaseUser }),
+  createMyProfileWithOtpToken: (body, otpToken) =>
+    request('POST', '/api/artist/my-profiles', { body, headers: { Authorization: `Bearer ${otpToken}` } }),
   updateMyProfile: (artistId, body, getIdToken, getFirebaseUser) =>
     request('PUT', `/api/artist/me/${encodeURIComponent(artistId)}`, { body, getIdToken, getFirebaseUser }),
   updateMyProfileWithOtpToken: (artistId, body, otpToken) =>
     request('PUT', `/api/artist/me/${encodeURIComponent(artistId)}`, { body, headers: { Authorization: `Bearer ${otpToken}` } }),
   uploadPhoto,
-  sendOtp: (email) =>
-    request('POST', '/api/artist/send-otp', { body: { email } }),
-  verifyOtp: (email, otp) =>
-    request('POST', '/api/artist/verify-otp', { body: { email, otp } })
+  sendOtp: (email, mode) =>
+    request('POST', '/api/artist/send-otp', { body: { email, mode } }),
+  verifyOtp: (email, otp, mode) =>
+    request('POST', '/api/artist/verify-otp', { body: { email, otp, mode } }),
+  checkAccount: (email) =>
+    request('POST', '/api/artist/check-account', { body: { email } })
 };
 
 // General Profile (Linktree-like) API
@@ -75,6 +81,25 @@ export const generalProfileAPI = {
   uploadPhoto: async (file, getIdToken) => {
     const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
     return uploadPhoto(file, token);
+  },
+  uploadMenuPdf: async (file, getIdToken, getFirebaseUser) => {
+    const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
+    const form = new FormData();
+    form.append('file', file);
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const user = typeof getFirebaseUser === 'function' ? getFirebaseUser() : getFirebaseUser;
+    if (user?.uid) headers['X-Firebase-UID'] = user.uid;
+    if (user?.email) headers['X-Firebase-Email'] = user.email;
+    const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+    const res = await fetch(`${base}/api/general-profile/upload-pdf`, {
+      method: 'POST',
+      headers,
+      body: form
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Upload failed');
+    return data;
   }
 };
 

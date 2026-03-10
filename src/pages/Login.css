@@ -1,0 +1,297 @@
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #121212;
+}
+
+.form {
+    --input-focus: #2d8cf0;
+    --font-color: #0f0f0f;
+    --font-color-sub: #333;
+    --bg-color: #fff;
+    --main-color: #1a1a1a;
+    position: relative;
+    padding: 60px;
+    width: 100%;
+    max-width: 550px;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    border-radius: 8px;
+    border: 3px solid var(--main-color);
+    box-shadow: 10px 10px var(--main-color);
+    font-family: 'Doto', sans-serif;
+}
+
+.title {
+    color: var(--font-color);
+    font-weight: 900;
+    font-size: 36px;
+    margin-bottom: 5px;
+    margin-top: 20px;
+    text-align: center;
+    font-family: 'Doto', sans-serif;
+}
+
+.title span {
+    display: block;
+    color: var(--font-color-sub);
+    font-weight: 600;
+    font-size: 18px;
+    margin-top: 12px;
+}
+
+.input {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    border: 3px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 6px 6px var(--main-color);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--font-color);
+    padding: 5px 20px;
+    outline: none;
+    transition: all 0.2s;
+    font-family: 'Doto', sans-serif;
+}
+
+.input::placeholder {
+    color: #444;
+    opacity: 1;
+}
+
+.input:hover {
+    border-color: var(--input-focus);
+    background-color: var(--bg-color);
+}
+
+.input:focus {
+    border: 2px solid var(--input-focus);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px var(--main-color);
+}
+
+.login-with {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center the Google section contents */
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.login-with p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.button-log {
+    cursor: pointer;
+    width: 100%;
+    height: 55px;
+    border-radius: 8px;
+    border: 3px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 6px 6px var(--main-color);
+    color: var(--font-color);
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    font-family: 'Doto', sans-serif;
+}
+
+.button-log svg {
+    width: 24px;
+    height: 24px;
+}
+
+.button-log:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px var(--main-color);
+    background-color: #f8f8f8;
+}
+
+.button-log:active {
+    box-shadow: 0px 0px var(--main-color);
+    transform: translate(6px, 6px);
+}
+
+.button-confirm {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    border: 3px solid var(--main-color);
+    background-color: #212121;
+    box-shadow: 6px 6px var(--main-color);
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Doto', sans-serif;
+}
+
+.button-confirm:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px var(--main-color);
+    background-color: #2b2b2b;
+}
+
+.button-confirm:active {
+    box-shadow: 0px 0px var(--main-color);
+    transform: translate(6px, 6px);
+}
+
+.form form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+.button-confirm:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.error-msg {
+    color: #d32f2f;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.success-msg {
+    color: #2e7d32;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.back-button {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    height: 3em;
+    width: 110px;
+    align-items: center;
+    justify-content: center;
+    background-color: #eeeeee;
+    border-radius: 5px;
+    letter-spacing: 1px;
+    transition: all 0.2s linear;
+    cursor: pointer;
+    border: none;
+    background: #eeeeee;
+    color: #0f0f0f;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Doto', sans-serif;
+}
+
+.back-button>svg {
+    margin-right: 10px;
+    width: 28px;
+    height: 28px;
+    fill: #0f0f0f;
+    stroke: #0f0f0f;
+    /* Adding stroke to make it thicker */
+    stroke-width: 40;
+    /* Scale relative to 1024 viewBox */
+    transition: all 0.4s ease-in;
+}
+
+.back-button:hover>svg {
+    transform: translateX(-6px) scale(1.1);
+}
+
+.back-button:hover {
+    box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1), -4px -4px 15px rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    background-color: #f5f5f5;
+}
+
+/* Choice View Styles */
+.choice-view {
+    padding: 60px 40px;
+    height: auto;
+}
+
+.choice-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.choice-btn {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    border: 3px solid var(--main-color);
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 6px 6px var(--main-color);
+    font-family: 'Doto', sans-serif;
+}
+
+.login-active {
+    background-color: var(--bg-color);
+    color: #0f0f0f;
+}
+
+.login-active:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 10px 10px var(--main-color);
+    background-color: #f8f8f8;
+}
+
+.signup-btn {
+    background-color: var(--main-color);
+    color: #fff;
+}
+
+.signup-btn:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 10px 10px var(--main-color);
+    opacity: 0.95;
+}
+
+.choice-btn:active {
+    box-shadow: 0px 0px var(--main-color);
+    transform: translate(6px, 6px);
+}
+
+.choice-footer {
+    font-size: 13px;
+    color: var(--font-color-sub);
+    font-weight: 600;
+    margin-top: 10px;
+    font-family: 'Doto', sans-serif;
+}

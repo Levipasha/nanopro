@@ -1,0 +1,122 @@
+@media (max-width: 768px) {
+  .dash-mobile-edit-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .dash-mobile-edit-modal {
+    position: relative;
+    width: min(92vw, 440px);
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    transform: translateZ(0);
+  }
+
+  .dash-mobile-edit-modal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
+  .dash-mobile-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .dash-mobile-edit-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .dash-mobile-edit-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .dash-mobile-edit-body {
+    padding: 16px;
+  }
+
+  .dash-mobile-edit-input {
+    width: 100%;
+    height: 48px;
+    box-sizing: border-box;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.95);
+    padding: 0 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+  }
+
+  .dash-mobile-edit-input::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 500;
+  }
+
+  .dash-mobile-edit-input:focus {
+    border-color: rgba(192, 132, 252, 0.65);
+    box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.18);
+  }
+
+  .dash-mobile-edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .dash-mobile-edit-btn {
+    flex: 1;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .dash-mobile-edit-btn.ghost {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .dash-mobile-edit-btn.primary {
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.95), rgba(96, 165, 250, 0.95));
+    color: #0b1020;
+  }
+
+  .dash-mobile-edit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}

@@ -204,6 +204,11 @@
   transform: translateY(-1px);
 }
 
+.gp-link-menu {
+  font-size: 1.05rem;
+  padding: 1.1rem 1.25rem;
+}
+
 .gp-link-icon {
   flex-shrink: 0;
   display: flex;
@@ -322,4 +327,132 @@
 
 .gp-avatar-img {
   cursor: zoom-in;
+}
+
+/* Animated Themes Additions */
+.theme-anim-aurora {
+  background: linear-gradient(-45deg, #0f172a, #111827, #1e1b4b, #312e81);
+  background-size: 400% 400%;
+  animation: aurora-flow 15s ease infinite;
+}
+
+@keyframes aurora-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.theme-anim-galaxy {
+  background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #000 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-anim-galaxy::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: transparent;
+  background-image: radial-gradient(#fff 1px, transparent 1px), radial-gradient(#fff 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0, 25px 25px;
+  animation: galaxy-spin 60s linear infinite;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+@keyframes galaxy-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.theme-anim-glass {
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  background-size: 200% 200%;
+  animation: glass-flow 10s ease infinite;
+}
+
+@keyframes glass-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.theme-anim-cyber {
+  background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-anim-cyber::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: cyber-grid 20s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes cyber-grid {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 30px 30px;
+  }
+}
+
+/* Dynamic Typography Variables */
+.gp-card-themed,
+.gp-card-themed * {
+  font-family: var(--font-body, "Outfit", sans-serif) !important;
+}
+
+.gp-card-themed h1,
+.gp-card-themed h2,
+.gp-card-themed h3,
+.gp-card-themed h4,
+.gp-card-themed h5,
+.gp-card-themed h6,
+.gp-card-themed .gp-name,
+.gp-card-themed .gp-title-overlay,
+.gp-card-themed h1 *,
+.gp-card-themed h2 *,
+.gp-card-themed h3 *,
+.gp-card-themed h4 *,
+.gp-card-themed h5 *,
+.gp-card-themed h6 *,
+.gp-card-themed .gp-name *,
+.gp-card-themed .gp-title-overlay * {
+  font-family: var(--font-heading, "Outfit", sans-serif) !important;
 }

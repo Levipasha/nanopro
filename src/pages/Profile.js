@@ -1,15 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle, onAuthStateChanged, auth, logout, getGoogleRedirectResult, getIdToken } from '../firebase';
 import { landingArtistAPI, generalProfileAPI } from '../services/api';
 import PlatformIconSelect from '../components/PlatformIconSelect';
-import { GENERAL_THEMES } from '../constants/generalThemes';
+import { getLinkIcon } from '../components/LinkIcons';
+import { GENERAL_THEMES, AVAILABLE_FONTS, resolveFontFamily } from '../constants/generalThemes';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import './Profile.css';
+import './Profile.mobile.css';
 
-// Profile mode: 'choice' | 'artist' | 'general'
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+// Profile mode: 'choice' | 'artist' | 'general' | 'restaurant'
 const PROFILE_MODE_KEY = 'profile_mode';
+// Lock type: 'artist' | 'general_restaurant' | null (not yet chosen)
+const PROFILE_LOCK_KEY = 'profile_type_lock';
 
 const defaultForm = {
+  artistId: '',
   name: '',
   bio: '',
   specialization: '',
@@ -31,18 +42,109 @@ const defaultForm = {
   instagramFollowing: '',
   instagramAccountBio: '',
   artworkCount: '',
-  profileTheme: 'mono'
+  profileTheme: 'mono',
+  profileFont: 'outfit'
 };
 
 const OTP_STORAGE_KEY = 'landing_otp_auth';
+const RESTAURANT_STORAGE_KEY = 'restaurant_profile';
+const RESTAURANT_ONBOARDING_KEY = 'restaurant_onboarding_step';
+
+const ALL_PLATFORMS = [
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'website', label: 'Website' },
+  { id: 'facebook', label: 'Facebook' },
+  { id: 'twitter', label: 'Twitter' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'spotify', label: 'Spotify' },
+  { id: 'snapchat', label: 'Snapchat' },
+  { id: 'telegram', label: 'Telegram' },
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'threads', label: 'Threads' },
+  { id: 'discord', label: 'Discord' },
+  { id: 'portfolio', label: 'Portfolio' },
+  { id: 'pinterest', label: 'Pinterest' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'twitch', label: 'Twitch' },
+  { id: 'quora', label: 'Quora' },
+  { id: 'github', label: 'GitHub' }
+];
+
+const SMART_PLATFORMS = ['whatsapp', 'telegram', 'instagram', 'twitter', 'tiktok', 'snapchat', 'threads'];
+
+function buildLinkUrl(platform, link) {
+  if (platform === 'whatsapp') {
+    const num = (link.waPhone || link.url || '').replace(/\D/g, '');
+    if (!num) return '';
+    const msg = (link.waMessage || '').trim();
+    return 'https://wa.me/' + num + (msg ? '?text=' + encodeURIComponent(msg) : '');
+  }
+  if (platform === 'telegram') {
+    const u = (link.platformUsername || '').trim().replace(/^@/, '').replace(/^https?:\/\/t\.me\/\+?/i, '').replace(/\s/g, '');
+    if (!u) return '';
+    const clean = u.replace(/^\+/, '');
+    return /^\d+$/.test(clean) && clean.length >= 10 ? 'https://t.me/+' + clean : 'https://t.me/' + clean;
+  }
+  const username = (link.platformUsername || '').trim().replace(/^@/, '');
+  if (!username && platform !== 'website' && platform !== 'custom') {
+    if (link.url && (link.url.includes('instagram.com') || link.url.includes('x.com') || link.url.includes('tiktok.com') || link.url.includes('snapchat.com') || link.url.includes('threads.net'))) return link.url;
+    return '';
+  }
+  if (platform === 'instagram') return username ? 'https://instagram.com/' + username : '';
+  if (platform === 'twitter') return username ? 'https://x.com/' + username : '';
+  if (platform === 'tiktok') return username ? 'https://www.tiktok.com/@' + username : '';
+  if (platform === 'snapchat') return username ? 'https://snapchat.com/add/' + username : '';
+  if (platform === 'threads') return username ? 'https://threads.net/@' + username : '';
+  return link.url || '';
+}
+
+function parseLinkFromUrl(link) {
+  const url = (link.url || '').trim();
+  const out = { ...link };
+  if (url.includes('wa.me/')) {
+    out.platform = out.platform || 'whatsapp';
+    const m = url.match(/wa\.me\/(\d+)/);
+    if (m) out.waPhone = m[1];
+    const t = url.match(/[?&]text=([^&]+)/);
+    if (t) out.waMessage = decodeURIComponent(t[1].replace(/\+/g, ' '));
+  } else if (url.includes('instagram.com/')) {
+    out.platform = out.platform || 'instagram';
+    out.platformUsername = (url.split('instagram.com/')[1] || '').split('/')[0].split('?')[0] || '';
+  } else if (url.includes('x.com/') || url.includes('twitter.com/')) {
+    out.platform = out.platform || 'twitter';
+    out.platformUsername = (url.split('x.com/')[1] || url.split('twitter.com/')[1] || '').split('/')[0].split('?')[0].replace(/^@/, '') || '';
+  } else if (url.includes('tiktok.com/@')) {
+    out.platform = out.platform || 'tiktok';
+    out.platformUsername = (url.split('@')[1] || '').split('/')[0].split('?')[0] || '';
+  } else if (url.includes('snapchat.com/add/')) {
+    out.platform = out.platform || 'snapchat';
+    out.platformUsername = (url.split('snapchat.com/add/')[1] || '').split('/')[0].split('?')[0] || '';
+  } else if (url.includes('threads.net/@')) {
+    out.platform = out.platform || 'threads';
+    out.platformUsername = (url.split('@')[1] || '').split('/')[0].split('?')[0] || '';
+  } else if (url.includes('t.me/')) {
+    out.platform = out.platform || 'telegram';
+    out.platformUsername = (url.split('t.me/')[1] || '').replace(/^\+/, '').split('/')[0].split('?')[0] || '';
+  }
+  return out;
+}
 
 function Profile() {
+  const navigate = useNavigate();
   const [profileMode, setProfileMode] = useState(() => {
     try {
-      return localStorage.getItem(PROFILE_MODE_KEY) || 'choice';
+      const stored = localStorage.getItem(PROFILE_MODE_KEY);
+      return stored || 'choice';
     } catch (e) {
       return 'choice';
     }
+  });
+  const [choiceSource, setChoiceSource] = useState(null);
+  const [profileLock, setProfileLock] = useState(() => {
+    try { return localStorage.getItem(PROFILE_LOCK_KEY) || null; } catch (e) { return null; }
   });
   const [user, setUser] = useState(null);
   const [otpUser, setOtpUser] = useState(() => {
@@ -57,14 +159,29 @@ function Profile() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [tempPlatforms, setTempPlatforms] = useState([]);
+  const [savingLink, setSavingLink] = useState(null); // which platform is saving
+  const [pendingLinks, setPendingLinks] = useState({}); // local unsaved edits
+  const [editingHeroField, setEditingHeroField] = useState(null); // 'name' | 'bio' | 'spec' | 'email' | 'phone'
+  const [heroUpdates, setHeroUpdates] = useState({}); // local unsaved edits for name/bio/spec/email/phone
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileHeroEditField, setMobileHeroEditField] = useState(null); // 'name' | 'specialization'
+  const [mobileHeroDraft, setMobileHeroDraft] = useState('');
+  const [isUploading, setIsUploading] = useState(null); // 'photo' | 'backgroundPhoto' | 'gallery_add'
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0); // For auto-refreshing iframe
   const [myArtists, setMyArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
   const [formData, setFormData] = useState(defaultForm);
   const [photoFile, setPhotoFile] = useState(null);
   const [bgFile, setBgFile] = useState(null);
-  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [onboardingGalleryFiles, setOnboardingGalleryFiles] = useState([]);
+  const [onboardingPlatforms, setOnboardingPlatforms] = useState([]);
+  const [isOnboardingSelectorOpen, setIsOnboardingSelectorOpen] = useState(false);
   const [newGalleryFile, setNewGalleryFile] = useState(null);
+  const [visiblePlatforms, setVisiblePlatforms] = useState([]);
   const [newGalleryName, setNewGalleryName] = useState('');
   const [saving, setSaving] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
@@ -76,7 +193,28 @@ function Profile() {
   // General profile (Linktree-like) state
   const [generalProfile, setGeneralProfile] = useState(null);
   const [generalProfileLoading, setGeneralProfileLoading] = useState(false);
-  const [generalStep, setGeneralStep] = useState('theme'); // 'theme' | 'create' | 'edit' | 'home'
+  const [generalStep, setGeneralStep] = useState(() => {
+    try {
+      return localStorage.getItem('general_step') || 'theme';
+    } catch (e) {
+      return 'theme';
+    }
+  });
+
+  const updateGeneralStep = (step) => {
+    setGeneralStep(step);
+    localStorage.setItem('general_step', step);
+  };
+  const [generalOnboardingStep, setGeneralOnboardingStep] = useState(() => {
+    try {
+      const s = localStorage.getItem('general_onboarding_step');
+      return s ? parseInt(s, 10) : 1;
+    } catch (e) { return 1; }
+  });
+  const updateGeneralOnboardingStep = (step) => {
+    setGeneralOnboardingStep(step);
+    localStorage.setItem('general_onboarding_step', step.toString());
+  };
   const [generalForm, setGeneralForm] = useState({
     username: '',
     name: '',
@@ -84,41 +222,318 @@ function Profile() {
     bio: '',
     photo: '',
     theme: 'mint',
+    font: 'outfit',
     links: [{ title: '', url: '', platform: 'website', order: 0 }]
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
   const [generalSaving, setGeneralSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [generalActiveTab, setGeneralActiveTab] = useState('profile');
+  const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
+  const usernameCheckTimer = useRef(null);
 
-  const isLoggedIn = !!(user || otpUser);
-  const isArtistMode = profileMode === 'artist';
-  const isGeneralMode = profileMode === 'general';
+  // Restaurant profile state (localStorage until backend exists)
+  const [restaurantForm, setRestaurantForm] = useState({
+    name: '',
+    tagline: '',
+    bio: '',
+    phone: '',
+    email: '',
+    theme: 'mono',
+    font: 'outfit',
+    titleFont: 'outfit',
+    bodyFont: 'outfit',
+    banner: null,
+    menuPdf: null,
+    gallery: [],
+    links: {}
+  });
+  const [restaurantOnboardingStep, setRestaurantOnboardingStep] = useState(() => {
+    try {
+      const s = localStorage.getItem(RESTAURANT_ONBOARDING_KEY);
+      return s ? parseInt(s, 10) : 1;
+    } catch (e) { return 1; }
+  });
+  const [restaurantActiveTab, setRestaurantActiveTab] = useState('info');
+  const [rBioEditing, setRBioEditing] = useState(false);
+  const [rBioDraft, setRBioDraft] = useState('');
+  const [rLinkSelectorOpen, setRLinkSelectorOpen] = useState(false);
+  const [rTempPlatforms, setRTempPlatforms] = useState([]);
+  const [rSyncFonts, setRSyncFonts] = useState(true);
+  const [restaurantPublishLoading, setRestaurantPublishLoading] = useState(false);
+  const [restaurantProfile, setRestaurantProfile] = useState(() => {
+    try {
+      const raw = localStorage.getItem(RESTAURANT_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  });
+
+  // Strip large base64 blobs before persisting — images/PDFs stay in React state only
+  const persistRestaurant = (profile) => {
+    try {
+      const safe = {
+        ...profile,
+        banner: profile.banner && profile.banner.startsWith('http') ? profile.banner : undefined,
+        menuPdf: profile.menuPdf && profile.menuPdf.startsWith('http') ? profile.menuPdf : undefined,
+        gallery: (profile.gallery || []).map(g => ({
+          ...g,
+          url: g.url && g.url.startsWith('http') ? g.url : undefined,
+        })).filter(g => g.url),
+      };
+      localStorage.setItem(RESTAURANT_STORAGE_KEY, JSON.stringify(safe));
+    } catch (e) {
+      // If still too large, save only non-binary fields
+      try {
+        const minimal = { ...profile, banner: undefined, menuPdf: undefined, gallery: [] };
+        localStorage.setItem(RESTAURANT_STORAGE_KEY, JSON.stringify(minimal));
+      } catch (e2) { console.warn('Could not persist restaurant profile', e2); }
+    }
+  };
+
+  const updateRestaurantOnboardingStep = (step) => {
+    setRestaurantOnboardingStep(step);
+    localStorage.setItem(RESTAURANT_ONBOARDING_KEY, step.toString());
+  };
+  const handlePdfUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setRestaurantForm(prev => ({ ...prev, menuPdf: event.target.result }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      alert('Please upload a valid PDF file.');
+    }
+  };
+
+  const handleRestaurantBannerUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setRestaurantForm(prev => ({ ...prev, banner: event.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePdf = () => {
+    setRestaurantForm(prev => ({ ...prev, menuPdf: null }));
+  };
+
+  const [pdfNumPages, setPdfNumPages] = useState(null);
+  const onPdfLoadSuccess = ({ numPages }) => {
+    setPdfNumPages(numPages);
+  };
+
+  const saveRestaurantProfile = () => {
+    // Basic validation
+    if (!restaurantForm.name.trim()) {
+      alert('Restaurant name is required');
+      updateRestaurantOnboardingStep(1);
+      return;
+    }
+    
+    // Auto-generate username from name if not provided
+    let usernameToSave = restaurantForm.username;
+    if (!usernameToSave || !usernameToSave.trim()) {
+       usernameToSave = restaurantForm.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    const payload = {
+      ...restaurantForm,
+      username: usernameToSave
+    };
+    
+    try {
+      persistRestaurant(payload);
+      localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+      setRestaurantProfile(payload);
+      setRestaurantOnboardingStep(0); // 0 means done, show dashboard
+    } catch (e) {
+      console.error('Failed to save restaurant profile', e);
+      alert('Failed to save. Please try again.');
+    }
+  };
+
+  const handleRestaurantPublish = async () => {
+    if (!restaurantProfile?.username) {
+      alert('Please add a username to your restaurant profile first.');
+      return;
+    }
+    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
+    if (!user && !otpUser) {
+      alert('Please sign in to publish your profile.');
+      return;
+    }
+    setRestaurantPublishLoading(true);
+    try {
+      let photoUrl = restaurantProfile.banner && restaurantProfile.banner.startsWith('http') ? restaurantProfile.banner : '';
+      if (restaurantProfile.banner && restaurantProfile.banner.startsWith('data:')) {
+        try {
+          const arr = restaurantProfile.banner.split(',');
+          const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/png';
+          const bstr = atob(arr[1]);
+          const u8arr = new Uint8Array(bstr.length);
+          for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+          const file = new File([u8arr], 'banner.png', { type: mime });
+          const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
+          photoUrl = up?.url || '';
+        } catch (e) {
+          console.warn('Banner upload failed:', e);
+        }
+      }
+      let menuPdfUrl = restaurantProfile.menuPdf && restaurantProfile.menuPdf.startsWith('http') ? restaurantProfile.menuPdf : '';
+      if (restaurantProfile.menuPdf && restaurantProfile.menuPdf.startsWith('data:')) {
+        try {
+          const arr = restaurantProfile.menuPdf.split(',');
+          const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'application/pdf';
+          const bstr = atob(arr[1]);
+          const u8arr = new Uint8Array(bstr.length);
+          for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+          const file = new File([u8arr], 'menu.pdf', { type: mime });
+          const up = await generalProfileAPI.uploadMenuPdf(file, getIdTokenFn, getFirebaseUserFn);
+          menuPdfUrl = up?.url || '';
+        } catch (e) {
+          console.warn('Menu PDF upload failed:', e);
+        }
+      }
+      const linkEntries = Object.entries(restaurantProfile.links || {}).filter(([, v]) => v && String(v).trim());
+      const links = linkEntries.map(([k, v], idx) => {
+        let url = String(v).trim();
+        const isFullUrl = url.startsWith('http') || url.startsWith('www.');
+        if (!isFullUrl && SMART_PLATFORMS.includes(k)) {
+          const built = buildLinkUrl(k, { platform: k, platformUsername: url });
+          if (built) url = built;
+        } else if (isFullUrl && !url.startsWith('http')) {
+          url = 'https://' + url;
+        }
+        return { platform: k, title: k.charAt(0).toUpperCase() + k.slice(1), url, order: idx };
+      }).filter(l => l.url);
+      const bioParts = [restaurantProfile.bio || ''];
+      if (restaurantProfile.phone) bioParts.push(`📞 ${restaurantProfile.phone}`);
+      if (restaurantProfile.email || displayEmail) bioParts.push(`✉ ${restaurantProfile.email || displayEmail}`);
+      const payload = {
+        username: (restaurantProfile.username || '').toLowerCase().trim(),
+        name: restaurantProfile.name || '',
+        title: restaurantProfile.tagline || '',
+        bio: bioParts.filter(Boolean).join('\n'),
+        photo: photoUrl,
+        menuPdf: menuPdfUrl,
+        theme: restaurantProfile.theme || 'mint',
+        font: restaurantProfile.titleFont || restaurantProfile.font || 'outfit',
+        bioFont: restaurantProfile.bodyFont || restaurantProfile.font || 'outfit',
+        links
+      };
+      const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
+      if (existing?.data) {
+        await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
+        alert('Profile updated! Your link is now live.');
+      } else {
+        await generalProfileAPI.create(payload, getIdTokenFn, getFirebaseUserFn);
+        alert('Profile published! Your link is now live.');
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to publish. Please try again.');
+    } finally {
+      setRestaurantPublishLoading(false);
+    }
+  };
+
+  // Dashboard customization state
+  const [activeTab, setActiveTab] = useState('profiles'); // 'profiles' | 'design' | 'preview' | 'link-art'
+  const [dashTheme, setDashTheme] = useState(() => localStorage.getItem('dash_theme') || 'aura');
+  const [dashFont, setDashFont] = useState(() => localStorage.getItem('dash_font') || 'outfit');
+  const [syncFonts, setSyncFonts] = useState(true);
+  const [designSubTab, setDesignSubTab] = useState(null); // null | 'theme' | 'font' (used for artist design)
+  const [generalDesignSubTab, setGeneralDesignSubTab] = useState('theme'); // 'theme' | 'font'
+  // Link Your Art tab state (must be top-level, not inside callback)
+  const [newArtTheme, setNewArtTheme] = useState('painting');
+  const [artSaving, setArtSaving] = useState(false);
+  const [artImagePreview, setArtImagePreview] = useState([]); // [{ file, url }, ...] for new art upload
+  const [artPreviewId, setArtPreviewId] = useState(null); // which art item to preview in side panel
+  const [showArtGallery, setShowArtGallery] = useState(false);
+  const [artGallerySelectedItem, setArtGallerySelectedItem] = useState(null);
+  const [onboardingStep, setOnboardingStep] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem('onboarding_step')) || 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  const updateOnboardingStep = (step) => {
+    setOnboardingStep(step);
+    localStorage.setItem('onboarding_step', step.toString());
+  };
+
   const getFirebaseUser = useCallback(
     () => (user ? { uid: user.uid, email: user.email || null } : null),
     [user]
   );
 
+  const handleSelectArtistMode = () => {
+    setError('');
+    setProfileMode('artist');
+    if (!profileLock) {
+      setProfileLock('artist');
+      try { localStorage.setItem(PROFILE_LOCK_KEY, 'artist'); } catch (e) { }
+    }
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
+  };
+
+  const handleSelectGeneralMode = () => {
+    setError('');
+    setProfileMode('general');
+    if (!profileLock) {
+      setProfileLock('general_restaurant');
+      try { localStorage.setItem(PROFILE_LOCK_KEY, 'general_restaurant'); } catch (e) { }
+    }
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
+  };
+
+  const handleSelectRestaurantMode = () => {
+    setError('');
+    setProfileMode('restaurant');
+    if (!profileLock) {
+      setProfileLock('general_restaurant');
+      try { localStorage.setItem(PROFILE_LOCK_KEY, 'general_restaurant'); } catch (e) { }
+    }
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
+  };
+
+  const handleBackToChoice = (source) => {
+    setError('');
+    setChoiceSource(source || null);
+    setProfileMode('choice');
+    updateOnboardingStep(0);
+    updateGeneralStep('theme');
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) { }
+  };
+
   const loadMyProfiles = useCallback(async () => {
     if (user) {
       setArtistsLoading(true);
-      setError('');
       try {
         const res = await landingArtistAPI.getMyProfiles(() => getIdToken(), getFirebaseUser);
         setMyArtists(res.data || []);
       } catch (err) {
-        setError(err.message || 'Failed to load your artist profiles.');
+        console.warn('Artist profiles load:', err.message);
+        setMyArtists([]);
       } finally {
         setArtistsLoading(false);
       }
     } else if (otpUser) {
       setArtistsLoading(true);
-      setError('');
       try {
         const res = await landingArtistAPI.getMyProfilesWithOtpToken(otpUser.token);
         setMyArtists(res.data || []);
       } catch (err) {
-        setError(err.message || 'Failed to load your artist profiles.');
+        console.warn('Artist profiles load:', err.message);
+        setMyArtists([]);
         if (err.message && (err.message.includes('expired') || err.message.includes('Invalid'))) {
           setOtpUser(null);
           localStorage.removeItem(OTP_STORAGE_KEY);
@@ -128,6 +543,85 @@ function Profile() {
       }
     }
   }, [user, otpUser, getFirebaseUser]);
+
+  const loadGeneralProfile = useCallback(async () => {
+    if (!user) return;
+    setGeneralProfileLoading(true);
+    try {
+      const res = await generalProfileAPI.getMine(() => getIdToken(), getFirebaseUser);
+      const data = res.data;
+      if (data) {
+        setGeneralProfile(data);
+        updateGeneralStep('home');
+        setGeneralForm({
+          username: data.username || '',
+          name: data.name || '',
+          title: data.title || '',
+          bio: data.bio || '',
+          photo: data.photo || '',
+          theme: data.theme || 'mint',
+          font: data.font || 'outfit',
+          links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+        });
+      } else {
+        updateGeneralStep('theme');
+      }
+    } catch (err) {
+      console.warn('General profile load:', err.message);
+      updateGeneralStep('theme');
+    } finally {
+      setGeneralProfileLoading(false);
+    }
+  }, [user, getFirebaseUser]);
+
+  useEffect(() => {
+    localStorage.setItem('dash_theme', dashTheme);
+  }, [dashTheme]);
+
+  useEffect(() => {
+    localStorage.setItem('dash_font', dashFont);
+  }, [dashFont]);
+
+  useEffect(() => {
+    if (myArtists && myArtists.length > 0) {
+      const artist = myArtists[0];
+      const active = ALL_PLATFORMS.filter(p => artist[p.id] && artist[p.id].trim() !== '').map(p => p.id);
+      setVisiblePlatforms(active);
+    }
+  }, [myArtists]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobileViewport(mq.matches);
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', update);
+      else mq.removeListener(update);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobileViewport) {
+      // Avoid rendering inline edit rows on mobile when we want a popup
+      if (editingHeroField === 'name' || editingHeroField === 'specialization') setEditingHeroField(null);
+    } else {
+      setMobileHeroEditField(null);
+    }
+  }, [isMobileViewport, editingHeroField]);
+
+  useEffect(() => {
+    if (activeTab === 'design' && isMobileViewport && designSubTab == null) {
+      setDesignSubTab('theme');
+    }
+  }, [activeTab, isMobileViewport, designSubTab]);
+
+  const isLoggedIn = !!(user || otpUser);
+  const isArtistMode = profileMode === 'artist';
+  const isGeneralMode = profileMode === 'general';
+  const isRestaurantMode = profileMode === 'restaurant';
+
 
   useEffect(() => {
     const checkRedirect = async () => {
@@ -148,60 +642,58 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    if (user || otpUser) loadMyProfiles();
-  }, [user, otpUser, loadMyProfiles]);
-
-  const loadGeneralProfile = useCallback(async () => {
-    if (!user) return;
-    setGeneralProfileLoading(true);
-    setError('');
-    try {
-      const res = await generalProfileAPI.getMine(() => getIdToken(), getFirebaseUser);
-      const data = res.data;
-      if (data) {
-        setGeneralProfile(data);
-        setGeneralStep('home');
-        setGeneralForm({
-          username: data.username || '',
-          name: data.name || '',
-          title: data.title || '',
-          bio: data.bio || '',
-          photo: data.photo || '',
-          theme: data.theme || 'mint',
-          links: (data.links && data.links.length) ? data.links : [{ title: '', url: '', platform: 'website', order: 0 }]
-        });
-      } else {
-        setGeneralStep('theme');
+    if (user || otpUser) {
+      if (profileMode !== 'general') {
+        loadMyProfiles();
       }
-    } catch (err) {
-      setError(err.message || 'Failed to load profile.');
-    } finally {
-      setGeneralProfileLoading(false);
+      if (user && (profileMode === 'choice' || profileMode === 'general')) {
+        loadGeneralProfile();
+      }
     }
-  }, [user, getFirebaseUser]);
+  }, [user, otpUser, loadMyProfiles, loadGeneralProfile, profileMode]);
 
   useEffect(() => {
-    if (isGeneralMode && user?.uid) loadGeneralProfile();
-  }, [isGeneralMode, user, loadGeneralProfile]);
+    if (myArtists.length > 0 && myArtists[0].isSetup === false && onboardingStep === 0 && profileMode === 'artist') {
+      updateOnboardingStep(1);
+      // Pre-fill name and email only; leave username (artistId) empty so user can enter their own nickname
+      setFormData(prev => ({
+        ...prev,
+        name: myArtists[0].name || '',
+        email: myArtists[0].email || ''
+      }));
+    }
+  }, [myArtists, onboardingStep, profileMode]);
 
-  const handleSelectArtistMode = () => {
-    setProfileMode('artist');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
-  };
+  // Smart Redirection: If user has an account AND it's already set up, go to its mode.
+  // BUT if they are fresh (no setup), or they have NO profiles, show choice.
+  useEffect(() => {
+    if (!artistsLoading && !generalProfileLoading && profileMode === 'choice') {
+      const lock = profileLock;
+      if (lock === 'artist') {
+        handleSelectArtistMode();
+        return;
+      }
+      if (lock === 'general_restaurant') {
+        const hasGeneral = !!generalProfile;
+        if (hasGeneral) {
+          handleSelectGeneralMode();
+        }
+        return;
+      }
+      const hasSetupArtist = myArtists.length > 0 && myArtists[0].isSetup === true;
+      const hasGeneral = !!generalProfile;
+      if (hasSetupArtist && !hasGeneral) {
+        handleSelectArtistMode();
+      } else if (hasGeneral && !hasSetupArtist) {
+        handleSelectGeneralMode();
+      }
+    }
+  }, [myArtists, artistsLoading, generalProfile, generalProfileLoading, profileMode, profileLock]);
 
-  const handleSelectGeneralMode = () => {
-    setProfileMode('general');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
-  };
-
-  const handleBackToChoice = () => {
-    setProfileMode('choice');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) { }
-  };
 
   const handleGeneralThemeSelect = (themeId) => {
     setGeneralForm(prev => ({ ...prev, theme: themeId }));
-    setGeneralStep('create');
+    updateGeneralStep('create');
   };
 
   const handleGeneralCreate = async (e) => {
@@ -219,14 +711,16 @@ function Profile() {
         const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
         photoUrl = up?.url || photoUrl;
       }
-      const links = generalForm.links.filter(l => l.url.trim());
+      const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const res = await generalProfileAPI.create(
         { ...generalForm, photo: photoUrl, links },
         () => getIdToken(),
         getFirebaseUser
       );
       setGeneralProfile(res.data);
-      setGeneralStep('home');
+      updateGeneralStep('home');
+      setGeneralOnboardingStep(1);
+      localStorage.removeItem('general_onboarding_step');
       setGeneralPhotoFile(null);
       setGeneralSuccess('Profile created successfully!');
       setTimeout(() => setGeneralSuccess(''), 2500);
@@ -248,7 +742,7 @@ function Profile() {
         const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
         photoUrl = up?.url || photoUrl;
       }
-      const links = generalForm.links.filter(l => l.url.trim());
+      const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const res = await generalProfileAPI.update(
         { ...generalForm, photo: photoUrl, links },
         () => getIdToken(),
@@ -289,6 +783,69 @@ function Profile() {
   const getProfileLink = () => {
     const base = window.location.origin;
     return `${base}/link/${generalProfile?.username || generalForm.username}`;
+  };
+
+  const handleGeneralFieldSave = async (field, value) => {
+    if (!generalProfile) return;
+    setGeneralSaving(true);
+    setError('');
+    try {
+      const payload = { [field]: value };
+      const res = await generalProfileAPI.update(payload, () => getIdToken(), getFirebaseUser);
+      setGeneralProfile(res.data);
+      setGeneralForm(prev => ({ ...prev, [field]: value }));
+    } catch (err) {
+      setError(err.message || 'Failed to save.');
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
+  const handleGeneralPhotoSave = async (file) => {
+    if (!file || !generalProfile) return;
+    setGeneralSaving(true);
+    setError('');
+    try {
+      const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
+      const photoUrl = up?.url || '';
+      const res = await generalProfileAPI.update({ photo: photoUrl }, () => getIdToken(), getFirebaseUser);
+      setGeneralProfile(res.data);
+      setGeneralForm(prev => ({ ...prev, photo: photoUrl }));
+      setGeneralPhotoFile(null);
+      setGeneralSuccess('Photo updated!');
+      setTimeout(() => setGeneralSuccess(''), 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to upload photo.');
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
+  const handleGeneralSaveAll = async () => {
+    if (!generalProfile) return;
+    setGeneralSaving(true);
+    setError('');
+    try {
+      let photoUrl = generalForm.photo;
+      if (generalPhotoFile) {
+        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
+        photoUrl = up?.url || photoUrl;
+      }
+      const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
+      const res = await generalProfileAPI.update(
+        { ...generalForm, photo: photoUrl, links },
+        () => getIdToken(),
+        getFirebaseUser
+      );
+      setGeneralProfile(res.data);
+      setGeneralPhotoFile(null);
+      setGeneralSuccess('Profile saved!');
+      setTimeout(() => setGeneralSuccess(''), 2500);
+    } catch (err) {
+      setError(err.message || 'Failed to save.');
+    } finally {
+      setGeneralSaving(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -349,8 +906,22 @@ function Profile() {
     if (user) logout();
     setOtpUser(null);
     localStorage.removeItem(OTP_STORAGE_KEY);
+    localStorage.removeItem('onboarding_step');
+    localStorage.removeItem('general_step');
+    localStorage.removeItem('general_onboarding_step');
+    localStorage.removeItem(RESTAURANT_STORAGE_KEY);
+    localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+    localStorage.removeItem(PROFILE_MODE_KEY);
+    localStorage.removeItem(PROFILE_LOCK_KEY);
     setMyArtists([]);
     setEditingArtist(null);
+    setProfileMode('choice');
+    setChoiceSource(null);
+    setProfileLock(null);
+    setOnboardingStep(0);
+    setGeneralStep('theme');
+    setGeneralOnboardingStep(1);
+    navigate('/login');
   };
 
   const openEdit = (artist) => {
@@ -471,12 +1042,300 @@ function Profile() {
       }
       await loadMyProfiles();
       closeEdit();
-    } catch (err) {
-      setError(err.message || 'Failed to save profile.');
     } finally {
       setSaving(false);
     }
   };
+
+  const handleUpdateLink = async (platform, value) => {
+    const artist = myArtists[0];
+    if (!artist) return;
+    setSavingLink(platform);
+    try {
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      let finalValue = value;
+      if (platform === 'whatsapp' && value && !value.includes('http')) {
+        // Clean the number and prepend wa.me
+        const cleanNumber = value.replace('+', '').replace(/\s/g, '');
+        finalValue = `https://wa.me/${cleanNumber}`;
+      }
+      const payload = { [platform]: finalValue }; // value could be null
+      if (otpUser) {
+        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+      } else {
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      }
+      // Update server-side source of truth
+      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [platform]: finalValue } : a));
+      // Clear local pending state after successful save
+      setPendingLinks(prev => {
+        const next = { ...prev };
+        delete next[platform];
+        return next;
+      });
+      // Auto-refresh preview
+      setPreviewKey(prev => prev + 1);
+    } catch (err) {
+      console.error('Failed to update link:', err);
+    } finally {
+      setSavingLink(null);
+    }
+  };
+
+  const handleUpdateHeroField = async (field, value, extraPayload = {}) => {
+    const artist = myArtists[0];
+    if (!artist) return;
+    setSavingLink(field); // reuse savingLink state for spinner
+    try {
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      const payload = { [field]: value, ...extraPayload };
+      if (otpUser) {
+        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+      } else {
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      }
+      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, ...payload } : a));
+      setEditingHeroField(null);
+      setHeroUpdates(prev => {
+        const next = { ...prev };
+        Object.keys(payload).forEach(k => delete next[k]);
+        return next;
+      });
+      // Auto-refresh preview
+      setPreviewKey(prev => prev + 1);
+    } catch (err) {
+      console.error(`Failed to update ${field}:`, err);
+    } finally {
+      setSavingLink(null);
+    }
+  };
+
+  const openHeroEditor = (field, artist) => {
+    if (isMobileViewport && (field === 'name' || field === 'specialization')) {
+      const current = heroUpdates[field] !== undefined ? heroUpdates[field] : (artist?.[field] || '');
+      setMobileHeroEditField(field);
+      setMobileHeroDraft(current);
+      return;
+    }
+    setEditingHeroField(field);
+  };
+
+  const saveMobileHeroField = async () => {
+    const artist = myArtists[0];
+    if (!artist || !mobileHeroEditField) return;
+    await handleUpdateHeroField(mobileHeroEditField, mobileHeroDraft);
+    setMobileHeroEditField(null);
+  };
+
+  const handleUploadField = async (field, file) => {
+    const artist = myArtists[0];
+    if (!artist || !file) return;
+    setIsUploading(field);
+    try {
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      const up = await landingArtistAPI.uploadPhoto(file, token);
+      if (up && up.url) {
+        const payload = { [field]: up.url };
+        if (otpUser) {
+          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+        } else {
+          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+        }
+        setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [field]: up.url } : a));
+        // Auto-refresh preview
+        setPreviewKey(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(`Failed to upload ${field}:`, err);
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
+  const handleAddGalleryItem = async (file, name = '') => {
+    const artist = myArtists[0];
+    if (!artist || !file) return;
+    setGalleryUploading(true);
+    try {
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      const up = await landingArtistAPI.uploadPhoto(file, token);
+      if (up && up.url) {
+        const newItem = { url: up.url, name: name || 'New Event' };
+        const newGallery = [...(artist.gallery || []), newItem];
+        const payload = { gallery: newGallery };
+        if (otpUser) {
+          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+        } else {
+          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+        }
+        setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
+        setPreviewKey(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error('Failed to add gallery item:', err);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const handleRemoveGalleryItem = async (idx) => {
+    const artist = myArtists[0];
+    if (!artist) return;
+    try {
+      const newGallery = (artist.gallery || []).filter((_, i) => i !== idx);
+      const payload = { gallery: newGallery };
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      if (otpUser) {
+        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+      } else {
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      }
+      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
+      setPreviewKey(prev => prev + 1);
+    } catch (err) {
+      console.error('Failed to remove gallery item:', err);
+    }
+  };
+
+  const togglePlatformInSelector = (id) => {
+    setTempPlatforms(prev =>
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    );
+  };
+
+  const handlePlatformDone = async () => {
+    const artist = myArtists[0];
+    if (!artist) return;
+
+    const updates = {};
+
+    // Platforms to ADD (were not present, now wanted)
+    tempPlatforms.forEach(p => {
+      if (artist[p] === undefined || artist[p] === null) {
+        updates[p] = '';
+      }
+    });
+
+    // Platforms to REMOVE (were present, now deselected)
+    ALL_PLATFORMS.forEach(p => {
+      if (!tempPlatforms.includes(p.id)) {
+        if (artist[p.id] !== undefined && artist[p.id] !== null) {
+          updates[p.id] = null;
+        }
+      }
+    });
+
+    setVisiblePlatforms([...tempPlatforms]);
+
+    if (Object.keys(updates).length > 0) {
+      try {
+        const token = otpUser ? otpUser.token : (await getIdToken());
+        if (otpUser) {
+          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, updates, otpUser.token);
+        } else {
+          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, updates, () => getIdToken(), getFirebaseUser);
+        }
+        setMyArtists(prev => prev.map((a, i) => i === 0 ? { ...a, ...updates } : a));
+      } catch (err) {
+        console.error('Failed to sync platforms:', err);
+      }
+    }
+    setIsSelectorOpen(false);
+  };
+
+  const handleOnboardingNext = () => updateOnboardingStep(onboardingStep + 1);
+  const handleOnboardingBack = () => updateOnboardingStep(onboardingStep - 1);
+  const handleOnboardingComplete = async () => {
+    try {
+      setSaving(true);
+      setError('');
+      
+      let artist = myArtists[0];
+      
+      // If we don't have an artist profile yet, we need to create one first
+      if (!artist) {
+        try {
+          // If no artist profile, create a barebones one first
+          const token = otpUser ? otpUser.token : (await getIdToken());
+          const createPayload = { 
+            artistId: formData.artistId || `user-${Date.now()}`,
+            name: formData.name || 'New Artist'
+          };
+          
+          let createRes;
+          if (otpUser) {
+            createRes = await landingArtistAPI.createMyProfileWithOtpToken(createPayload, otpUser.token);
+          } else {
+            createRes = await landingArtistAPI.createMyProfile(createPayload, () => getIdToken(), getFirebaseUser);
+          }
+          
+          if (!createRes.success) {
+            throw new Error(createRes.message || 'Failed to initialize profile');
+          }
+          artist = createRes.data;
+        } catch (createErr) {
+          console.error("Profile auto-creation error:", createErr);
+          throw new Error('No profile to save, and auto-creation failed: ' + createErr.message);
+        }
+      }
+
+      const { _wa_phone, _wa_msg, _tg_user, _ig_user, _tw_user, _tt_user, _sc_user, _th_user, ...cleanFormData } = formData;
+      const payload = {
+        ...cleanFormData,
+        isSetup: true,
+        updatedAt: Date.now()
+      };
+
+      // Upload images if selected
+      if (photoFile) {
+        const up = await landingArtistAPI.uploadPhoto(photoFile, () => getIdToken());
+        payload.photo = up?.url || payload.photo;
+      }
+      if (bgFile) {
+        const up = await landingArtistAPI.uploadPhoto(bgFile, () => getIdToken());
+        payload.backgroundPhoto = up?.url || payload.backgroundPhoto;
+      }
+
+      // Upload gallery files
+      if (onboardingGalleryFiles && onboardingGalleryFiles.length > 0) {
+        const galleryUrls = [];
+        for (let i = 0; i < onboardingGalleryFiles.length; i++) {
+          const up = await landingArtistAPI.uploadPhoto(onboardingGalleryFiles[i], () => getIdToken());
+          if (up?.url) {
+            galleryUrls.push({ url: up.url, name: `Gallery Image ${i + 1}` });
+          }
+        }
+        payload.gallery = [...(payload.gallery || []), ...galleryUrls];
+      }
+
+      const token = otpUser ? otpUser.token : (await getIdToken());
+      if (otpUser) {
+        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+      } else {
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      }
+
+      // Refresh data
+      await loadMyProfiles();
+      updateOnboardingStep(0);
+    } catch (err) {
+      console.error('Onboarding error:', err);
+      setError(err.message || 'Failed to complete setup. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Global display variables moved up to fix ReferenceError
+  const displayName = user?.displayName || user?.email || otpUser?.email || 'Profile';
+  const displayEmail = user?.email || otpUser?.email || '';
+  const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || otpUser?.email?.charAt(0) || '?';
+
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      navigate('/login');
+    }
+  }, [loading, isLoggedIn, navigate]);
 
   if (loading) {
     return (
@@ -486,130 +1345,389 @@ function Profile() {
     );
   }
 
-  // Choice screen: Artist Profile vs General Profile
-  if (!isLoggedIn && profileMode === 'choice') {
+  if (!isLoggedIn) return null;
+
+  // Onboarding Wizard
+  if (isLoggedIn && isArtistMode && onboardingStep > 0) {
+    return (
+      <div className="profile-page profile-login-wrap onboarding-screen">
+        <div className="onboarding-bg-shapes">
+          <div className="glass-blob blob-1"></div>
+          <div className="glass-blob blob-2"></div>
+          <div className="glass-blob blob-3"></div>
+        </div>
+        <div className="profile-login-card onboarding-card">
+          {onboardingStep > 1 && (
+            <button className="onboarding-back-arrow" onClick={handleOnboardingBack}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          <div className="onboarding-progress-container">
+            <div className="onboarding-progress-bar" style={{ width: `${(onboardingStep / 3) * 100}%` }} />
+          </div>
+
+          <div className="onboarding-step-content">
+            {onboardingStep === 1 && (
+              <div className="onboarding-step fade-in">
+                <h2>Welcome! Let's get started</h2>
+                <p className="onboarding-subtitle">Personalize your artist identity</p>
+                <div className="onboarding-fields">
+                  <div className="onboarding-field">
+                    <label>Full Name</label>
+                    <input
+                      type="text"
+                      className="onboarding-input"
+                      value={formData.name}
+                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g. Vamshi Krishna"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="onboarding-field">
+                    <label>Username</label>
+                    <div className="artist-id-input-wrapper">
+                      <input
+                        type="text"
+                        className="onboarding-input-id"
+                        style={{ paddingLeft: '1.25rem' }}
+                        value={formData.artistId}
+                        onChange={e => setFormData(prev => ({ ...prev, artistId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                        placeholder="Enter your nickname"
+                      />
+                    </div>
+                    <small className="onboarding-tip">Your profile URL will be: <b>nanoprofile.com/artist/{formData.artistId || 'username'}</b></small>
+                  </div>
+                  <div className="onboarding-field">
+                    <label>Art Form / Specialization</label>
+                    <input
+                      type="text"
+                      className="onboarding-input"
+                      value={formData.specialization}
+                      onChange={e => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                      placeholder="e.g. Micro Artist, Painter, Musician"
+                    />
+                  </div>
+                  <div className="onboarding-field">
+                    <label>Email Address</label>
+                    <input
+                      type="email"
+                      className="onboarding-input"
+                      value={formData.email}
+                      onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="e.g. hello@example.com"
+                    />
+                  </div>
+                  <div className="onboarding-field">
+                    <label>Mobile Number</label>
+                    <input
+                      type="tel"
+                      className="onboarding-input"
+                      value={formData.phone}
+                      onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="e.g. +1 234 567 890"
+                    />
+                  </div>
+                </div>
+                <button className="onboarding-btn-primary" onClick={handleOnboardingNext} disabled={!formData.name || !formData.artistId || !formData.specialization}>
+                  Next Step →
+                </button>
+              </div>
+            )}
+
+            {onboardingStep === 2 && (
+              <div className="onboarding-step fade-in">
+                <h2>Connect Your Digital World</h2>
+                <p className="onboarding-subtitle">Link your social media and other platforms</p>
+                <div className="onboarding-fields">
+                  {!isOnboardingSelectorOpen ? (
+                    <>
+                      <div className="dash-links-section onboarding-added-links" style={{ marginBottom: '1.5rem' }}>
+                        {onboardingPlatforms.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', marginBottom: '1rem' }}>
+                            <p style={{ margin: 0, fontSize: '0.9rem' }}>No platforms added yet.<br/>Click below to add some!</p>
+                          </div>
+                        )}
+                        {onboardingPlatforms.map(platformId => {
+                          const platform = ALL_PLATFORMS.find(p => p.id === platformId);
+                          const inputStyle = { width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: 'var(--dash-text, #f1f5f9)', background: 'rgba(255,255,255,0.06)', boxSizing: 'border-box' };
+                          const previewStyle = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.35rem', wordBreak: 'break-all' };
+
+                          const renderPlatformInput = () => {
+                            if (platformId === 'whatsapp') {
+                              const waPhone = formData._wa_phone || '';
+                              const waMsg = formData._wa_msg || '';
+                              const waLink = waPhone ? `https://wa.me/${waPhone.replace(/[^0-9]/g, '')}${waMsg ? '?text=' + encodeURIComponent(waMsg) : ''}` : '';
+                              return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', flexShrink: 0 }}>+</span>
+                                    <input type="tel" style={inputStyle} value={waPhone} onChange={e => { const v = e.target.value.replace(/[^0-9+\s-]/g, ''); setFormData(prev => ({ ...prev, _wa_phone: v, whatsapp: v ? `https://wa.me/${v.replace(/[^0-9]/g, '')}${prev._wa_msg ? '?text=' + encodeURIComponent(prev._wa_msg) : ''}` : '' })); }} placeholder="91 98765 43210" />
+                                  </div>
+                                  <input type="text" style={inputStyle} value={waMsg} onChange={e => { const v = e.target.value; setFormData(prev => { const phone = (prev._wa_phone || '').replace(/[^0-9]/g, ''); return { ...prev, _wa_msg: v, whatsapp: phone ? `https://wa.me/${phone}${v ? '?text=' + encodeURIComponent(v) : ''}` : '' }; }); }} placeholder="Pre-filled message (optional)" />
+                                  {waLink && <p style={previewStyle}>{waLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'telegram') {
+                              const tgUser = formData._tg_user || '';
+                              const tgLink = tgUser ? `https://t.me/${tgUser.replace('@', '')}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>t.me/</span>
+                                    <input type="text" style={inputStyle} value={tgUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _tg_user: v, telegram: v ? `https://t.me/${v.replace('@', '')}` : '' })); }} placeholder="username" />
+                                  </div>
+                                  {tgLink && <p style={previewStyle}>{tgLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'instagram') {
+                              const igUser = formData._ig_user || '';
+                              const igLink = igUser ? `https://instagram.com/${igUser.replace('@', '')}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
+                                    <input type="text" style={inputStyle} value={igUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _ig_user: v, instagram: v ? `https://instagram.com/${v}` : '' })); }} placeholder="username" />
+                                  </div>
+                                  {igLink && <p style={previewStyle}>{igLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'twitter') {
+                              const twUser = formData._tw_user || '';
+                              const twLink = twUser ? `https://x.com/${twUser.replace('@', '')}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
+                                    <input type="text" style={inputStyle} value={twUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tw_user: v, twitter: v ? `https://x.com/${v}` : '' })); }} placeholder="handle" />
+                                  </div>
+                                  {twLink && <p style={previewStyle}>{twLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'tiktok') {
+                              const ttUser = formData._tt_user || '';
+                              const ttLink = ttUser ? `https://tiktok.com/@${ttUser.replace('@', '')}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
+                                    <input type="text" style={inputStyle} value={ttUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tt_user: v, tiktok: v ? `https://tiktok.com/@${v}` : '' })); }} placeholder="username" />
+                                  </div>
+                                  {ttLink && <p style={previewStyle}>{ttLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'snapchat') {
+                              const scUser = formData._sc_user || '';
+                              const scLink = scUser ? `https://snapchat.com/add/${scUser}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>add/</span>
+                                    <input type="text" style={inputStyle} value={scUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _sc_user: v, snapchat: v ? `https://snapchat.com/add/${v}` : '' })); }} placeholder="username" />
+                                  </div>
+                                  {scLink && <p style={previewStyle}>{scLink}</p>}
+                                </div>
+                              );
+                            }
+                            if (platformId === 'threads') {
+                              const thUser = formData._th_user || '';
+                              const thLink = thUser ? `https://threads.net/@${thUser.replace('@', '')}` : '';
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
+                                    <input type="text" style={inputStyle} value={thUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _th_user: v, threads: v ? `https://threads.net/@${v}` : '' })); }} placeholder="username" />
+                                  </div>
+                                  {thLink && <p style={previewStyle}>{thLink}</p>}
+                                </div>
+                              );
+                            }
+                            return (
+                              <input type="text" className="dash-link-inline-input" style={inputStyle} value={formData[platformId] || ''} onChange={e => setFormData(prev => ({ ...prev, [platformId]: e.target.value }))} placeholder="https://" />
+                            );
+                          };
+
+                          return (
+                            <div className="dash-link-card fade-in" key={platformId} style={{ background: 'var(--dash-card-bg, rgba(20,20,30,0.8))', borderRadius: '16px', padding: '0.8rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                               <div className="dash-link-icon-circle" style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(139,92,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a78bfa', flexShrink: 0 }}>
+                                 {getLinkIcon({ platform: platform.id })}
+                               </div>
+                               <div className="dash-link-content" style={{ flex: 1, minWidth: 0 }}>
+                                 <div className="dash-link-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                   <span className="dash-link-title" style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>{platform.label}</span>
+                                   <button 
+                                     className="dash-link-remove-btn" 
+                                     onClick={() => {
+                                        setOnboardingPlatforms(prev => prev.filter(id => id !== platform.id));
+                                        setFormData(prev => ({ ...prev, [platform.id]: '' }));
+                                     }}
+                                     style={{ background: 'rgba(239,68,68,0.15)', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f87171', transition: 'all 0.2s ease' }}
+                                   >✕</button>
+                                 </div>
+                                 <div className="dash-link-url">
+                                   {renderPlatformInput()}
+                                 </div>
+                               </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <button 
+                        type="button" 
+                        onClick={() => setIsOnboardingSelectorOpen(true)}
+                        style={{ width: '100%', padding: '1rem', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '2px dashed rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; }}
+                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                      >
+                        <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Platforms
+                      </button>
+                    </>
+                  ) : (
+                    <div className="onboarding-selector-view fade-in">
+                      <div className="selector-header">
+                        <h3>Select Platforms</h3>
+                        <button 
+                          type="button"
+                          className="selector-close-btn"
+                          onClick={() => setIsOnboardingSelectorOpen(false)}
+                        >✕</button>
+                      </div>
+                      <p className="selector-subtitle">Choose the platforms you want on your profile</p>
+                      
+                      <div className="dash-selector-grid">
+                        {ALL_PLATFORMS.map((p) => {
+                          const isActive = onboardingPlatforms.includes(p.id);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                              onClick={() => {
+                                if (isActive) {
+                                  setOnboardingPlatforms(prev => prev.filter(id => id !== p.id));
+                                  setFormData(prev => ({ ...prev, [p.id]: '' }));
+                                } else {
+                                  setOnboardingPlatforms(prev => [...prev, p.id]);
+                                }
+                              }}
+                            >
+                              <div className="dash-selector-icon">
+                                {getLinkIcon({ platform: p.id })}
+                              </div>
+                              <span className="dash-selector-label">{p.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      
+                      <button 
+                        type="button"
+                        className="onboarding-btn-primary"
+                        onClick={() => setIsOnboardingSelectorOpen(false)}
+                        style={{ marginTop: '1.25rem' }}
+                      >
+                        Done Selecting ({onboardingPlatforms.length} selected)
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {!isOnboardingSelectorOpen && (
+                  <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                    <button className="onboarding-btn-primary" onClick={handleOnboardingNext}>Next Step →</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {onboardingStep === 3 && (
+              <div className="onboarding-step fade-in">
+                <h2>Show your style</h2>
+                <p className="onboarding-subtitle">Upload your profile, banner, and gallery images</p>
+                <div className="onboarding-images">
+                  <div className="image-upload-box">
+                    <label>Profile Image</label>
+                    <div className="upload-preview-circle" onClick={() => document.getElementById('photo-input').click()}>
+                      {photoFile ? <img src={URL.createObjectURL(photoFile)} alt="Preview" /> : <span>+</span>}
+                    </div>
+                    <input id="photo-input" type="file" hidden onChange={e => setPhotoFile(e.target.files[0])} accept="image/*" />
+                  </div>
+                  <div className="image-upload-box">
+                    <label>Banner Image</label>
+                    <div className="upload-preview-banner" onClick={() => document.getElementById('bg-input').click()}>
+                      {bgFile ? <img src={URL.createObjectURL(bgFile)} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                    </div>
+                    <input id="bg-input" type="file" hidden onChange={e => setBgFile(e.target.files[0])} accept="image/*" />
+                  </div>
+                </div>
+
+                <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
+                  <label>Gallery Images / GIFs (up to 3)</label>
+                  <div className="upload-preview-banner" onClick={() => document.getElementById('gallery-input').click()} style={{ minHeight: '80px', display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '10px' }}>
+                    {onboardingGalleryFiles.length > 0 ? (
+                      onboardingGalleryFiles.map((f, i) => (
+                        <div key={i} style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden' }}>
+                          <img src={URL.createObjectURL(f)} alt="Gallery preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ))
+                    ) : (
+                      <span style={{ margin: 'auto' }}>+ Click to select up to 3 images</span>
+                    )}
+                  </div>
+                  <input 
+                    id="gallery-input" 
+                    type="file" 
+                    multiple 
+                    hidden 
+                    onChange={e => {
+                      const files = Array.from(e.target.files).slice(0, 3);
+                      setOnboardingGalleryFiles(files);
+                    }} 
+                    accept="image/*,image/gif" 
+                  />
+                </div>
+
+                <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>
+                  <div className="onboarding-field">
+                    <label>Short Bio</label>
+                    <textarea
+                      className="onboarding-textarea"
+                      value={formData.bio}
+                      onChange={e => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                {error && <p className="onboarding-error-msg">{error}</p>}
+                <div className="onboarding-actions">
+                  <button className="onboarding-btn-complete" onClick={handleOnboardingComplete} disabled={saving}>
+                    {saving ? 'Setting up...' : 'Complete Setup ✓'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button onClick={handleLogout} className="onboarding-logout-btn">Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
+
+  // Mode selection screen (Artist vs General)
+  if (isLoggedIn && profileMode === 'choice') {
     return (
       <div className="profile-page profile-login-wrap">
         <div className="profile-login-card profile-choice-card">
-          <div className="profile-login-header">
-            <h1>Profile</h1>
-            <p>Choose how you want to manage your profile</p>
-          </div>
-          <div className="profile-choice-buttons">
-            <button type="button" onClick={handleSelectGeneralMode} className="profile-choice-btn profile-choice-general">
-              <span className="profile-choice-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-              </span>
-              <span className="profile-choice-title">General Profile</span>
-              <span className="profile-choice-desc">Sign in, create a Linktree-style profile, select theme, and get your shareable link.</span>
-            </button>
-            <button type="button" onClick={handleSelectArtistMode} className="profile-choice-btn profile-choice-artist">
-              <span className="profile-choice-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
-                  <path d="M12 19l7-7 3 3-7 7-3-3z" />
-                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-                </svg>
-              </span>
-              <span className="profile-choice-title">Artist Profile</span>
-              <span className="profile-choice-desc">Login to edit your NFC artist profiles. Use Google or verify with your profile email.</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Artist Profile login
-  if (!isLoggedIn && isArtistMode) {
-    return (
-      <div className="profile-page profile-login-wrap">
-        <div className="profile-login-card profile-login-card-no-flip">
-          <button type="button" onClick={handleBackToChoice} className="profile-back-btn">← Back</button>
-          <div className="profile-login-header">
-            <div className="profile-icon">
-              <DotLottieReact
-                src="https://lottie.host/487284a2-1c84-44ff-a757-a3a02b9bd91f/hin5ajk5f6.lottie"
-                loop
-                autoplay
-                style={{ width: '100%', height: '100%' }}
-              />
-            </div>
-            <h1>Artist Profile</h1>
-            <p>Sign in with Google or verify with your profile email to access and edit your artist profiles</p>
-          </div>
-          <div className="profile-social-section">
-            <button type="button" onClick={handleGoogleLogin} className="profile-google-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            <div className="profile-otp-divider">
-              <span>Or verify with your profile email</span>
-            </div>
-
-            {otpStep !== 'sent' ? (
-              <form onSubmit={handleSendOtp} className="profile-otp-form">
-                <input
-                  type="email"
-                  placeholder="Email on your artist profile"
-                  value={otpEmail}
-                  onChange={(e) => { setOtpEmail(e.target.value); setError(''); }}
-                  className="profile-otp-input"
-                  disabled={otpSendLoading}
-                  autoComplete="email"
-                />
-                <button type="submit" className="profile-otp-btn" disabled={otpSendLoading}>
-                  {otpSendLoading ? 'Sending…' : 'Send verification code'}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="profile-otp-form">
-                <p className="profile-otp-sent-msg">We sent a 6-digit code to <strong>{otpEmail}</strong>. Enter it below.</p>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="000000"
-                  value={otpCode}
-                  onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, '')); setError(''); }}
-                  className="profile-otp-input profile-otp-code-input"
-                  disabled={otpVerifyLoading}
-                  autoComplete="one-time-code"
-                />
-                <button type="submit" className="profile-otp-btn" disabled={otpVerifyLoading || otpCode.length !== 6}>
-                  {otpVerifyLoading ? 'Verifying…' : 'Verify and continue'}
-                </button>
-                <button
-                  type="button"
-                  className="profile-otp-back"
-                  onClick={() => { setOtpStep('idle'); setOtpCode(''); setError(''); }}
-                >
-                  Use a different email
-                </button>
-              </form>
-            )}
-
-            {error && <div className="profile-error-msg">{error}</div>}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // General Profile login (Google only)
-  if (!isLoggedIn && isGeneralMode) {
-    return (
-      <div className="profile-page profile-login-wrap">
-        <div className="profile-login-card">
-          <button type="button" onClick={handleBackToChoice} className="profile-back-btn">← Back</button>
           <div className="profile-login-header">
             <div className="profile-icon">
               <DotLottieReact
@@ -619,27 +1737,1172 @@ function Profile() {
                 style={{ width: '100%', height: '100%' }}
               />
             </div>
-            <h1>General Profile</h1>
-            <p>Sign in with Google to create your Linktree-style profile. Pick a theme, add your links, and get your shareable URL.</p>
+            <h1>
+              {displayName && displayName.includes('@')
+                ? 'Welcome!'
+                : `Welcome, ${(displayName || 'Profile').split(' ')[0]}`}
+            </h1>
+            {displayEmail ? (
+              <p className="profile-header-email" title={displayEmail}>{displayEmail}</p>
+            ) : null}
+            <p className="profile-header-sub">Select which profile you'd like to manage today</p>
           </div>
-          <div className="profile-social-section">
-            <button type="button" onClick={handleGoogleLogin} className="profile-google-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-            {error && <div className="profile-error-msg">{error}</div>}
+          <div className="profile-choice-grid">
+            {!profileLock && !choiceSource && !generalProfile && !restaurantProfile && (
+              <button className="neo-card neo-card-artist" onClick={handleSelectArtistMode}>
+                <div className="neo-card-content">
+                  <p className="neo-card-plan">Artist Profile</p>
+                  <div className="neo-card-tagline">🎨 Portfolio & NFC</div>
+                  <ul className="neo-check-list" role="list">
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Art Gallery &amp; Portfolio
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Social Links
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Custom Themes
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      NFC Tap Ready
+                    </li>
+                  </ul>
+                </div>
+              </button>
+            )}
+            {profileLock !== 'artist' && (<>
+              <button className="neo-card neo-card-general" onClick={handleSelectGeneralMode}>
+                <div className="neo-card-content">
+                  <p className="neo-card-plan">General Profile</p>
+                  <div className="neo-card-tagline">🔗 Link-in-Bio</div>
+                  <ul className="neo-check-list" role="list">
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Custom Links &amp; Socials
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Multiple Themes
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Photo &amp; Bio
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      NFC Tap Ready
+                    </li>
+                  </ul>
+                </div>
+              </button>
+              <button className="neo-card neo-card-restaurant" onClick={handleSelectRestaurantMode}>
+                <div className="neo-card-content">
+                  <p className="neo-card-plan">Restaurant</p>
+                  <div className="neo-card-tagline">🍽️ Tap to Order</div>
+                  <ul className="neo-check-list" role="list">
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Digital Menu (PDF)
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Contact &amp; Location
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      Custom Themes
+                    </li>
+                    <li className="neo-check-item">
+                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
+                      NFC Tap Ready
+                    </li>
+                  </ul>
+                </div>
+              </button>
+            </>)}
           </div>
         </div>
       </div>
     );
   }
 
-  // General Profile: theme selection
+  // Restaurant profile: home (profile already created) — same layout as artist dashboard
+  if (isLoggedIn && isRestaurantMode && restaurantProfile) {
+    return (
+      <div className={`dash-root dash-theme-aura dash-font-outfit`}>
+        {/* Sidebar */}
+        <aside className="dash-sidebar">
+          <div className="dash-sidebar-brand">
+            <div className="dash-sidebar-top-avatar">
+              {user?.photoURL
+                ? <img src={user.photoURL} alt={displayName} />
+                : <span>{avatarLetter}</span>
+              }
+            </div>
+            <span className="dash-brand-email-main">{displayEmail}</span>
+          </div>
+
+          <nav className="dash-nav">
+            <div className="dash-nav-section">
+              <span className="dash-nav-label">Restaurant</span>
+              <button
+                className={`dash-nav-item ${restaurantActiveTab === 'info' ? 'dash-nav-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('info')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile &amp; Menu
+              </button>
+              <button
+                className={`dash-nav-item ${restaurantActiveTab === 'design' ? 'dash-nav-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('design')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                Design
+              </button>
+              <button
+                className={`dash-nav-item ${restaurantActiveTab === 'menu' ? 'dash-nav-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('menu')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Menu
+              </button>
+            </div>
+          </nav>
+
+          <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              className="dash-sidebar-signout-btn dash-sidebar-home-btn"
+              onClick={() => navigate('/')}
+            >
+              ← Back to Home
+            </button>
+            <button
+              className="dash-sidebar-signout-btn"
+              onClick={() => handleBackToChoice('restaurant')}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'var(--dash-text, #f1f5f9)'
+              }}
+            >
+              ← Switch Profile
+            </button>
+            <button className="dash-sidebar-signout-btn" onClick={handleLogout}>Sign out</button>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="dash-main">
+          <header className="dash-main-header">
+            <div>
+              <h1 className="dash-main-title">{restaurantActiveTab === 'design' ? 'Design' : restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}</h1>
+              <p className="dash-main-subtitle">{restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact info'}</p>
+            </div>
+          </header>
+
+          <div className="dash-content">
+            {/* ── PROFILE & MENU TAB ── */}
+            {restaurantActiveTab === 'info' && (
+              <div className="dash-profile-layout">
+                {/* Left: profile info */}
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {/* Hero banner — with inline edit button */}
+                  <div className="dash-profile-hero">
+                    {restaurantProfile.banner
+                      ? <img src={restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
+                      : <div className="dash-profile-hero-bg" style={{ background: 'linear-gradient(135deg,#fceabb,#f8b500)' }} />
+                    }
+                    <div className="dash-profile-hero-overlay" />
+
+                    <label className="dash-hero-bg-trigger" style={{ cursor: 'pointer' }} onClick={() => { setRestaurantForm({ ...restaurantProfile, menuPdf: restaurantProfile.menuPdf || null, banner: restaurantProfile.banner || null, gallery: restaurantProfile.gallery || [], links: restaurantProfile.links || {} }); setRestaurantProfile(null); updateRestaurantOnboardingStep(1); }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      <span>Edit Profile</span>
+                    </label>
+
+                    <div className="dash-profile-hero-content">
+                      <div className="dash-hero-text">
+                        <h2 className="dash-hero-name">{restaurantProfile.name}</h2>
+                        <p className="dash-hero-spec">@{restaurantProfile.username}</p>
+                        <p className="dash-hero-bio">{restaurantProfile.tagline}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Copy Profile Link */}
+                  <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Profile Link</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${window.location.origin}/link/${restaurantProfile.username || ''}`}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/link/${restaurantProfile.username || ''}`;
+                          navigator.clipboard.writeText(url);
+                          alert('Profile URL copied to clipboard!');
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: 'var(--dash-accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                        Copy Link
+                      </button>
+                      <a href={`${window.location.origin}/link/${restaurantProfile.username || ''}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: 'rgba(99,102,241,0.15)', color: 'var(--dash-accent)', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Open</a>
+                    </div>
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>Share this link so customers can view your restaurant profile.</p>
+                    <button
+                      type="button"
+                      onClick={handleRestaurantPublish}
+                      disabled={restaurantPublishLoading}
+                      style={{ marginTop: '0.75rem', padding: '8px 16px', background: restaurantPublishLoading ? 'var(--dash-border)' : '#22c55e', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: restaurantPublishLoading ? 'not-allowed' : 'pointer' }}
+                    >
+                      {restaurantPublishLoading ? 'Publishing…' : 'Publish to make link live'}
+                    </button>
+                  </div>
+
+                  {/* Bio — always editable inline */}
+                  <div style={{ marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>About / Bio</span>
+                      {!rBioEditing && <button onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }} style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>Edit</button>}
+                    </div>
+                    {rBioEditing ? (
+                      <div>
+                        <textarea
+                          rows={3}
+                          value={rBioDraft}
+                          onChange={e => setRBioDraft(e.target.value)}
+                          placeholder="Tell customers about your restaurant..."
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--dash-accent)', background: 'var(--dash-bg-card)', color: 'var(--dash-text)', fontSize: '0.95rem', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                          autoFocus
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <button onClick={() => { const updated = { ...restaurantProfile, bio: rBioDraft }; setRestaurantProfile(updated); persistRestaurant(updated); setRBioEditing(false); }} style={{ padding: '0.5rem 1.2rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Save</button>
+                          <button onClick={() => setRBioEditing(false)} style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }} style={{ padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px', color: restaurantProfile.bio ? 'var(--dash-text)' : 'var(--dash-subtext)', fontSize: '0.95rem', lineHeight: 1.6, cursor: 'text', minHeight: '3rem' }}>
+                        {restaurantProfile.bio || 'Click to add a bio…'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact */}
+                  <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {restaurantProfile.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16z"/></svg>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</div>
+                          <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600 }}>{restaurantProfile.phone}</div>
+                        </div>
+                      </div>
+                    )}
+                    {(restaurantProfile.email || displayEmail) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</div>
+                          <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600 }}>{restaurantProfile.email || displayEmail}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gallery Images — up to 3, inline upload */}
+                  <div style={{ marginTop: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
+                      {(restaurantProfile.gallery || []).length < 3 && (
+                        <>
+                          <input type="file" accept="image/*" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (!files.length) return;
+                            const existing = restaurantProfile.gallery || [];
+                            const slots = 3 - existing.length;
+                            const toRead = files.slice(0, slots);
+                            let loaded = [];
+                            toRead.forEach((file, i) => {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                loaded.push({ url: ev.target.result, name: '' });
+                                if (loaded.length === toRead.length) {
+                                  const updated = { ...restaurantProfile, gallery: [...existing, ...loaded] };
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                          }} />
+                          <label htmlFor="r-gallery-upload" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem' }}>+ Add Image</label>
+                        </>
+                      )}
+                    </div>
+                    {(restaurantProfile.gallery || []).length === 0 ? (
+                      <div style={{ padding: '2rem', border: '2px dashed var(--dash-border)', borderRadius: '16px', textAlign: 'center', color: 'var(--dash-subtext)', fontSize: '0.9rem' }}>
+                        No gallery images yet. Add up to 3.
+                      </div>
+                    ) : (
+                      <div className="dash-gallery-grid">
+                        {(restaurantProfile.gallery || []).map((item, idx) => (
+                          <div className="dash-gallery-item" key={idx}>
+                            <img src={item.url} alt={item.name || ''} />
+                            <div className="dash-gallery-item-overlay">
+                              <input
+                                className="dash-gallery-item-name-input"
+                                value={item.name || ''}
+                                placeholder="Caption"
+                                onChange={(e) => {
+                                  const newGal = [...(restaurantProfile.gallery || [])];
+                                  newGal[idx] = { ...newGal[idx], name: e.target.value };
+                                  const updated = { ...restaurantProfile, gallery: newGal };
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                }}
+                              />
+                              <button
+                                className="dash-gallery-remove-btn"
+                                onClick={() => {
+                                  const newGal = (restaurantProfile.gallery || []).filter((_, i) => i !== idx);
+                                  const updated = { ...restaurantProfile, gallery: newGal };
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                }}
+                              >✕</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Social / Platform Links */}
+                  <div style={{ marginTop: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Links</h3>
+                      <button
+                        type="button"
+                        className="dash-add-platform-btn"
+                        onClick={() => { setRTempPlatforms(Object.keys(restaurantProfile.links || {})); setRLinkSelectorOpen(true); }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add Platforms
+                      </button>
+                    </div>
+                    <div className="dash-links-section">
+                      {ALL_PLATFORMS.filter(p => p.id in (restaurantProfile.links || {})).map(p => (
+                        <div className="dash-link-card" key={p.id}>
+                          <div className="dash-link-card-main">
+                            <div className="dash-link-icon-circle">
+                              {getLinkIcon({ platform: p.id })}
+                            </div>
+                            <div className="dash-link-content">
+                              <div className="dash-link-title-row">
+                                <span className="dash-link-title">{p.label}</span>
+                              </div>
+                              <div className="dash-link-url">
+                                <input
+                                  className="dash-link-inline-input"
+                                  placeholder="Enter URL / handle"
+                                  value={(restaurantProfile.links || {})[p.id] || ''}
+                                  onChange={(e) => {
+                                    const updated = { ...restaurantProfile, links: { ...(restaurantProfile.links || {}), [p.id]: e.target.value } };
+                                    setRestaurantProfile(updated);
+                                    persistRestaurant(updated);
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div className="dash-link-controls">
+                              <button
+                                className="dash-link-remove-icon-btn"
+                                onClick={() => {
+                                  const newLinks = { ...(restaurantProfile.links || {}) };
+                                  delete newLinks[p.id];
+                                  const updated = { ...restaurantProfile, links: newLinks };
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                }}
+                                title="Remove this platform"
+                              >✕</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: live preview panel */}
+                <div className="dash-preview-panel">
+                  <div className="dash-full-preview-container">
+                    {(() => {
+                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
+                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
+                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
+                      return (
+                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: t.bg, fontFamily: bodyFontFamily }}>
+                          {restaurantProfile.banner && (
+                            <img src={restaurantProfile.banner} alt="Banner" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
+                          )}
+                          <div style={{ padding: '20px', textAlign: 'center', color: t.text }}>
+                            <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 6px', color: t.text, fontFamily: titleFontFamily }}>{restaurantProfile.name}</h2>
+                            <p style={{ margin: '0 0 10px', fontSize: '17px', color: t.text, opacity: 0.75, fontFamily: titleFontFamily }}>{restaurantProfile.tagline}</p>
+                            {restaurantProfile.bio && <p style={{ margin: '0 0 18px', fontSize: '15px', lineHeight: 1.6, color: t.text, opacity: 0.7, fontFamily: bodyFontFamily }}>{restaurantProfile.bio}</p>}
+                            {restaurantProfile.phone && (
+                              <div style={{ display: 'inline-block', padding: '8px 20px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', color: t.text, fontSize: '16px', marginBottom: '10px' }}>📞 {restaurantProfile.phone}</div>
+                            )}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
+                              {restaurantProfile.menuPdf && (
+                                <span style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px' }}>📄 View Menu</span>
+                              )}
+                              {Object.entries(restaurantProfile.links || {}).filter(([, v]) => v).map(([k, v]) => (
+                                <a key={k} href={v} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px', textDecoration: 'none' }}>{k}</a>
+                              ))}
+                            </div>
+                          </div>
+                          {(restaurantProfile.gallery || []).length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '0 12px 16px' }}>
+                              {(restaurantProfile.gallery || []).map((item, i) => (
+                                <div key={i} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
+                                  <img src={item.url} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── DESIGN TAB ── */}
+            {restaurantActiveTab === 'design' && (
+              <div className="dash-profile-layout">
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+
+                  {/* Profile Theme — applies to public page */}
+                  <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a look for your public restaurant page</p>
+                    <div className="dash-design-grid dash-themes-grid">
+                      {GENERAL_THEMES.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            const updated = { ...restaurantProfile, theme: t.id };
+                            setRestaurantProfile(updated);
+                            persistRestaurant(updated);
+                          }}
+                          className={`dash-design-card ${restaurantProfile.theme === t.id ? 'active' : ''}`}
+                          style={{
+                            border: '2px solid ' + (restaurantProfile.theme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                            boxShadow: restaurantProfile.theme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                          }}
+                        >
+                          <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                          <h3 className="dash-design-card-label">{t.label}</h3>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Font — applies to public page */}
+                  <section className="dash-design-section">
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Font</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--dash-subtext)' }}>
+                        <input
+                          type="checkbox"
+                          checked={rSyncFonts}
+                          onChange={e => {
+                            setRSyncFonts(e.target.checked);
+                            if (e.target.checked) {
+                              const tf = restaurantProfile.titleFont || 'outfit';
+                              const updated = { ...restaurantProfile, bodyFont: tf };
+                              setRestaurantProfile(updated);
+                              persistRestaurant(updated);
+                            }
+                          }}
+                          style={{ width: 16, height: 16, accentColor: 'var(--dash-accent)' }}
+                        />
+                        Use same font for all
+                      </label>
+                    </div>
+                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that match your restaurant brand</p>
+
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Name &amp; Tagline)</h3>
+                      <div className="dash-design-grid dash-fonts-grid">
+                        {AVAILABLE_FONTS.map(f => (
+                          <button
+                            key={`rtitle-${f.id}`}
+                            onClick={() => {
+                              const update = rSyncFonts
+                                ? { ...restaurantProfile, titleFont: f.id, bodyFont: f.id }
+                                : { ...restaurantProfile, titleFont: f.id };
+                              setRestaurantProfile(update);
+                              persistRestaurant(update);
+                            }}
+                            className={`dash-design-card ${(restaurantProfile.titleFont || 'outfit') === f.id ? 'active' : ''}`}
+                            style={{ border: '2px solid ' + ((restaurantProfile.titleFont || 'outfit') === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                          >
+                            <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
+                            <h3 className="dash-design-card-label">{f.label}</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {!rSyncFonts && (
+                      <div>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio &amp; Descriptions)</h3>
+                        <div className="dash-design-grid dash-fonts-grid">
+                          {AVAILABLE_FONTS.map(f => (
+                            <button
+                              key={`rbody-${f.id}`}
+                              onClick={() => {
+                                const update = { ...restaurantProfile, bodyFont: f.id };
+                                setRestaurantProfile(update);
+                                persistRestaurant(update);
+                              }}
+                              className={`dash-design-card ${(restaurantProfile.bodyFont || 'outfit') === f.id ? 'active' : ''}`}
+                              style={{ border: '2px solid ' + ((restaurantProfile.bodyFont || 'outfit') === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                            >
+                              <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
+                              <h3 className="dash-design-card-label">{f.label}</h3>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                </div>
+
+                {/* Right: live preview showing the theme + font applied to the public page */}
+                <div className="dash-preview-panel">
+                  <div className="dash-full-preview-container">
+                    {(() => {
+                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
+                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
+                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
+                      const isGradient = t.bg && t.bg.includes('gradient');
+                      return (
+                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: isGradient ? t.bg : t.bg, fontFamily: bodyFontFamily }}>
+                          {restaurantProfile.banner && (
+                            <img src={restaurantProfile.banner} alt="Banner" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
+                          )}
+                          <div style={{ padding: '20px', textAlign: 'center', color: t.text }}>
+                            <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 6px', fontFamily: titleFontFamily, color: t.text }}>{restaurantProfile.name}</h2>
+                            <p style={{ margin: '0 0 10px', fontSize: '17px', color: t.text, opacity: 0.75, fontFamily: titleFontFamily }}>{restaurantProfile.tagline}</p>
+                            {restaurantProfile.bio && <p style={{ margin: '0 0 18px', fontSize: '15px', lineHeight: 1.6, color: t.text, opacity: 0.7, fontFamily: bodyFontFamily }}>{restaurantProfile.bio}</p>}
+                            {restaurantProfile.phone && (
+                              <div style={{ display: 'inline-block', padding: '8px 20px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', color: t.text, fontSize: '16px', marginBottom: '10px' }}>📞 {restaurantProfile.phone}</div>
+                            )}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
+                              {restaurantProfile.menuPdf && (
+                                <span style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px' }}>📄 View Menu</span>
+                              )}
+                              {Object.entries(restaurantProfile.links || {}).filter(([, v]) => v).map(([k, v]) => (
+                                <a key={k} href={v} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px', textDecoration: 'none' }}>{k}</a>
+                              ))}
+                            </div>
+                          </div>
+                          {(restaurantProfile.gallery || []).length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '0 12px 16px' }}>
+                              {(restaurantProfile.gallery || []).map((item, i) => (
+                                <div key={i} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
+                                  <img src={item.url} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── MENU TAB ── */}
+            {restaurantActiveTab === 'menu' && (
+              <div className="dash-profile-layout">
+                {/* Left: PDF upload & viewer */}
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--dash-text)', margin: 0 }}>Menu PDF</h2>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--dash-subtext)', margin: '4px 0 0' }}>Customers can view this on your public profile</p>
+                    </div>
+                    {restaurantProfile.menuPdf && (
+                      <>
+                        <input type="file" accept="application/pdf" id="dash-menu-replace" style={{ display: 'none' }} onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const updated = { ...restaurantProfile, menuPdf: ev.target.result };
+                            setRestaurantProfile(updated);
+                            persistRestaurant(updated);
+                            setPdfNumPages(null);
+                          };
+                          reader.readAsDataURL(file);
+                        }} />
+                        <label htmlFor="dash-menu-replace" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', padding: '0.5rem 1rem', border: '1px solid #6366f1', borderRadius: '10px' }}>Replace PDF</label>
+                      </>
+                    )}
+                  </div>
+
+                  {restaurantProfile.menuPdf ? (
+                    <div style={{ border: '1px solid var(--dash-border)', borderRadius: '16px', overflow: 'hidden' }}>
+                      <div style={{ maxHeight: 600, overflowY: 'auto', background: '#f1f5f9', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                        <Document
+                          file={restaurantProfile.menuPdf}
+                          onLoadSuccess={onPdfLoadSuccess}
+                          loading={<div style={{ padding: '3rem', color: '#64748b' }}>Loading menu...</div>}
+                          error={<div style={{ padding: '3rem', color: '#ef4444' }}>Failed to load PDF.</div>}
+                        >
+                          {pdfNumPages && Array.from(new Array(pdfNumPages), (el, index) => (
+                            <div key={`page_${index + 1}`} style={{ marginBottom: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
+                              <Page pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false} width={380} />
+                            </div>
+                          ))}
+                        </Document>
+                      </div>
+                      <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--dash-border)' }}>
+                        <button onClick={() => {
+                          const updated = { ...restaurantProfile, menuPdf: null };
+                          setRestaurantProfile(updated);
+                          persistRestaurant(updated);
+                          setPdfNumPages(null);
+                        }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>Remove PDF</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '4rem 2rem', border: '2px dashed var(--dash-border)', borderRadius: '20px', textAlign: 'center', color: 'var(--dash-subtext)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ marginBottom: '1rem', opacity: 0.4 }}>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                      <p style={{ margin: '0 0 1.5rem', fontSize: '0.95rem' }}>No menu uploaded yet</p>
+                      <input type="file" accept="application/pdf" id="dash-menu-upload" style={{ display: 'none' }} onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const updated = { ...restaurantProfile, menuPdf: ev.target.result };
+                          setRestaurantProfile(updated);
+                          persistRestaurant(updated);
+                        };
+                        reader.readAsDataURL(file);
+                      }} />
+                      <label htmlFor="dash-menu-upload" style={{ cursor: 'pointer', color: '#fff', fontWeight: 600, display: 'inline-block', padding: '0.65rem 1.5rem', background: '#6366f1', borderRadius: '12px', fontSize: '0.9rem' }}>
+                        Upload Menu PDF
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: preview showing "View Menu" pill */}
+                <div className="dash-preview-panel">
+                  <div className="dash-full-preview-container">
+                    {(() => {
+                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
+                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
+                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
+                      return (
+                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: t.bg, fontFamily: bodyFontFamily, padding: '2rem' }}>
+                          {restaurantProfile.menuPdf ? (
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ width: 64, height: 64, borderRadius: '18px', background: t.linkBg || 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '28px' }}>📄</div>
+                              <p style={{ color: t.text, fontWeight: 600, margin: '0 0 0.5rem', fontFamily: titleFontFamily }}>Menu available</p>
+                              <p style={{ color: t.text, opacity: 0.6, fontSize: '0.8rem', margin: 0, fontFamily: bodyFontFamily }}>Customers can tap to view your menu</p>
+                              <div style={{ marginTop: '1.5rem', padding: '10px 24px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', display: 'inline-block', color: t.text, fontSize: '14px', fontFamily: bodyFontFamily }}>📄 View Menu</div>
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center', opacity: 0.5 }}>
+                              <div style={{ fontSize: '48px', marginBottom: '0.75rem' }}>📋</div>
+                              <p style={{ color: t.text, fontSize: '0.85rem', margin: 0 }}>Upload a menu PDF to show it here</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Restaurant Platform Selector Modal — same as artist */}
+        {rLinkSelectorOpen && (
+          <div className="dash-selector-overlay">
+            <div className="dash-selector-modal">
+              <div className="dash-selector-header">
+                <h3>Add Platforms</h3>
+                <p>Select platforms to add to your restaurant profile</p>
+              </div>
+              <div className="dash-selector-grid">
+                {ALL_PLATFORMS.map((p) => {
+                  const isActive = rTempPlatforms.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                      onClick={() => setRTempPlatforms(prev => isActive ? prev.filter(x => x !== p.id) : [...prev, p.id])}
+                    >
+                      <div className="dash-selector-icon">
+                        {getLinkIcon({ platform: p.id })}
+                      </div>
+                      <span className="dash-selector-label">{p.label}</span>
+                      {isActive && <div className="dash-selector-check">✓</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="dash-selector-actions">
+                <button type="button" className="dash-selector-btn-cancel" onClick={() => setRLinkSelectorOpen(false)}>Cancel</button>
+                <button type="button" className="dash-selector-btn-done" onClick={() => {
+                  const currentLinks = restaurantProfile.links || {};
+                  const newLinks = { ...currentLinks };
+                  rTempPlatforms.forEach(id => { if (!(id in newLinks)) newLinks[id] = ''; });
+                  Object.keys(newLinks).forEach(id => { if (!rTempPlatforms.includes(id)) delete newLinks[id]; });
+                  const updated = { ...restaurantProfile, links: newLinks };
+                  setRestaurantProfile(updated);
+                  persistRestaurant(updated);
+                  setRLinkSelectorOpen(false);
+                }}>Done</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (isLoggedIn && isRestaurantMode && !restaurantProfile) {
+    const rStep = restaurantOnboardingStep;
+    return (
+      <div className="profile-page profile-login-wrap onboarding-screen">
+        <div className="profile-login-card profile-choice-card general-onboarding-card">
+          {rStep > 1 && (
+            <button type="button" className="profile-back-btn" onClick={() => updateRestaurantOnboardingStep(rStep - 1)}>← Back</button>
+          )}
+          <div className="general-onboarding-progress">
+            <div className="general-onboarding-progress-bar" style={{ width: `${(rStep / 4) * 100}%` }} />
+          </div>
+
+          {rStep === 1 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 1 – Identity</h2>
+              <p className="onboarding-subtitle">Restaurant name and details</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <label>Restaurant name</label>
+                  <input type="text" className="onboarding-input" value={restaurantForm.name} onChange={e => setRestaurantForm(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g. My Cafe" required autoFocus />
+                </div>
+                <div className="onboarding-field">
+                  <label>Tagline</label>
+                  <input type="text" className="onboarding-input" value={restaurantForm.tagline} onChange={e => setRestaurantForm(prev => ({ ...prev, tagline: e.target.value }))} placeholder="e.g. Fresh food, fast" />
+                </div>
+                <div className="onboarding-field">
+                  <label>Bio / Description</label>
+                  <textarea className="onboarding-textarea" rows={3} value={restaurantForm.bio} onChange={e => setRestaurantForm(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell customers about your restaurant..." />
+                </div>
+                <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
+                  <label>Banner Image</label>
+                  <div className="upload-preview-banner" onClick={() => document.getElementById('restaurant-banner-input').click()}>
+                    {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                  </div>
+                  <input id="restaurant-banner-input" type="file" hidden onChange={handleRestaurantBannerUpload} accept="image/*" />
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => {
+                  setRestaurantForm(prev => ({ ...prev, email: prev.email || displayEmail }));
+                  updateRestaurantOnboardingStep(2);
+                }} disabled={!restaurantForm.name.trim()}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {rStep === 2 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 2 – Contact info</h2>
+              <p className="onboarding-subtitle">Phone and email contact</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <label>Phone</label>
+                  <input type="tel" className="onboarding-input" value={restaurantForm.phone} onChange={e => setRestaurantForm(prev => ({ ...prev, phone: e.target.value }))} placeholder="+91 98765 43210" autoFocus />
+                </div>
+                <div className="onboarding-field">
+                  <label>Email</label>
+                  <input type="email" className="onboarding-input" value={displayEmail || restaurantForm.email} readOnly style={{ opacity: 0.7, cursor: 'not-allowed' }} />
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateRestaurantOnboardingStep(3)}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {rStep === 3 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 3 – Look</h2>
+              <p className="onboarding-subtitle">Theme</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field onboarding-theme-field">
+                  <label>Theme</label>
+                  <div className="onboarding-theme-selector-wrap">
+                    <div className="onboarding-theme-selector onboarding-theme-grid">
+                      {GENERAL_THEMES.map((t) => (
+                        <button 
+                          key={t.id} 
+                          type="button" 
+                          className={`theme-pick-btn ${restaurantForm.theme === t.id ? 'active' : ''}`} 
+                          onClick={() => setRestaurantForm(prev => ({ ...prev, theme: t.id }))}
+                          style={{
+                            background: t.bg,
+                            color: t.text,
+                            opacity: restaurantForm.theme === t.id ? 1 : 0.65,
+                            borderWidth: restaurantForm.theme === t.id ? 2 : 1,
+                            borderColor: restaurantForm.theme === t.id ? '#6366f1' : 'rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateRestaurantOnboardingStep(4)}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {rStep === 4 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 4 – Menu</h2>
+              <p className="onboarding-subtitle">Upload your menu PDF</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <label style={{ color: '#1a1b2e' }}>Menu PDF</label>
+                  {!restaurantForm.menuPdf ? (
+                    <div style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.15)', borderRadius: '16px', textAlign: 'center', background: 'rgba(0,0,0,0.02)' }}>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                        style={{ display: 'none' }}
+                        id="menu-pdf-upload"
+                      />
+                      <label htmlFor="menu-pdf-upload" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.1)', borderRadius: '8px' }}>
+                        Click to upload PDF
+                      </label>
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#64748b' }}>Max file size: 5MB</p>
+                    </div>
+                  ) : (
+                    <div style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: '16px', overflow: 'hidden', position: 'relative' }}>
+                      <button 
+                        type="button" 
+                        onClick={removePdf} 
+                        style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', color: '#ef4444' }}
+                      >
+                        ✕
+                      </button>
+                      <div style={{ maxHeight: 400, overflowY: 'auto', background: '#f1f5f9', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                        <Document
+                          file={restaurantForm.menuPdf}
+                          onLoadSuccess={onPdfLoadSuccess}
+                          loading={<div style={{ padding: '2rem', color: '#64748b' }}>Loading PDF...</div>}
+                          error={<div style={{ padding: '2rem', color: '#ef4444' }}>Failed to load PDF. Try another.</div>}
+                        >
+                          {pdfNumPages && Array.from(new Array(pdfNumPages), (el, index) => (
+                            <div key={`page_${index + 1}`} style={{ marginBottom: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
+                              <Page 
+                                pageNumber={index + 1} 
+                                renderTextLayer={false}
+                                renderAnnotationLayer={false}
+                                width={280}
+                              />
+                            </div>
+                          ))}
+                        </Document>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-complete" onClick={saveRestaurantProfile}>Save Restaurant ✓</button>
+              </div>
+            </div>
+          )}
+
+          <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
+  // General Profile: 4-step onboarding (no profile yet)
+  if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading) {
+    const genStep = generalOnboardingStep;
+    return (
+      <div className="profile-page profile-login-wrap onboarding-screen">
+        <div className="profile-login-card profile-choice-card general-onboarding-card">
+          {genStep > 1 && (
+            <button type="button" className="profile-back-btn" onClick={() => updateGeneralOnboardingStep(genStep - 1)}>← Back</button>
+          )}
+          <div className="general-onboarding-progress">
+            <div className="general-onboarding-progress-bar" style={{ width: `${(genStep / 4) * 100}%` }} />
+          </div>
+
+          {genStep === 1 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 1 – Identity</h2>
+              <p className="onboarding-subtitle">Your name and profile link</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <label>Name</label>
+                  <input type="text" className="onboarding-input" value={generalForm.name} onChange={e => setGeneralForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Your name" required autoFocus />
+                </div>
+                <div className="onboarding-field">
+                  <label>Username (for your link)</label>
+                  <div className="artist-id-input-wrapper" style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="onboarding-input-id"
+                      style={{
+                        paddingLeft: '1.25rem',
+                        paddingRight: '2.5rem',
+                        borderColor: usernameCheck.status === 'available' ? '#10b981' : usernameCheck.status === 'taken' || usernameCheck.status === 'invalid' ? '#ef4444' : undefined
+                      }}
+                      value={generalForm.username}
+                      onChange={e => {
+                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                        setGeneralForm(prev => ({ ...prev, username: val }));
+                        clearTimeout(usernameCheckTimer.current);
+                        if (!val || val.length < 3) {
+                          setUsernameCheck(val ? { status: 'invalid', msg: 'At least 3 characters' } : { status: 'idle', msg: '' });
+                          return;
+                        }
+                        setUsernameCheck({ status: 'checking', msg: '' });
+                        usernameCheckTimer.current = setTimeout(async () => {
+                          try {
+                            await generalProfileAPI.getByUsername(val);
+                            setUsernameCheck({ status: 'taken', msg: 'Username already taken' });
+                          } catch {
+                            setUsernameCheck({ status: 'available', msg: 'Available!' });
+                          }
+                        }, 500);
+                      }}
+                      placeholder="myprofile"
+                      required
+                    />
+                    {usernameCheck.status === 'checking' && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#94a3b8' }}>...</span>
+                    )}
+                    {usernameCheck.status === 'available' && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#10b981' }}>✓</span>
+                    )}
+                    {(usernameCheck.status === 'taken' || usernameCheck.status === 'invalid') && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#ef4444' }}>✕</span>
+                    )}
+                  </div>
+                  {usernameCheck.status === 'taken' && (
+                    <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                  )}
+                  {usernameCheck.status === 'invalid' && (
+                    <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                  )}
+                  {usernameCheck.status === 'available' && (
+                    <small style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                  )}
+                  <small className="onboarding-tip">Your link: <b>nanoprofile.com/link/{generalForm.username || 'username'}</b></small>
+                </div>
+                <div className="onboarding-field">
+                  <label>Title / tagline (optional)</label>
+                  <input type="text" className="onboarding-input" value={generalForm.title} onChange={e => setGeneralForm(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g. Creator, Founder" />
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateGeneralOnboardingStep(2)} disabled={!generalForm.name.trim() || !generalForm.username.trim() || usernameCheck.status !== 'available'}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {genStep === 2 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 2 – Look</h2>
+              <p className="onboarding-subtitle">Choose theme and font</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field onboarding-theme-field">
+                  <label>Theme</label>
+                  <div className="onboarding-theme-selector-wrap">
+                    <div className="onboarding-theme-selector onboarding-theme-grid">
+                      {GENERAL_THEMES.slice(0, 8).map((t) => (
+                        <button 
+                          key={t.id} 
+                          type="button" 
+                          className={`theme-pick-btn ${generalForm.theme === t.id ? 'active' : ''}`} 
+                          onClick={() => setGeneralForm(prev => ({ ...prev, theme: t.id }))}
+                          style={{
+                            background: t.bg,
+                            color: t.text,
+                            opacity: generalForm.theme === t.id ? 1 : 0.65,
+                            borderWidth: generalForm.theme === t.id ? 2 : 1,
+                            borderColor: generalForm.theme === t.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="onboarding-field onboarding-theme-field" style={{ marginTop: '1rem' }}>
+                  <label>Font</label>
+                  <div className="onboarding-theme-selector-wrap">
+                    <div className="onboarding-theme-selector onboarding-theme-grid">
+                      {[{ id: 'outfit', label: 'Outfit' }, { id: 'playfair', label: 'Playfair' }, { id: 'caveat', label: 'Caveat' }, { id: 'mono-font', label: 'Mono' }].map((f) => (
+                        <button 
+                          key={f.id} 
+                          type="button" 
+                          className={`theme-pick-btn ${generalForm.font === f.id ? 'active' : ''}`} 
+                          onClick={() => setGeneralForm(prev => ({ ...prev, font: f.id }))}
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            color: '#fff',
+                            borderWidth: generalForm.font === f.id ? 2 : 1,
+                            borderColor: generalForm.font === f.id ? '#6366f1' : 'transparent',
+                            fontFamily: f.id === 'playfair' ? 'Playfair Display, serif' : f.id === 'caveat' ? 'Caveat, cursive' : f.id === 'mono-font' ? 'monospace' : 'Outfit, sans-serif'
+                          }}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateGeneralOnboardingStep(3)}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {genStep === 3 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 3 – Photo & bio</h2>
+              <p className="onboarding-subtitle">Profile photo and short bio</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <label>Profile photo (optional)</label>
+                  <div className="image-upload-box">
+                    <div className="upload-preview-circle" onClick={() => document.getElementById('gen-photo-input').click()}>
+                      {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="Preview" /> : <span>+</span>}
+                    </div>
+                    <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
+                  </div>
+                </div>
+                <div className="onboarding-field">
+                  <label>Short bio (optional)</label>
+                  <textarea className="onboarding-textarea" value={generalForm.bio} onChange={e => setGeneralForm(prev => ({ ...prev, bio: e.target.value }))} rows={3} placeholder="A few words about you" />
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateGeneralOnboardingStep(4)}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {genStep === 4 && (
+            <form className="onboarding-step fade-in" onSubmit={handleGeneralCreate}>
+              <h2>Step 4 – Links</h2>
+              <p className="onboarding-subtitle">Add links for your page</p>
+              {error && <div className="profile-error-msg">{error}</div>}
+              <div className="onboarding-fields">
+                {generalForm.links.map((link, idx) => (
+                  <div key={idx} className="profile-edit-link-block fade-in" style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '16px', background: 'rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '0.8rem' }}>
+                      <select className="onboarding-input" value={link.platform} onChange={e => updateLink(idx, 'platform', e.target.value)} style={{ flex: 1, padding: '0.8rem', background: 'rgba(0,0,0,0.03)', color: '#1a1b2e', border: '1px solid rgba(0,0,0,0.1)' }}>
+                        <option value="website" style={{ color: '#000' }}>Website</option>
+                        <option value="whatsapp" style={{ color: '#000' }}>WhatsApp</option>
+                        <option value="telegram" style={{ color: '#000' }}>Telegram</option>
+                        <option value="instagram" style={{ color: '#000' }}>Instagram</option>
+                        <option value="twitter" style={{ color: '#000' }}>Twitter / X</option>
+                        <option value="tiktok" style={{ color: '#000' }}>TikTok</option>
+                        <option value="snapchat" style={{ color: '#000' }}>Snapchat</option>
+                        <option value="threads" style={{ color: '#000' }}>Threads</option>
+                        <option value="linkedin" style={{ color: '#000' }}>LinkedIn</option>
+                        <option value="youtube" style={{ color: '#000' }}>YouTube</option>
+                        <option value="custom" style={{ color: '#000' }}>Custom</option>
+                      </select>
+                      <input className="onboarding-input" style={{ flex: 2 }} placeholder="Link title (e.g. Chat on WhatsApp)" value={link.title} onChange={e => updateLink(idx, 'title', e.target.value)} />
+                    </div>
+                    {link.platform === 'whatsapp' && (
+                      <div style={{ marginBottom: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input className="onboarding-input" placeholder="Phone number (e.g. 919876543210)" value={link.waPhone || ''} onChange={e => updateLink(idx, 'waPhone', e.target.value)} />
+                        <input className="onboarding-input" placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={e => updateLink(idx, 'waMessage', e.target.value)} />
+                      </div>
+                    )}
+                    {(link.platform === 'instagram' || link.platform === 'twitter' || link.platform === 'tiktok' || link.platform === 'snapchat' || link.platform === 'threads') && (
+                      <div style={{ marginBottom: '0.8rem' }}>
+                        <input className="onboarding-input" placeholder={link.platform === 'instagram' ? 'Username only (no @ or link)' : 'Username only'} value={link.platformUsername || ''} onChange={e => { updateLink(idx, 'platformUsername', e.target.value); }} />
+                      </div>
+                    )}
+                    {link.platform === 'telegram' && (
+                      <div style={{ marginBottom: '0.8rem' }}>
+                        <input className="onboarding-input" placeholder="Username or phone (e.g. johndoe or 919876543210)" value={link.platformUsername || ''} onChange={e => updateLink(idx, 'platformUsername', e.target.value)} />
+                      </div>
+                    )}
+                    {!SMART_PLATFORMS.includes(link.platform) && (
+                      <div style={{ marginBottom: '0.8rem' }}>
+                        <input className="onboarding-input" placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button type="button" onClick={() => removeLink(idx)} style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Remove Link</button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={addLink} style={{ width: '100%', padding: '1rem', borderRadius: '16px', background: 'rgba(0,0,0,0.03)', border: '2px dashed rgba(0,0,0,0.15)', color: '#1a1b2e', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease', marginTop: '0.5rem' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Another Link
+                </button>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="submit" className="onboarding-btn-complete" disabled={generalSaving}>
+                  {generalSaving ? 'Creating...' : 'Create General Profile ✓'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
+  // General Profile: theme selection (when resuming or changing theme)
   if (isLoggedIn && isGeneralMode && generalStep === 'theme' && !generalProfileLoading) {
     return (
       <div className="profile-page profile-login-wrap">
@@ -654,9 +2917,9 @@ function Profile() {
               <button
                 key={t.id}
                 type="button"
-                className={`profile-theme-preview ${generalForm.theme === t.id ? 'selected' : ''}`}
+                className={`profile-theme-preview ${generalForm.theme === t.id ? 'selected' : ''} ${t.isAnimated ? t.className : ''}`}
                 onClick={() => handleGeneralThemeSelect(t.id)}
-                style={{ background: t.bg, color: t.text }}
+                style={{ background: t.isAnimated ? undefined : t.bg, color: t.text }}
               >
                 <div className="profile-theme-avatar" />
                 <span className="profile-theme-name">{t.name}</span>
@@ -675,47 +2938,447 @@ function Profile() {
     );
   }
 
-  // General Profile: home dashboard (Edit profile / Copy link)
+  // General Profile: home dashboard (full sidebar layout like artist)
   if (isLoggedIn && isGeneralMode && generalStep === 'home' && !generalProfileLoading && generalProfile) {
+    const gProfileLink = getProfileLink();
     return (
-      <div className="profile-page profile-login-wrap">
-        <div className="profile-login-card profile-general-home-card">
-          <button type="button" onClick={handleLogout} className="profile-back-btn">← Sign out</button>
-          <div className="profile-login-header">
-            <h1>Your profile</h1>
-            <p>@{generalProfile.username}</p>
+      <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${generalActiveTab}`}>
+        {generalSuccess && (
+          <div className="profile-success-overlay" role="dialog" aria-live="polite" onClick={() => setGeneralSuccess('')}>
+            <div className="profile-success-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="profile-success-icon-wrap">
+                <svg className="profile-success-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+              <h2 className="profile-success-title">Saved</h2>
+              <p className="profile-success-message">{generalSuccess}</p>
+              <button type="button" className="profile-success-ok" onClick={() => setGeneralSuccess('')}>OK</button>
+            </div>
           </div>
-          <div className="profile-general-home-actions">
-            <button type="button" className="profile-general-home-btn" onClick={() => setGeneralStep('edit')}>
-              Edit profile
+        )}
+
+        <aside className="dash-sidebar">
+          <div className="dash-sidebar-brand">
+            <div className="dash-sidebar-top-avatar">
+              {generalProfile.photo
+                ? <img src={generalProfile.photo} alt={generalProfile.name} />
+                : user?.photoURL
+                  ? <img src={user.photoURL} alt={displayName} />
+                  : <span>{(generalProfile.name || displayName || '?')[0].toUpperCase()}</span>
+              }
+            </div>
+            <span className="dash-brand-email-main">{displayEmail}</span>
+          </div>
+
+          <nav className="dash-nav">
+            <div className="dash-nav-section">
+              <span className="dash-nav-label">Management</span>
+              <button className={`dash-nav-item ${generalActiveTab === 'profile' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('profile')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Profile
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'design' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('design')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                Design
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'links' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('links')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                Links
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'preview' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('preview')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" /></svg>
+                Preview
+              </button>
+            </div>
+          </nav>
+
+          <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              className="dash-sidebar-signout-btn dash-sidebar-home-btn"
+              onClick={() => navigate('/')}
+            >
+              ← Back to Home
             </button>
             <button
-              type="button"
-              className={`profile-general-home-btn ${linkCopied ? 'copied' : ''}`}
-              onClick={() => {
-                navigator.clipboard.writeText(getProfileLink());
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 2000);
+              className="dash-sidebar-signout-btn"
+              onClick={() => handleBackToChoice('general')}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'var(--dash-text, #f1f5f9)'
               }}
             >
-              {linkCopied ? '✓ Link copied!' : 'Copy link'}
+              ← Switch Profile
+            </button>
+            <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
+              Sign out
             </button>
           </div>
-        </div>
+        </aside>
+
+        <main className="dash-main">
+          <header className="dash-main-header">
+            <div>
+              <h1 className="dash-main-title">
+                {generalActiveTab === 'profile' ? 'My Profile' : generalActiveTab === 'design' ? 'Profile Design' : generalActiveTab === 'links' ? 'Manage Links' : 'Preview'}
+              </h1>
+              <p className="dash-main-subtitle">
+                {generalActiveTab === 'profile'
+                  ? 'Edit your personal information and profile details'
+                  : generalActiveTab === 'design'
+                    ? 'Customize the visual theme and typography of your public page'
+                    : generalActiveTab === 'links'
+                      ? 'Add and manage your links, social media, and more'
+                      : 'See a live preview of your public profile page'}
+              </p>
+              {generalActiveTab === 'profile' && (
+                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dash-bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--dash-border)', maxWidth: 'max-content', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace' }}>{gProfileLink}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(gProfileLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: linkCopied ? 'rgba(16,185,129,0.15)' : 'rgba(100,116,139,0.1)', border: 'none', cursor: 'pointer', color: linkCopied ? '#10b981' : '#64748b', padding: '6px 12px', borderRadius: '8px', transition: 'all 0.2s', fontSize: '0.8rem', fontWeight: 600, gap: '4px' }}>
+                    {linkCopied ? '✓ Copied!' : 'Copy'}
+                  </button>
+                  <a href={gProfileLink} target="_blank" rel="noreferrer" style={{ marginLeft: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.1)', color: '#6366f1', textDecoration: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'background 0.2s' }}>
+                    Open
+                  </a>
+                </div>
+              )}
+            </div>
+          </header>
+
+          <div className="dash-content">
+            {/* Profile Tab */}
+            {generalActiveTab === 'profile' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: 'var(--dash-bg-card)', borderRadius: '16px', border: '1px solid var(--dash-border)' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'var(--dash-bg)', border: '3px solid var(--dash-border)' }}>
+                      {(generalForm.photo || generalPhotoFile) ? (
+                        <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800, color: 'var(--dash-subtext)' }}>
+                          {(generalProfile.name || '?')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.3rem', fontWeight: 700, color: 'var(--dash-text)' }}>{generalProfile.name || 'Unnamed'}</h2>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--dash-accent)' }}>@{generalProfile.username}</p>
+                      {generalProfile.title && <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--dash-subtext)' }}>{generalProfile.title}</p>}
+                    </div>
+                    <label style={{ cursor: 'pointer', padding: '8px 16px', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--dash-text)', background: 'var(--dash-bg)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      Change Photo
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) { setGeneralPhotoFile(e.target.files[0]); handleGeneralPhotoSave(e.target.files[0]); } }} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1.25rem' }}>
+                    {[
+                      { key: 'name', label: 'Display Name', placeholder: 'Your full name', type: 'text' },
+                      { key: 'username', label: 'Username', placeholder: 'your_username', type: 'text', disabled: true },
+                      { key: 'title', label: 'Title / Tagline', placeholder: 'e.g. Company Owner, Digital Creator', type: 'text' },
+                      { key: 'bio', label: 'Bio', placeholder: 'Tell people about yourself...', type: 'textarea' }
+                    ].map(field => (
+                      <div key={field.key} style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{field.label}</label>
+                        {field.type === 'textarea' ? (
+                          <textarea
+                            value={generalForm[field.key] || ''}
+                            onChange={(e) => setGeneralForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder}
+                            rows={3}
+                            style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={generalForm[field.key] || ''}
+                            onChange={(e) => !field.disabled && setGeneralForm(prev => ({ ...prev, [field.key]: field.key === 'username' ? e.target.value.toLowerCase().replace(/\s+/g, '_') : e.target.value }))}
+                            placeholder={field.placeholder}
+                            disabled={field.disabled}
+                            style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: field.disabled ? 'var(--dash-border)' : 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box', opacity: field.disabled ? 0.6 : 1 }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleGeneralSaveAll}
+                      disabled={generalSaving}
+                      style={{ padding: '0.85rem 2.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: generalSaving ? 'wait' : 'pointer', opacity: generalSaving ? 0.7 : 1, transition: 'all 0.2s' }}
+                    >
+                      {generalSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-${generalProfile.username}-${generalProfile.theme}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+                        sandbox="allow-scripts allow-same-origin"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Design Tab */}
+            {generalActiveTab === 'design' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {/* Toggle between Theme / Font for General profile */}
+                  <div className="dash-design-subnav">
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${generalDesignSubTab === 'theme' ? 'active' : ''}`}
+                      onClick={() => setGeneralDesignSubTab('theme')}
+                    >
+                      <span className="dash-design-subnav-icon">🎨</span>
+                      <span>Theme</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${generalDesignSubTab === 'font' ? 'active' : ''}`}
+                      onClick={() => setGeneralDesignSubTab('font')}
+                    >
+                      <span className="dash-design-subnav-icon">Aa</span>
+                      <span>Font</span>
+                    </button>
+                  </div>
+
+                  {generalDesignSubTab === 'theme' && (
+                    <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a look for your public page</p>
+                      <div className="dash-design-grid dash-themes-grid">
+                        {GENERAL_THEMES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setGeneralForm(prev => ({ ...prev, theme: t.id }));
+                              handleGeneralFieldSave('theme', t.id);
+                            }}
+                            className={`dash-design-card ${generalProfile.theme === t.id ? 'active' : ''}`}
+                            style={{
+                              border: '2px solid ' + (generalProfile.theme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                              boxShadow: generalProfile.theme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                          >
+                            <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                            <h3 className="dash-design-card-label">{t.label}</h3>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {generalDesignSubTab === 'font' && (
+                    <section className="dash-design-section">
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Typography</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select a font that matches your style</p>
+                      <div className="dash-design-grid dash-fonts-grid">
+                        {AVAILABLE_FONTS.map(f => (
+                          <button
+                            key={`gf-${f.id}`}
+                            onClick={() => {
+                              setGeneralForm(prev => ({ ...prev, font: f.id }));
+                              handleGeneralFieldSave('font', f.id);
+                            }}
+                            className={`dash-design-card ${generalProfile.font === f.id ? 'active' : ''}`}
+                            style={{ border: '2px solid ' + (generalProfile.font === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                          >
+                            <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
+                            <h3 className="dash-design-card-label">{f.label}</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-design-${generalProfile.theme}-${generalProfile.font}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+                        sandbox="allow-scripts allow-same-origin"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Links Tab */}
+            {generalActiveTab === 'links' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
+
+                  <section style={{ marginBottom: '2.5rem' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Your Links</h2>
+                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Add links to your website, social media, portfolios, and more</p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                      {generalForm.links.map((link, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
+                              <input
+                                placeholder="Title (e.g. My Website)"
+                                value={link.title || ''}
+                                onChange={(e) => updateLink(idx, 'title', e.target.value)}
+                                style={{ flex: 1, padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.9rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                              />
+                            </div>
+                            <input
+                              placeholder="https://..."
+                              value={link.url || ''}
+                              onChange={(e) => updateLink(idx, 'url', e.target.value)}
+                              style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.9rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                          <button type="button" onClick={() => removeLink(idx)} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '10px', width: '36px', height: '36px', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '0.25rem', fontWeight: 700 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button type="button" onClick={addLink} style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', border: '2px dashed var(--dash-border)', background: 'transparent', color: 'var(--dash-accent)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', width: '100%' }}>
+                      + Add Link
+                    </button>
+                  </section>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleGeneralSaveAll}
+                      disabled={generalSaving}
+                      style={{ padding: '0.85rem 2.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: generalSaving ? 'wait' : 'pointer', opacity: generalSaving ? 0.7 : 1, transition: 'all 0.2s' }}
+                    >
+                      {generalSaving ? 'Saving...' : 'Save Links'}
+                    </button>
+                  </div>
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-links-${generalProfile.username}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+                        sandbox="allow-scripts allow-same-origin"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Preview Tab */}
+            {generalActiveTab === 'preview' && (
+              <div className="dash-mobile-preview-page">
+                <div className="dash-mobile-preview-frame-wrap">
+                  <iframe
+                    key={`gp-preview-${generalProfile.username}-${generalProfile.theme}`}
+                    title="General Profile Preview"
+                    src={gProfileLink}
+                    className="dash-mobile-preview-iframe"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Mobile bottom nav — same style as Artist dashboard (centered pill) */}
+        {isMobileViewport && (
+          <div className="dash-mobile-bottom-nav">
+            <div className="dash-mobile-bottom-nav-inner">
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'profile' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('profile')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 20c0-3.2 2.4-5.5 7-5.5s7 2.3 7 5.5" />
+                  </svg>
+                </div>
+                <span>Profile</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('design')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </div>
+                <span>Design</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'links' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('links')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                </div>
+                <span>Links</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'preview' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('preview')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z" />
+                  </svg>
+                </div>
+                <span>Preview</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  // General Profile: create or edit form
-  if (isLoggedIn && isGeneralMode && (generalStep === 'create' || generalStep === 'edit') && !generalProfileLoading) {
+  // General Profile: create form (first-time setup only)
+  if (isLoggedIn && isGeneralMode && (generalStep === 'create') && !generalProfileLoading) {
     return (
       <div className="profile-page profile-view-wrap">
         <div className="profile-view-card profile-view-card-wide profile-general-card">
           <div className="profile-view-header profile-edit-view-header">
             <div className="profile-edit-header-row">
-              <button type="button" onClick={generalStep === 'create' ? () => setGeneralStep('theme') : () => setGeneralStep('home')} className="profile-back-btn">← Back</button>
+              <button type="button" onClick={() => updateGeneralStep('theme')} className="profile-back-btn">← Back</button>
             </div>
-            <h1 className="profile-edit-main-title">{generalStep === 'create' ? 'Create your profile' : 'Edit your profile'}</h1>
+            <h1 className="profile-edit-main-title">Create your profile</h1>
           </div>
           {generalSuccess && (
             <div className="profile-success-overlay" role="dialog" aria-labelledby="profile-success-title" aria-live="polite" onClick={() => setGeneralSuccess('')}>
@@ -726,12 +3389,12 @@ function Profile() {
                   </svg>
                 </div>
                 <h2 id="profile-success-title" className="profile-success-title">Success</h2>
-                <p className="profile-success-message">Your profile has been saved successfully.</p>
+                <p className="profile-success-message">Your profile has been created successfully.</p>
                 <button type="button" className="profile-success-ok" onClick={() => setGeneralSuccess('')}>OK</button>
               </div>
             </div>
           )}
-          <form onSubmit={generalStep === 'create' ? handleGeneralCreate : handleGeneralUpdate} className="profile-edit-form">
+          <form onSubmit={handleGeneralCreate} className="profile-edit-form">
             {error && <div className="profile-error-msg">{error}</div>}
             <div className="profile-edit-body">
               <div className="profile-edit-section">
@@ -751,15 +3414,69 @@ function Profile() {
                   ))}
                 </div>
               </div>
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Font</h4>
+                <div className="theme-choices-row" style={{ marginTop: '0.5rem' }}>
+                  {AVAILABLE_FONTS.slice(0, 4).map((fnt) => (
+                    <button
+                      key={fnt.id}
+                      type="button"
+                      className={`theme-pill ${generalForm.font === fnt.id ? 'selected' : ''}`}
+                      onClick={() => setGeneralForm(prev => ({ ...prev, font: fnt.id }))}
+                    >
+                      <span className="theme-pill-label" style={{ fontFamily: resolveFontFamily(fnt.id) }}>{fnt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="profile-edit-field">
                 <label>Username (for your link)</label>
-                <input
-                  name="username"
-                  value={generalForm.username}
-                  onChange={(e) => setGeneralForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
-                  placeholder="myprofile"
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    name="username"
+                    value={generalForm.username}
+                    style={{
+                      paddingRight: '2.5rem',
+                      borderColor: usernameCheck.status === 'available' ? '#10b981' : usernameCheck.status === 'taken' || usernameCheck.status === 'invalid' ? '#ef4444' : undefined
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                      setGeneralForm(prev => ({ ...prev, username: val }));
+                      clearTimeout(usernameCheckTimer.current);
+                      if (!val || val.length < 3) {
+                        setUsernameCheck(val ? { status: 'invalid', msg: 'At least 3 characters' } : { status: 'idle', msg: '' });
+                        return;
+                      }
+                      if (val === generalProfile?.username) {
+                        setUsernameCheck({ status: 'available', msg: 'Current username' });
+                        return;
+                      }
+                      setUsernameCheck({ status: 'checking', msg: '' });
+                      usernameCheckTimer.current = setTimeout(async () => {
+                        try {
+                          await generalProfileAPI.getByUsername(val);
+                          setUsernameCheck({ status: 'taken', msg: 'Username already taken' });
+                        } catch {
+                          setUsernameCheck({ status: 'available', msg: 'Available!' });
+                        }
+                      }, 500);
+                    }}
+                    placeholder="myprofile"
+                    required
+                  />
+                  {usernameCheck.status === 'checking' && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#94a3b8' }}>...</span>
+                  )}
+                  {usernameCheck.status === 'available' && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#10b981' }}>✓</span>
+                  )}
+                  {(usernameCheck.status === 'taken' || usernameCheck.status === 'invalid') && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#ef4444' }}>✕</span>
+                  )}
+                </div>
+                {usernameCheck.msg && usernameCheck.status !== 'idle' && usernameCheck.status !== 'checking' && (
+                  <small style={{ color: usernameCheck.status === 'available' ? '#10b981' : '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block' }}>{usernameCheck.msg}</small>
+                )}
               </div>
               <div className="profile-edit-field">
                 <label>Name</label>
@@ -802,7 +3519,21 @@ function Profile() {
                     </div>
                     <div className="profile-edit-link-fields">
                       <input placeholder="Title (e.g. My Website)" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} className="profile-edit-link-title" />
-                      <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                      {link.platform === 'whatsapp' && (
+                        <>
+                          <input placeholder="Phone number (e.g. 919876543210)" value={link.waPhone || ''} onChange={(e) => updateLink(idx, 'waPhone', e.target.value)} className="profile-edit-link-url" />
+                          <input placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={(e) => updateLink(idx, 'waMessage', e.target.value)} className="profile-edit-link-url" />
+                        </>
+                      )}
+                      {(link.platform === 'instagram' || link.platform === 'twitter' || link.platform === 'tiktok' || link.platform === 'snapchat' || link.platform === 'threads') && (
+                        <input placeholder="Username only (no @ or link)" value={link.platformUsername || ''} onChange={(e) => updateLink(idx, 'platformUsername', e.target.value)} className="profile-edit-link-url" />
+                      )}
+                      {link.platform === 'telegram' && (
+                        <input placeholder="Username or phone (e.g. johndoe or 919876543210)" value={link.platformUsername || ''} onChange={(e) => updateLink(idx, 'platformUsername', e.target.value)} className="profile-edit-link-url" />
+                      )}
+                      {!SMART_PLATFORMS.includes(link.platform || '') && (
+                        <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -810,7 +3541,7 @@ function Profile() {
               </div>
             </div>
             <div className="profile-edit-footer">
-              <button type="submit" disabled={generalSaving}>{generalSaving ? 'Saving…' : (generalStep === 'create' ? 'Create profile' : 'Save')}</button>
+              <button type="submit" disabled={generalSaving}>{generalSaving ? 'Saving…' : 'Create profile'}</button>
             </div>
           </form>
         </div>
@@ -828,70 +3559,1116 @@ function Profile() {
   }
 
   // Artist Profile (existing flow - logged in)
-  const displayName = user?.displayName || user?.email || otpUser?.email || 'Profile';
-  const displayEmail = user?.email || otpUser?.email || '';
-  const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || otpUser?.email?.charAt(0) || '?';
 
   return (
-    <div className="profile-page profile-view-wrap">
-      <div className="profile-view-card profile-view-card-wide">
-        <div className="profile-view-header">
-          <div className="profile-avatar">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt={displayName} />
-            ) : (
-              <span>{avatarLetter}</span>
-            )}
+    <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${activeTab}`}>
+      {/* Sidebar */}
+      <aside className="dash-sidebar">
+        <div className="dash-sidebar-brand">
+          <div className="dash-sidebar-top-avatar">
+            {user?.photoURL
+              ? <img src={user.photoURL} alt={displayName} />
+              : <span>{avatarLetter}</span>
+            }
           </div>
-          <h1>{displayName}</h1>
-          <p className="profile-email">{displayEmail}</p>
-          <button type="button" onClick={handleLogout} className="profile-logout-btn">
+          <span className="dash-brand-email-main">{displayEmail}</span>
+        </div>
+
+        <nav className="dash-nav">
+          <div className="dash-nav-section">
+            <span className="dash-nav-label">Management</span>
+            <button
+              className={`dash-nav-item ${activeTab === 'profiles' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('profiles')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              Artist Profiles
+            </button>
+            <button
+              className={`dash-nav-item ${activeTab === 'design' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('design')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+              Profile Design
+            </button>
+            <button
+              className={`dash-nav-item ${activeTab === 'link-art' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('link-art')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+              Link Your Art
+            </button>
+          </div>
+        </nav>
+
+        <div className="dash-sidebar-bottom">
+          <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
             Sign out
           </button>
         </div>
+      </aside>
 
-        <div className="profile-view-body">
-          <h2 className="profile-section-title">My artist profiles</h2>
-          <p className="profile-section-desc">Edit only your artist profiles here. Student profiles are managed by your school.</p>
-          {error && <div className="profile-error-msg">{error}</div>}
-          {artistsLoading ? (
-            <p className="profile-loading-text">Loading your artist profiles…</p>
-          ) : myArtists.length === 0 ? (
-            <p className="profile-empty">You have no artist profiles linked to this Google account yet. Set up your NFC artist tag from the artist app and link it with this email to edit it here.</p>
-          ) : (
-            <ul className="profile-artist-list">
-              {myArtists.map((artist) => (
-                <li key={artist._id || artist.artistId} className="profile-artist-item">
-                  <div className="profile-artist-avatar">
-                    {artist.photo ? (
-                      <img src={artist.photo} alt="" />
-                    ) : (
-                      <span>{artist.name?.charAt(0) || '?'}</span>
-                    )}
-                  </div>
-                  <div className="profile-artist-info">
-                    <strong>{artist.name || 'Unnamed'}</strong>
-                    <span className="profile-artist-id">{artist.artistId}</span>
-                  </div>
-                  <div className="profile-artist-actions">
-                    <a
-                      href={`${process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin}/artist/${artist.accessToken || artist.artistId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="profile-artist-view"
-                    >
-                      View
+      {/* Main Content */}
+      <main className="dash-main">
+        {!(isMobileViewport && activeTab === 'design') && (
+          <header className="dash-main-header">
+            <div>
+              <h1 className="dash-main-title">
+                {activeTab === 'profiles'
+                  ? 'Artist Profiles'
+                  : activeTab === 'design'
+                    ? 'Profile Design'
+                    : activeTab === 'preview'
+                      ? 'Preview'
+                      : 'Link Your Art'}
+              </h1>
+              <p className="dash-main-subtitle">
+                {activeTab === 'profiles'
+                  ? 'Manage your NFC artist profiles and portfolio'
+                  : activeTab === 'design'
+                    ? 'Customize the visual theme and typography of your public artist profile'
+                    : activeTab === 'preview'
+                      ? 'See a live preview of your public artist profile'
+                      : 'Connect your external portfolios, galleries, and art marketplaces'}
+              </p>
+              {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
+                const nfcBaseUrl = process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin);
+                const profileUrl = `${nfcBaseUrl}/artist?id=${myArtists[0].artistId}`;
+                return (
+                  <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dash-bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--dash-border)', maxWidth: 'max-content' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace' }}>{profileUrl}</span>
+                    <button onClick={() => {
+                      navigator.clipboard.writeText(profileUrl);
+                      alert('Profile URL copied to clipboard!');
+                    }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(100,116,139,0.1)', border: 'none', cursor: 'pointer', color: '#64748b', padding: '6px', borderRadius: '8px', transition: 'background 0.2s', width: '28px', height: '28px' }} title="Copy URL" onMouseOver={e => e.currentTarget.style.background = 'rgba(100,116,139,0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(100,116,139,0.1)'}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <a href={profileUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.1)', color: '#6366f1', textDecoration: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.15)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}>
+                      Open
                     </a>
-                    <button type="button" onClick={() => openEdit(artist)} className="profile-artist-edit">
-                      Edit
+                  </div>
+                );
+              })()}
+            </div>
+          </header>
+        )}
+
+        <div className="dash-content">
+          {/* Preview-only page (used mainly for mobile bottom nav "Preview") */}
+          {activeTab === 'preview' && myArtists[0] && (
+            <div className="dash-mobile-preview-page">
+              <div className="dash-mobile-preview-frame-wrap">
+                <iframe
+                  key={previewKey}
+                  title="Artist Preview"
+                  src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                  className="dash-mobile-preview-iframe"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'design' && myArtists[0] && (
+            isMobileViewport ? (
+              <div className="dash-design-mobile-page">
+                <div className="dash-design-mobile-header">
+                  <button
+                    type="button"
+                    className="dash-design-mobile-back"
+                    onClick={() => setActiveTab('profiles')}
+                    aria-label="Back"
+                  >
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="dash-design-mobile-title">Design</span>
+                </div>
+                <div className="dash-design-mobile-preview-wrap">
+                  {designSubTab && (
+                    <button
+                      type="button"
+                      className="dash-design-mobile-preview-dismiss"
+                      aria-label="Close design options"
+                      onClick={() => setDesignSubTab(null)}
+                    />
+                  )}
+                  <iframe
+                    key={previewKey}
+                    title="Profile Design Preview"
+                    src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                    className="dash-design-mobile-preview-iframe"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                </div>
+
+                <div className="dash-design-mobile-sheet">
+                  <div className="dash-design-subnav">
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${designSubTab === 'theme' ? 'active' : ''}`}
+                      onClick={() => setDesignSubTab(prev => (prev === 'theme' ? null : 'theme'))}
+                    >
+                      <span className="dash-design-subnav-icon">🎨</span>
+                      <span>Themes</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                      onClick={() => setDesignSubTab(prev => (prev === 'font' ? null : 'font'))}
+                    >
+                      <span className="dash-design-subnav-icon">Aa</span>
+                      <span>Fonts</span>
                     </button>
                   </div>
-                </li>
-              ))}
-            </ul>
+                  {designSubTab && (
+                    <div className="dash-design-mobile-body">
+                      {designSubTab === 'theme' && (
+                        <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                          <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a professional look for your public page</p>
+                          <div className="dash-design-grid dash-themes-grid">
+                            {GENERAL_THEMES.map(t => (
+                              <button
+                                key={t.id}
+                                onClick={() => handleUpdateHeroField('profileTheme', t.id)}
+                                className={`dash-design-card ${myArtists[0].profileTheme === t.id ? 'active' : ''}`}
+                                style={{
+                                  border: '2px solid ' + (myArtists[0].profileTheme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                                  boxShadow: myArtists[0].profileTheme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                                }}
+                              >
+                                <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                                <h3 className="dash-design-card-label">{t.label}</h3>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      {designSubTab === 'font' && (
+                        <section className="dash-design-section">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--dash-text)' }}>Typography</h2>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--dash-subtext)', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={syncFonts}
+                                onChange={e => {
+                                  setSyncFonts(e.target.checked);
+                                  if (e.target.checked && myArtists[0]) {
+                                    handleUpdateHeroField('bioFont', myArtists[0].profileFont || 'outfit');
+                                  }
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              Use same font for all
+                            </label>
+                          </div>
+                          <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that suit your artist brand</p>
+
+                          <div style={{ marginBottom: '2rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Username & Titles)</h3>
+                            <div className="dash-design-grid dash-fonts-grid">
+                              {AVAILABLE_FONTS.map(f => (
+                                <button
+                                  key={`head-${f.id}`}
+                                  onClick={() => {
+                                    if (syncFonts) {
+                                      handleUpdateHeroField('profileFont', f.id, { bioFont: f.id });
+                                    } else {
+                                      handleUpdateHeroField('profileFont', f.id);
+                                    }
+                                  }}
+                                  className={`dash-design-card ${myArtists[0].profileFont === f.id ? 'active' : ''}`}
+                                  style={{ border: '2px solid ' + (myArtists[0].profileFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                                >
+                                  <p style={{
+                                    fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                    fontFamily: resolveFontFamily(f.id)
+                                  }}>{f.sample}</p>
+                                  <h3 className="dash-design-card-label">{f.label}</h3>
+                                  <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {!syncFonts && (
+                            <div>
+                              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio & Descriptions)</h3>
+                              <div className="dash-design-grid dash-fonts-grid">
+                                {AVAILABLE_FONTS.map(f => (
+                                  <button
+                                    key={`body-${f.id}`}
+                                    onClick={() => handleUpdateHeroField('bioFont', f.id)}
+                                    className={`dash-design-card ${myArtists[0].bioFont === f.id ? 'active' : ''}`}
+                                    style={{ border: '2px solid ' + (myArtists[0].bioFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                                  >
+                                    <p style={{
+                                      fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                      fontFamily: resolveFontFamily(f.id)
+                                    }}>{f.sample}</p>
+                                    <h3 className="dash-design-card-label">{f.label}</h3>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </section>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {/* Desktop sub‑toggle: Theme / Font */}
+                  <div className="dash-design-subnav">
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${(!designSubTab || designSubTab === 'theme') ? 'active' : ''}`}
+                      onClick={() => setDesignSubTab('theme')}
+                    >
+                      <span className="dash-design-subnav-icon">🎨</span>
+                      <span>Theme</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                      onClick={() => setDesignSubTab('font')}
+                    >
+                      <span className="dash-design-subnav-icon">Aa</span>
+                      <span>Font</span>
+                    </button>
+                  </div>
+
+                  {(!designSubTab || designSubTab === 'theme') && (
+                    <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a professional look for your public page</p>
+                      <div className="dash-design-grid dash-themes-grid">
+                        {GENERAL_THEMES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleUpdateHeroField('profileTheme', t.id)}
+                            className={`dash-design-card ${myArtists[0].profileTheme === t.id ? 'active' : ''}`}
+                            style={{
+                              border: '2px solid ' + (myArtists[0].profileTheme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                              boxShadow: myArtists[0].profileTheme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                          >
+                            <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                            <h3 className="dash-design-card-label">{t.label}</h3>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {designSubTab === 'font' && (
+                    <section className="dash-design-section">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--dash-text)' }}>Typography</h2>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--dash-subtext)', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={syncFonts}
+                            onChange={e => {
+                              setSyncFonts(e.target.checked);
+                              if (e.target.checked && myArtists[0]) {
+                                handleUpdateHeroField('bioFont', myArtists[0].profileFont || 'outfit');
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          Use same font for all
+                        </label>
+                      </div>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that suit your artist brand</p>
+
+                      <div style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Username & Titles)</h3>
+                        <div className="dash-design-grid dash-fonts-grid">
+                          {AVAILABLE_FONTS.map(f => (
+                            <button
+                              key={`head-${f.id}`}
+                              onClick={() => {
+                                if (syncFonts) {
+                                  handleUpdateHeroField('profileFont', f.id, { bioFont: f.id });
+                                } else {
+                                  handleUpdateHeroField('profileFont', f.id);
+                                }
+                              }}
+                              className={`dash-design-card ${myArtists[0].profileFont === f.id ? 'active' : ''}`}
+                              style={{ border: '2px solid ' + (myArtists[0].profileFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                            >
+                              <p style={{
+                                fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                fontFamily: resolveFontFamily(f.id)
+                              }}>{f.sample}</p>
+                              <h3 className="dash-design-card-label">{f.label}</h3>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {!syncFonts && (
+                        <div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio & Descriptions)</h3>
+                          <div className="dash-design-grid dash-fonts-grid">
+                            {AVAILABLE_FONTS.map(f => (
+                              <button
+                                key={`body-${f.id}`}
+                                onClick={() => handleUpdateHeroField('bioFont', f.id)}
+                                className={`dash-design-card ${myArtists[0].bioFont === f.id ? 'active' : ''}`}
+                                style={{ border: '2px solid ' + (myArtists[0].bioFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                              >
+                                <p style={{
+                                  fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                  fontFamily: resolveFontFamily(f.id)
+                                }}>{f.sample}</p>
+                                <h3 className="dash-design-card-label">{f.label}</h3>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  )}
+                </div>
+
+                {/* Preview on the right (desktop / laptop only) */}
+                <div className="dash-preview-panel">
+                  <div className="dash-full-preview-container">
+                    <iframe
+                      key={previewKey}
+                      title="Profile Design Preview"
+                      src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                      className="dash-preview-iframe"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
           )}
-        </div>
-      </div>
+
+          {
+            activeTab === 'link-art' && myArtists[0] && (() => {
+              const ART_THEMES = [
+                { id: 'painting', label: 'Painting', icon: '🖼️', color: '#e67e22' },
+                { id: 'digital', label: 'Digital Art', icon: '💻', color: '#3498db' },
+                { id: 'sculpture', label: 'Sculpture', icon: '🗿', color: '#95a5a6' },
+                { id: 'photography', label: 'Photography', icon: '📷', color: '#2c3e50' },
+                { id: 'illustration', label: 'Illustration', icon: '✏️', color: '#9b59b6' },
+                { id: 'abstract', label: 'Abstract', icon: '🌀', color: '#e74c3c' },
+                { id: 'portrait', label: 'Portrait', icon: '👤', color: '#1abc9c' },
+                { id: 'landscape', label: 'Landscape', icon: '🏞️', color: '#27ae60' },
+                { id: 'miniature', label: 'Miniature', icon: '🔬', color: '#f39c12' },
+                { id: 'street', label: 'Street Art', icon: '🏙️', color: '#e91e63' },
+                { id: 'mixed', label: 'Mixed Media', icon: '🎭', color: '#673ab7' },
+                { id: 'other', label: 'Other', icon: '🎨', color: '#607d8b' },
+              ];
+              const artShowcase = myArtists[0].artLinks || [];
+              const items = Array.isArray(artShowcase) ? artShowcase : [];
+              const artistToken = myArtists[0].artistId || myArtists[0]._id;
+              const nfcBaseUrl = process.env.REACT_APP_NFC_FRONTEND_URL ||
+                (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin);
+              const getArtUrl = (artId) => `${nfcBaseUrl}/artist?id=${artistToken}&art=${artId}`;
+              const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
+
+              const handleArtImagePick = (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
+                files.forEach(file => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setArtImagePreview(prev => [...prev, { file, url: ev.target.result }]);
+                  reader.readAsDataURL(file);
+                });
+                // reset input so same files can be re-added if needed
+                e.target.value = '';
+              };
+
+              const handleAddArt = async () => {
+                const title = document.getElementById('art-title-input')?.value?.trim();
+                const desc = document.getElementById('art-desc-input')?.value?.trim();
+                if (!title) return alert('Please enter an art title.');
+                setArtSaving(true);
+                try {
+                  const uploadedUrls = [];
+                  for (const img of artImagePreview) {
+                    const uploaded = await landingArtistAPI.uploadPhoto(img.file, () => getIdToken());
+                    uploadedUrls.push(uploaded.url || uploaded.photo || '');
+                  }
+                  const artId = Date.now();
+                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls };
+                  await handleUpdateHeroField('artLinks', [...items, newItem]);
+                  document.getElementById('art-title-input').value = '';
+                  document.getElementById('art-desc-input').value = '';
+                  setArtImagePreview([]);
+                  setNewArtTheme('painting');
+                  // Automatically focus preview on the newly added artwork
+                  setArtPreviewId(artId);
+                } finally {
+                  setArtSaving(false);
+                }
+              };
+
+              const handleRemoveArt = async (itemId) => {
+                await handleUpdateHeroField('artLinks', items.filter(i => i.id !== itemId));
+              };
+
+              // Pick first item for preview by default
+              const previewArtId = artPreviewId || (items[0]?.id ?? null);
+              const nfcFrontend = process.env.REACT_APP_NFC_FRONTEND_URL ||
+                (window.location.hostname === 'localhost' ? 'http://localhost:5173' : window.location.origin);
+              const artPreviewSrc = previewArtId
+                ? `${nfcFrontend}/artist?id=${artistToken}&art=${previewArtId}`
+                : `${nfcFrontend}/artist?id=${artistToken}`;
+
+              return (
+                <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                  {/* ── LEFT: Form + cards ── */}
+                  <div className="dash-single-profile" style={{ padding: '2rem 2.5rem', overflowY: 'auto' }}>
+
+                    {/* ── Add New Art Form ── */}
+                    <div className="dash-art-add-card">
+                      <h3 className="dash-art-form-title">
+                        ✨ Add New Artwork
+                      </h3>
+
+                      {/* Multi-image upload */}
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length} added)</span>}
+                        </label>
+
+                        {/* Thumbnail strip if images picked */}
+                        {artImagePreview.length > 0 && (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                            {artImagePreview.map((img, idx) => (
+                              <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--dash-accent)' }}>
+                                <img src={img.url} alt={`art-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <button onClick={() => setArtImagePreview(prev => prev.filter((_, i) => i !== idx))}
+                                  style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, padding: 0 }}>✕</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Upload zone */}
+                        <label htmlFor="art-image-file" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', border: '2px dashed var(--dash-accent)', borderRadius: '14px', padding: '1.25rem', cursor: 'pointer', background: 'var(--dash-bg)', transition: 'all 0.2s' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ color: 'var(--dash-accent)', opacity: 0.7 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images' : 'Click to upload artwork photos'}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Multiple images supported — they'll appear as a slideshow</span>
+                          <input id="art-image-file" type="file" accept="image/*" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
+                        </label>
+                      </div>
+
+                      {/* Title + Description */}
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Art Title *</label>
+                        <input id="art-title-input" type="text" placeholder="e.g. Ocean Blue – Abstract Series No. 4" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.9rem', border: '1.5px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brief Description</label>
+                        <textarea id="art-desc-input" rows={3} placeholder="Tell viewers what makes this artwork special — materials, inspiration, story behind it..." style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.9rem', border: '1.5px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                      </div>
+
+                      <button onClick={handleAddArt} disabled={artSaving} style={{ padding: '0.85rem 2.25rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: artSaving ? 'wait' : 'pointer', opacity: artSaving ? 0.7 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {artSaving ? (<><span>Uploading...</span></>) : (<><span>✦</span><span>Add to Showcase</span></>)}
+                      </button>
+                    </div>
+
+                    {/* ── Art Cards ── */}
+                    {items.length > 0 ? (
+                      <div>
+                        <div className="dash-art-header">
+                          <h3 className="dash-art-title">Your Art Showcase ({items.length})</h3>
+                          <span className="dash-art-subtitle">Each card has its own NFC/QR URL</span>
+                        </div>
+                        <div className="dash-art-grid">
+                          {items.map(item => {
+                            const theme = ART_THEMES.find(t => t.id === item.theme) || ART_THEMES[ART_THEMES.length - 1];
+                            const artUrl = getArtUrl(item.id);
+                            const qrUrl = getQrUrl(artUrl);
+                            const coverImage = item.image || (Array.isArray(item.images) ? item.images[0] : '');
+                            return (
+                              <div key={item.id} className="dash-art-card">
+                                {/* Artwork image */}
+                                {coverImage ? (
+                                  <div style={{ width: '100%', height: '180px', overflow: 'hidden' }}>
+                                    <img src={coverImage} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </div>
+                                ) : (
+                                  <div className="dash-art-placeholder" style={{ background: `linear-gradient(90deg, ${theme.color}, ${theme.color}88)` }} />
+                                )}
+
+                                <div style={{ padding: '1.25rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1rem', fontWeight: 700, color: 'var(--dash-text)', lineHeight: 1.3 }}>{item.title}</h4>
+                                    <button onClick={() => handleRemoveArt(item.id)} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>Remove</button>
+                                  </div>
+                                  {item.description && <p style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)', lineHeight: 1.55, margin: '0 0 1rem' }}>{item.description}</p>}
+
+                                  {/* QR + URL Section */}
+                                  <div className="dash-art-qr-section">
+                                    <div style={{ flexShrink: 0 }}>
+                                      <img src={qrUrl} alt="QR Code" width={80} height={80} style={{ borderRadius: '8px', display: 'block' }} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div className="dash-art-qr-actions">
+                                        <button
+                                          onClick={() => { navigator.clipboard.writeText(artUrl); }}
+                                          className="dash-art-btn-copy"
+                                          style={{ background: theme.color }}
+                                        >
+                                          Copy URL
+                                        </button>
+                                        <a
+                                          href={qrUrl}
+                                          download={`qr-${item.title}.png`}
+                                          className="dash-art-btn-secondary"
+                                        >
+                                          ⬇ QR
+                                        </a>
+                                        <a
+                                          href={artUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="dash-art-btn-secondary"
+                                        >
+                                          ↗ Preview
+                                        </a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '3.5rem', color: 'var(--dash-subtext)', border: '2px dashed var(--dash-border)', borderRadius: '20px' }}>
+                        <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎨</div>
+                        <h3 style={{ fontWeight: 700, color: 'var(--dash-text)', marginBottom: '0.5rem' }}>No artworks added yet</h3>
+                        <p style={{ fontSize: '0.9rem' }}>Upload your first artwork above — you'll get a unique URL + QR code to place on the physical art!</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── RIGHT: Phone Preview (desktop / laptop only) ── */}
+                  {!isMobileViewport && (
+                    <div className="dash-preview-panel">
+                      <div className="dash-full-preview-container">
+                        {items.length > 0 ? (
+                          <iframe
+                            key={artPreviewSrc}
+                            title="Art Preview"
+                            src={artPreviewSrc}
+                            className="dash-preview-iframe"
+                            sandbox="allow-scripts allow-same-origin"
+                          />
+                        ) : (
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--dash-subtext)', gap: '0.75rem', padding: '2rem' }}>
+                            <span style={{ fontSize: '3rem' }}>📱</span>
+                            <p style={{ fontSize: '0.82rem', textAlign: 'center', margin: 0 }}>Add an artwork to see the live NFC/QR preview here</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          }
+
+          {
+            activeTab === 'profiles' && (
+              <>
+                {error && <div className="profile-error-msg" style={{ marginBottom: '1.5rem' }}>{error}</div>}
+
+                {artistsLoading ? (
+                  <div className="dash-loading">
+                    <div className="dash-loading-spinner" />
+                    <span>Loading your profile…</span>
+                  </div>
+                ) : myArtists.length === 0 ? (
+                  <div className="dash-empty-state" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="64" height="64" style={{ opacity: 0.4, marginBottom: '1.5rem' }}>
+                      <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                    </svg>
+                    <h3 style={{ marginBottom: '0.75rem', fontSize: '1.3rem' }}>Create Your Artist Profile</h3>
+                    <p style={{ marginBottom: '1.5rem', color: 'var(--dash-subtext)', maxWidth: '380px', margin: '0 auto 1.5rem' }}>Set up your portfolio, connect social links, and get your unique NFC-ready profile link.</p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          setSaving(true);
+                          if (user) {
+                            await landingArtistAPI.createMyProfile({ name: user.displayName || 'New Artist' }, () => getIdToken(), getFirebaseUser);
+                          } else if (otpUser) {
+                            await landingArtistAPI.createMyProfileWithOtpToken({ name: 'New Artist' }, otpUser.token);
+                          }
+                          await loadMyProfiles();
+                        } catch (err) {
+                          setError(err.message || 'Failed to create profile');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving}
+                      style={{ padding: '0.9rem 2.5rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, background: 'var(--dash-accent, #8b5cf6)', color: '#fff', border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(139,92,246,0.3)' }}
+                    >
+                      {saving ? 'Creating...' : 'Get Started'}
+                    </button>
+                  </div>
+                ) : (() => {
+                  // Only use the first (primary) profile — 1 per email rule
+                  const artist = myArtists[0];
+                  return (
+                    <div className="dash-profile-layout">
+
+                      {/* ── LEFT: Profile Info ── */}
+                      <div className="dash-single-profile">
+                        {/* Profile Hero */}
+                        <div className="dash-profile-hero">
+                          {artist.backgroundPhoto && (
+                            <img src={artist.backgroundPhoto} alt="" className="dash-profile-hero-bg" />
+                          )}
+                          <div className="dash-profile-hero-overlay" />
+
+                          {/* Background Change Trigger */}
+                          <label className="dash-hero-bg-trigger">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => e.target.files?.[0] && handleUploadField('backgroundPhoto', e.target.files[0])}
+                              style={{ display: 'none' }}
+                            />
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                              <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            <span>{isUploading === 'backgroundPhoto' ? 'Uploading...' : 'Change Cover'}</span>
+                          </label>
+
+                          <div className="dash-profile-hero-content">
+                            <div className="dash-profile-hero-avatar">
+                              <label className="dash-avatar-trigger">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => e.target.files?.[0] && handleUploadField('photo', e.target.files[0])}
+                                  style={{ display: 'none' }}
+                                />
+                                {artist.photo
+                                  ? <img src={artist.photo} alt={artist.name} />
+                                  : <span>{artist.name?.charAt(0) || '?'}</span>
+                                }
+                                <div className="dash-avatar-overlay">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                    <circle cx="12" cy="13" r="4" />
+                                  </svg>
+                                </div>
+                                {isUploading === 'photo' && <div className="dash-avatar-uploading-spinner" />}
+                              </label>
+                            </div>
+                            <div className="dash-profile-hero-info">
+                              <div className="dash-hero-editable-wrapper">
+                                {editingHeroField === 'name' ? (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input name"
+                                      autoFocus
+                                      value={heroUpdates.name !== undefined ? heroUpdates.name : (artist.name || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, name: e.target.value }))}
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('name', heroUpdates.name)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                ) : (
+                                  <h2
+                                    className="dash-profile-hero-name clickable"
+                                    onClick={() => openHeroEditor('name', artist)}
+                                  >
+                                    <span>{artist.name || 'Unnamed Artist'}</span>
+                                  </h2>
+                                )}
+                              </div>
+
+                              <div className="dash-hero-editable-wrapper">
+                                {editingHeroField === 'specialization' ? (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      autoFocus
+                                      value={heroUpdates.specialization !== undefined ? heroUpdates.specialization : (artist.specialization || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, specialization: e.target.value }))}
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('specialization', heroUpdates.specialization)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                ) : (
+                                  <p
+                                    className="dash-profile-hero-spec clickable"
+                                    onClick={() => openHeroEditor('specialization', artist)}
+                                  >
+                                    <span>{artist.specialization || 'Add specialization'}</span>
+                                  </p>
+                                )}
+                              </div>
+                              <span className="dash-profile-hero-id">ID: {artist.artistId}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isMobileViewport && mobileHeroEditField && (
+                          <div
+                            className="dash-mobile-edit-overlay"
+                            onClick={() => setMobileHeroEditField(null)}
+                          >
+                            <div
+                              className="dash-mobile-edit-modal"
+                              role="dialog"
+                              aria-modal="true"
+                              aria-label={mobileHeroEditField === 'name' ? 'Edit name' : 'Edit artist tag'}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="dash-mobile-edit-header">
+                                <div className="dash-mobile-edit-title">
+                                  {mobileHeroEditField === 'name' ? 'Edit name' : 'Edit artist tag'}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="dash-mobile-edit-close"
+                                  onClick={() => setMobileHeroEditField(null)}
+                                  aria-label="Close"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <div className="dash-mobile-edit-body">
+                                <input
+                                  className="dash-mobile-edit-input"
+                                  autoFocus
+                                  value={mobileHeroDraft}
+                                  placeholder={mobileHeroEditField === 'name' ? 'Enter your name' : 'Enter your artist tag'}
+                                  onChange={(e) => setMobileHeroDraft(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') setMobileHeroEditField(null);
+                                    if (e.key === 'Enter') saveMobileHeroField();
+                                  }}
+                                />
+                                <div className="dash-mobile-edit-actions">
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn ghost"
+                                    onClick={() => setMobileHeroEditField(null)}
+                                    disabled={savingLink === mobileHeroEditField}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn primary"
+                                    onClick={saveMobileHeroField}
+                                    disabled={savingLink === mobileHeroEditField}
+                                  >
+                                    {savingLink === mobileHeroEditField ? 'Saving…' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Bio Section */}
+                        <div className="dash-profile-bio-section">
+                          <h3 className="dash-section-label">About</h3>
+                          <div className="dash-hero-editable-wrapper">
+                            {editingHeroField === 'bio' ? (
+                              <div className="dash-hero-edit-row bio">
+                                <textarea
+                                  className="dash-hero-inline-textarea"
+                                  autoFocus
+                                  rows={3}
+                                  value={heroUpdates.bio !== undefined ? heroUpdates.bio : (artist.bio || '')}
+                                  onChange={(e) => setHeroUpdates(prev => ({ ...prev, bio: e.target.value }))}
+                                />
+                                <div className="dash-bio-actions">
+                                  <button onClick={() => handleUpdateHeroField('bio', heroUpdates.bio)}>Save Biography</button>
+                                  <button className="cancel" onClick={() => setEditingHeroField(null)}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p
+                                className="dash-profile-bio clickable"
+                                onClick={() => setEditingHeroField('bio')}
+                              >
+                                <span>{artist.bio || 'Add a bio describing your art...'}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Links Section Header */}
+                        <div className="dash-section-header">
+                          <h3 className="dash-section-label">Links</h3>
+                          <button
+                            type="button"
+                            className="dash-add-platform-btn"
+                            onClick={() => {
+                              setTempPlatforms([...visiblePlatforms]);
+                              setIsSelectorOpen(true);
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Platforms
+                          </button>
+                        </div>
+
+                        {/* Link Cards Section */}
+                        <div className="dash-links-section">
+                          {ALL_PLATFORMS.filter(p => visiblePlatforms.includes(p.id)).map(platform => {
+                            let serverValue = artist[platform.id] || '';
+                            // Simplify WhatsApp for display
+                            if (platform.id === 'whatsapp' && serverValue.includes('wa.me/')) {
+                              serverValue = serverValue.split('wa.me/')[1];
+                            }
+
+                            const localValue = pendingLinks[platform.id];
+                            const currentValue = localValue !== undefined ? localValue : serverValue;
+                            const isModified = localValue !== undefined && localValue !== serverValue;
+
+                            const getUrlDisplay = (val, id) => {
+                              if (!val) return 'Enter link or handle';
+                              if (id === 'instagram') return val.includes('http') ? val : `instagram.com/${val.replace('@', '')}`;
+                              if (id === 'whatsapp') return val.includes('wa.me') ? val : `wa.me/${val.replace('+', '').replace(/\s/g, '')}`;
+                              return val;
+                            };
+
+                            return (
+                              <div className="dash-link-card" key={platform.id}>
+                                <div className="dash-link-card-main">
+                                  <div className="dash-link-icon-circle">
+                                    {getLinkIcon({ platform: platform.id })}
+                                  </div>
+                                  <div className="dash-link-content">
+                                    <div className="dash-link-title-row">
+                                      <span className="dash-link-title">{platform.label}</span>
+                                    </div>
+                                    <div className="dash-link-url">
+                                      <input
+                                        className="dash-link-inline-input"
+                                        placeholder={
+                                          platform.id === 'instagram' ? '@handle' :
+                                            platform.id === 'whatsapp' ? 'Phone number (e.g. 91834...)' :
+                                              'Enter URL / handle'
+                                        }
+                                        value={currentValue}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value;
+                                          setPendingLinks(prev => ({ ...prev, [platform.id]: newVal }));
+                                        }}
+                                      />
+                                      {savingLink === platform.id && <span className="dash-link-saving">Saving…</span>}
+                                    </div>
+                                  </div>
+                                  <div className="dash-link-controls">
+                                    <button
+                                      className="dash-link-remove-icon-btn"
+                                      onClick={() => handleUpdateLink(platform.id, null)}
+                                      title="Remove this platform"
+                                    >
+                                      ✕
+                                    </button>
+
+                                    <button
+                                      className={`dash-link-save-btn ${isModified ? 'active' : ''}`}
+                                      disabled={!isModified || savingLink === platform.id}
+                                      onClick={() => handleUpdateLink(platform.id, currentValue)}
+                                    >
+                                      {savingLink === platform.id ? '...' : 'Save'}
+                                    </button>
+
+                                    <label className="dash-link-toggle">
+                                      <input type="checkbox" defaultChecked />
+                                      <span className="dash-link-toggle-slider"></span>
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Get in Touch Section */}
+                        <div className="dash-profile-bio-section">
+                          <h3 className="dash-section-label">Get in Touch</h3>
+                          <div className="dash-contact-grid">
+                            <div className="dash-contact-item">
+                              <div className="dash-contact-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                              </div>
+                              <div className="dash-contact-content">
+                                <span className="dash-contact-label">Email</span>
+                                {editingHeroField === 'email' ? (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input"
+                                      value={heroUpdates.email !== undefined ? heroUpdates.email : (artist.email || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, email: e.target.value }))}
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('email', heroUpdates.email)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                ) : (
+                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('email')}>{artist.email || 'Add email'}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="dash-contact-item">
+                              <div className="dash-contact-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                              </div>
+                              <div className="dash-contact-content">
+                                <span className="dash-contact-label">Phone</span>
+                                {editingHeroField === 'phone' ? (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input"
+                                      value={heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, phone: e.target.value }))}
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('phone', heroUpdates.phone)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                ) : (
+                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('phone')}>{artist.phone || 'Add phone'}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Show My Art Button */}
+                        <div className="dash-profile-bio-section">
+                          <button
+                            className="show-my-art-btn"
+                            onClick={() => {
+                              if ((artist.artLinks || []).length > 0) {
+                                setShowArtGallery(true);
+                              } else {
+                                setActiveTab('link-art');
+                              }
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span>{(artist.artLinks || []).length > 0 ? 'Show My Art' : 'Add Your Art'}</span>
+                            {(artist.artLinks || []).length > 0 && (
+                              <span className="show-my-art-count">{(artist.artLinks || []).length}</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Events / Gallery Section */}
+                        <div className="dash-profile-bio-section">
+                          <div className="dash-section-header">
+                            <h3 className="dash-section-label">Events</h3>
+                            <label className="dash-add-platform-btn">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => e.target.files?.[0] && handleAddGalleryItem(e.target.files[0])}
+                              />
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                              </svg>
+                              {galleryUploading ? 'Uploading...' : 'Add Event Image'}
+                            </label>
+                          </div>
+
+                          <div className="dash-gallery-grid">
+                            {(artist.gallery || []).map((item, idx) => (
+                              <div className="dash-gallery-item" key={idx}>
+                                <img src={item.url} alt={item.name} />
+                                <div className="dash-gallery-item-overlay">
+                                  <input
+                                    className="dash-gallery-item-name-input"
+                                    value={item.name}
+                                    placeholder="Event title"
+                                    onChange={(e) => {
+                                      const newGal = [...artist.gallery];
+                                      newGal[idx].name = e.target.value;
+                                      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
+                                    }}
+                                    onBlur={() => {
+                                      const payload = { gallery: artist.gallery };
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+                                    }}
+                                  />
+                                  <button
+                                    className="dash-gallery-remove-btn"
+                                    onClick={() => handleRemoveGalleryItem(idx)}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            {(!artist.gallery || artist.gallery.length === 0) && (
+                              <div className="dash-gallery-empty">
+                                <p>No events added yet. Start by adding images from your recent exhibitions or workshops.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+
+                        {myArtists.length > 1 && (
+                          <p className="dash-multi-profile-note">
+                            ⚠️ Your account has {myArtists.length} profiles linked. Only one profile per email is allowed. Please contact support to resolve this.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ── RIGHT: Live iframe Preview (desktop / laptop only) ── */}
+                      {!isMobileViewport && (
+                        <div className="dash-preview-panel">
+                          <div className="dash-full-preview-container">
+                            <iframe
+                              key={previewKey}
+                              title="Profile Preview"
+                              src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${artist.artistId}`}
+                              className="dash-preview-iframe"
+                              sandbox="allow-scripts allow-same-origin"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })()}
+              </>
+            )
+          }
+        </div >
+      </main >
+
 
       {editingArtist && (
         <div className="profile-edit-overlay" onClick={closeEdit}>
@@ -919,19 +4696,43 @@ function Profile() {
                   <div className="profile-edit-field">
                     <label>Profile theme</label>
                     <div className="theme-choices-row">
-                      {[
-                        { id: 'mono', label: 'Mono Dark' },
-                        { id: 'classic', label: 'Classic Light' },
-                        { id: 'neon', label: 'Neon Glow' },
-                        { id: 'art', label: 'Art Red/Black' }
-                      ].map((theme) => (
+                      {GENERAL_THEMES.map((theme) => (
                         <button
                           key={theme.id}
                           type="button"
                           className={`theme-pill ${formData.profileTheme === theme.id ? 'selected' : ''}`}
                           onClick={() => setFormData((prev) => ({ ...prev, profileTheme: theme.id }))}
+                          style={formData.profileTheme === theme.id ? { background: theme.bg, color: theme.text } : {}}
                         >
                           <span className="theme-pill-label">{theme.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="profile-edit-field">
+                    <label>Profile font</label>
+                    <div className="theme-choices-row">
+                      {[
+                        { id: 'outfit', label: 'Outfit' },
+                        { id: 'playfair', label: 'Playfair Display' },
+                        { id: 'caveat', label: 'Caveat' },
+                        { id: 'mono-font', label: 'Roboto Mono' }
+                      ].map((fnt) => (
+                        <button
+                          key={fnt.id}
+                          type="button"
+                          className={`theme-pill ${formData.profileFont === fnt.id ? 'selected' : ''}`}
+                          onClick={() => setFormData((prev) => ({ ...prev, profileFont: fnt.id }))}
+                        >
+                          <style>{`
+                            .font-preview-${fnt.id} { font-family: ${fnt.id === 'playfair' ? "'Playfair Display', serif" :
+                              fnt.id === 'caveat' ? "'Caveat', cursive" :
+                                fnt.id === 'mono-font' ? "'Roboto Mono', monospace" :
+                                  "'Outfit', sans-serif"
+                            }; }
+                          `}</style>
+                          <span className={`theme-pill-label font-preview-${fnt.id}`}>{fnt.label}</span>
                         </button>
                       ))}
                     </div>
@@ -1094,8 +4895,166 @@ function Profile() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Art Gallery Popup */}
+      {showArtGallery && myArtists[0] && (() => {
+        const artItems = myArtists[0].artLinks || [];
+        const selected = artGallerySelectedItem;
+        return (
+          <div className="art-gallery-overlay" onClick={() => { setShowArtGallery(false); setArtGallerySelectedItem(null); }}>
+            <div className="art-gallery-modal" onClick={e => e.stopPropagation()}>
+              <div className="art-gallery-header">
+                <h2>My Art Collection</h2>
+                <span className="art-gallery-count">{artItems.length} pieces</span>
+                <button className="art-gallery-close" onClick={() => { setShowArtGallery(false); setArtGallerySelectedItem(null); }}>✕</button>
+              </div>
+              <div className="art-gallery-scroll">
+                <div className="art-gallery-masonry">
+                  {artItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="art-gallery-card"
+                      onClick={() => setArtGallerySelectedItem(item)}
+                    >
+                      {item.images && item.images[0] ? (
+                        <img src={item.images[0]} alt={item.title} className="art-gallery-card-img" loading="lazy" />
+                      ) : (
+                        <div className="art-gallery-card-placeholder">
+                          <span>{item.theme === 'painting' ? '🖼️' : item.theme === 'digital' ? '💻' : item.theme === 'sculpture' ? '🗿' : item.theme === 'photography' ? '📷' : '🎨'}</span>
+                        </div>
+                      )}
+                      <div className="art-gallery-card-info">
+                        <h4>{item.title}</h4>
+                        {item.description && <p>{item.description}</p>}
+                        <span className="art-gallery-card-theme">{item.theme}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {selected && (
+              <div className="art-lightbox-overlay" onClick={(e) => { e.stopPropagation(); setArtGallerySelectedItem(null); }}>
+                <div className="art-lightbox" onClick={e => e.stopPropagation()}>
+                  <button className="art-lightbox-close" onClick={() => setArtGallerySelectedItem(null)}>✕</button>
+                  <div className="art-lightbox-images">
+                    {(selected.images || []).map((img, i) => (
+                      <img key={i} src={img} alt={`${selected.title} ${i + 1}`} className="art-lightbox-img" />
+                    ))}
+                  </div>
+                  <div className="art-lightbox-info">
+                    <h3>{selected.title}</h3>
+                    {selected.description && <p>{selected.description}</p>}
+                    <span className="art-lightbox-theme">{selected.theme}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Platform Selector Modal */}
+      {
+        isSelectorOpen && (
+          <div className="dash-selector-overlay">
+            <div className="dash-selector-modal">
+              <div className="dash-selector-header">
+                <h3>Add Platforms</h3>
+                <p>Select multiple platforms to add them to your profile</p>
+              </div>
+              <div className="dash-selector-grid">
+                {ALL_PLATFORMS.map((p) => {
+                  const isActive = tempPlatforms.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                      onClick={() => togglePlatformInSelector(p.id)}
+                    >
+                      <div className="dash-selector-icon">
+                        {getLinkIcon({ platform: p.id })}
+                      </div>
+                      <span className="dash-selector-label">{p.label}</span>
+                      {isActive && <div className="dash-selector-check">✓</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="dash-selector-actions">
+                <button
+                  type="button"
+                  className="dash-selector-btn-cancel"
+                  onClick={() => setIsSelectorOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="dash-selector-btn-done"
+                  onClick={handlePlatformDone}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Mobile-only bottom nav: Profile, Preview, Design — show on all tabs including Design */}
+      {isMobileViewport && (
+        <div className="dash-mobile-bottom-nav">
+          <div className="dash-mobile-bottom-nav-inner">
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'profiles' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('profiles')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c0-3.2 2.4-5.5 7-5.5s7 2.3 7 5.5" />
+                </svg>
+              </div>
+              <span>Profile</span>
+            </button>
+
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'preview' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('preview')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z" />
+                </svg>
+              </div>
+              <span>Preview</span>
+            </button>
+
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('design')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </div>
+              <span>Design</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div >
   );
 }
 
 export default Profile;
+

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
 import { getLinkIcon } from '../components/LinkIcons';
-import { getThemeById } from '../constants/generalThemes';
+import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
 
@@ -77,6 +77,11 @@ function GeneralProfileView() {
   const links = (profile.links || []).filter(l => l.url).sort((a, b) => (a.order || 0) - (b.order || 0));
   const theme = getThemeById(profile.theme || 'mint');
 
+
+
+  const activeHeadingFont = profile.font || 'outfit';
+  const activeBodyFont = profile.bioFont || activeHeadingFont;
+
   return (
     <div className="gp-view gp-layout">
       <Helmet>
@@ -98,7 +103,14 @@ function GeneralProfileView() {
         <meta name="twitter:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
       </Helmet>
 
-      <div className="gp-card gp-card-themed" style={{ background: theme.bg, color: theme.text }}>
+      <div
+        className={`gp-card gp-card-themed ${theme.isAnimated ? theme.className : ''}`}
+        style={{
+          background: theme.isAnimated ? undefined : theme.bg,
+          color: theme.text,
+          '--font-heading': resolveFontFamily(activeHeadingFont),
+          '--font-body': resolveFontFamily(activeBodyFont)
+        }}>
         {/* Share button - top right */}
         <button type="button" onClick={handleShare} className="gp-share-btn" aria-label="Share">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -142,6 +154,18 @@ function GeneralProfileView() {
 
         {/* Link buttons */}
         <div className="gp-links">
+          {profile.menuPdf && (
+            <a
+              href={profile.menuPdf.startsWith('http') ? profile.menuPdf : `https://${profile.menuPdf}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="gp-link gp-link-menu"
+              style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
+            >
+              <span className="gp-link-icon">📄</span>
+              <span className="gp-link-text">See my menu</span>
+            </a>
+          )}
           {links.map((link, idx) => (
             <a
               key={idx}

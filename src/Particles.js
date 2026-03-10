@@ -219,8 +219,10 @@ const Particles = ({
         container.removeEventListener('mousemove', handleMouseMove);
       }
       cancelAnimationFrame(animationFrameId);
-      if (container.contains(gl.canvas)) {
-        container.removeChild(gl.canvas);
+
+      // Safer removal
+      if (gl.canvas && gl.canvas.parentNode) {
+        gl.canvas.parentNode.removeChild(gl.canvas);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
