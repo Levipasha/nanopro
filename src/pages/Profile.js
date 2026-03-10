@@ -481,7 +481,7 @@ function Profile() {
     [user]
   );
 
-  const handleSelectArtistMode = () => {
+  const handleSelectArtistMode = useCallback(() => {
     setError('');
     setProfileMode('artist');
     if (!profileLock) {
@@ -489,9 +489,9 @@ function Profile() {
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'artist'); } catch (e) { }
     }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
-  };
+  }, [profileLock]);
 
-  const handleSelectGeneralMode = () => {
+  const handleSelectGeneralMode = useCallback(() => {
     setError('');
     setProfileMode('general');
     if (!profileLock) {
@@ -499,7 +499,7 @@ function Profile() {
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'general_restaurant'); } catch (e) { }
     }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
-  };
+  }, [profileLock]);
 
   const handleSelectRestaurantMode = () => {
     setError('');
@@ -741,34 +741,6 @@ function Profile() {
       setTimeout(() => setGeneralSuccess(''), 2500);
     } catch (err) {
       setError(err.message || 'Failed to create profile.');
-    } finally {
-      setGeneralSaving(false);
-    }
-  };
-
-  const handleGeneralUpdate = async (e) => {
-    e.preventDefault();
-    setGeneralSaving(true);
-    setError('');
-    setGeneralSuccess('');
-    try {
-      let photoUrl = generalForm.photo;
-      if (generalPhotoFile) {
-        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
-        photoUrl = up?.url || photoUrl;
-      }
-      const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      const res = await generalProfileAPI.update(
-        { ...generalForm, photo: photoUrl, links },
-        () => getIdToken(),
-        getFirebaseUser
-      );
-      setGeneralProfile(res.data);
-      setGeneralPhotoFile(null);
-      setGeneralSuccess('Profile saved successfully!');
-      setTimeout(() => setGeneralSuccess(''), 2500);
-    } catch (err) {
-      setError(err.message || 'Failed to save profile.');
     } finally {
       setGeneralSaving(false);
     }
@@ -1074,7 +1046,6 @@ function Profile() {
     if (!artist) return;
     setSavingLink(platform);
     try {
-      const token = otpUser ? otpUser.token : (await getIdToken());
       let finalValue = value;
       if (platform === 'whatsapp' && value && !value.includes('http')) {
         // Clean the number and prepend wa.me
@@ -1109,7 +1080,6 @@ function Profile() {
     if (!artist) return;
     setSavingLink(field); // reuse savingLink state for spinner
     try {
-      const token = otpUser ? otpUser.token : (await getIdToken());
       const payload = { [field]: value, ...extraPayload };
       if (otpUser) {
         await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
@@ -1206,7 +1176,6 @@ function Profile() {
     try {
       const newGallery = (artist.gallery || []).filter((_, i) => i !== idx);
       const payload = { gallery: newGallery };
-      const token = otpUser ? otpUser.token : (await getIdToken());
       if (otpUser) {
         await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
       } else {
@@ -1251,7 +1220,6 @@ function Profile() {
 
     if (Object.keys(updates).length > 0) {
       try {
-        const token = otpUser ? otpUser.token : (await getIdToken());
         if (otpUser) {
           await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, updates, otpUser.token);
         } else {
@@ -1278,7 +1246,6 @@ function Profile() {
       if (!artist) {
         try {
           // If no artist profile, create a barebones one first
-          const token = otpUser ? otpUser.token : (await getIdToken());
           const createPayload = { 
             artistId: formData.artistId || `user-${Date.now()}`,
             name: formData.name || 'New Artist'
