@@ -8,6 +8,7 @@ import gsap from 'gsap';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import GeneralProfileView from './pages/GeneralProfileView';
+import ArtistPublicView from './pages/ArtistPublicView';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { auth, onAuthStateChanged, logout } from './firebase';
 import nanoProfileVideo from './nano profile.mp4';
@@ -343,6 +344,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Login />} />
         <Route path="/link/:username" element={<GeneralProfileView />} />
+        <Route path="/artist" element={<ArtistPublicView />} />
         <Route path="/*" element={
           <main className="landing-page-container">
             <nav className="navbar">
