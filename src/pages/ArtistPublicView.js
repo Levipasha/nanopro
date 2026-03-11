@@ -126,7 +126,12 @@ function ArtistPublicView() {
   const fontFamily = fontMap[fontId] || fontMap.outfit;
 
   return (
-    <div className="gp-view gp-layout">
+    <div
+      className="gp-view gp-layout"
+      style={{
+        background: theme.bg
+      }}
+    >
       <div
         className="gp-card"
         style={{
