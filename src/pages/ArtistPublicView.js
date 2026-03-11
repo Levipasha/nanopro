@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
@@ -106,6 +106,8 @@ function ArtistPublicView() {
   const hasGallery = Array.isArray(artist.gallery) && artist.gallery.length > 0;
   const hasContact = artist.email || artist.phone;
 
+  const galleryStripRef = useRef(null);
+
   const themeId = artist.profileTheme || 'mono';
   const themeMap = {
     mono: { bg: '#0f172a', text: '#ffffff', linkBg: 'rgba(255,255,255,0.08)' },
@@ -124,6 +126,28 @@ function ArtistPublicView() {
     'mono-font': "'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
   };
   const fontFamily = fontMap[fontId] || fontMap.outfit;
+
+  // Auto-scroll gallery strip horizontally to create slideshow effect
+  useEffect(() => {
+    if (!hasGallery || !galleryStripRef.current) return;
+
+    const stripEl = galleryStripRef.current;
+    const gapPx = 14; // approx 0.9rem gap between cards
+    let index = 0;
+
+    const timer = setInterval(() => {
+      const firstCard = stripEl.firstElementChild;
+      if (!firstCard) return;
+      const cardWidth = firstCard.getBoundingClientRect().width || 0;
+      if (!cardWidth) return;
+
+      index = (index + 1) % artist.gallery.length;
+      const scrollLeft = index * (cardWidth + gapPx);
+      stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [hasGallery, artist.gallery?.length]);
 
   return (
     <div
@@ -202,7 +226,7 @@ function ArtistPublicView() {
         {hasContact && (
           <div className="gp-section">
             <h2 className="gp-section-title">Get in Touch</h2>
-            <div className="gp-contact-grid">
+            <div className="gp-contact-stack">
               {artist.email && (
                 <div className="gp-contact-item">
                   <div className="gp-contact-label">Email</div>
@@ -251,7 +275,7 @@ function ArtistPublicView() {
           <div className="gp-section">
             <h2 className="gp-section-title">Events</h2>
             <div className="gp-gallery-strip-wrapper">
-              <div className="gp-gallery-strip">
+              <div className="gp-gallery-strip" ref={galleryStripRef}>
                 {artist.gallery.map((item, idx) => (
                   <button
                     key={idx}
