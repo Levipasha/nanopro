@@ -329,6 +329,349 @@
   cursor: zoom-in;
 }
 
+/* Artist public view enhancements */
+.gp-cover-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-photo-header-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.gp-section {
+  padding: 1.25rem 1.5rem 0;
+}
+
+.gp-section-title {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+  margin: 0 0 0.5rem 0;
+}
+
+.gp-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.gp-contact-item {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.gp-contact-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.gp-contact-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: inherit;
+  word-break: break-all;
+}
+
+.gp-contact-value:hover {
+  opacity: 0.9;
+}
+
+.gp-gallery-strip-wrapper {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.gp-gallery-strip {
+  display: flex;
+  gap: 0.6rem;
+  min-width: 0;
+  scroll-snap-type: x mandatory;
+}
+
+.gp-gallery-chip {
+  flex: 0 0 auto;
+  width: 120px;
+  border-radius: 14px;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.7);
+  cursor: pointer;
+  scroll-snap-align: start;
+  text-align: left;
+  color: inherit;
+}
+
+.gp-gallery-chip-thumb {
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+}
+
+.gp-gallery-chip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-gallery-chip-title {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.45rem 0.5rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.gp-art-button {
+  width: 100%;
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), rgba(236, 72, 153, 0.9));
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.gp-art-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-art-button-count {
+  background: rgba(15, 23, 42, 0.7);
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+/* Art gallery modal */
+.gp-art-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.gp-art-modal {
+  max-width: 960px;
+  width: 100%;
+  max-height: 90vh;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 24px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #e5e7eb;
+}
+
+.gp-art-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gp-art-modal-header h2 {
+  flex: 1;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.gp-art-modal-count {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.gp-art-modal-close {
+  border: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.gp-art-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.9rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.gp-art-card {
+  border: none;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.gp-art-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-art-card-empty {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: radial-gradient(circle at 50% 0, rgba(148, 163, 184, 0.3), transparent 55%), #020617;
+}
+
+.gp-art-card-info {
+  padding: 0.55rem 0.7rem 0.7rem;
+}
+
+.gp-art-card-info h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.2rem 0;
+}
+
+.gp-art-card-info p {
+  font-size: 0.8rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.gp-art-lightbox {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.gp-art-lightbox-inner {
+  max-width: 960px;
+  width: 100%;
+  max-height: 90vh;
+  background: #020617;
+  border-radius: 24px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  color: #e5e7eb;
+}
+
+.gp-art-lightbox-close {
+  border: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  cursor: pointer;
+  float: right;
+}
+
+.gp-art-lightbox-images {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.gp-art-lightbox-images img {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: contain;
+}
+
+/* Artist public view avatar row */
+.gp-avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -56px;
+  padding: 0 1.5rem 0.75rem;
+}
+
+.gp-avatar-circle {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 3px solid rgba(15, 23, 42, 0.85);
+  overflow: hidden;
+  background: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.6);
+}
+
+.gp-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-avatar-circle-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.9);
+  background: radial-gradient(circle at 30% 0, rgba(129, 140, 248, 0.75), transparent 55%), #020617;
+}
+
+.gp-avatar-text {
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.gp-avatar-text .gp-name {
+  text-align: center;
+}
+
+.gp-avatar-text .gp-title-overlay {
+  text-align: center;
+}
+
 /* Animated Themes Additions */
 .theme-anim-aurora {
   background: linear-gradient(-45deg, #0f172a, #111827, #1e1b4b, #312e81);

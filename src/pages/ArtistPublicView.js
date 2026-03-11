@@ -135,24 +135,31 @@ function ArtistPublicView() {
           fontFamily
         }}
       >
-        {/* Cover + avatar */}
+        {/* Cover banner */}
         <div className="gp-photo-header">
           {artist.backgroundPhoto && (
-            <img src={artist.backgroundPhoto} alt={artist.name} className="gp-cover-img" />
+            <img src={artist.backgroundPhoto} alt={artist.name || 'Cover'} className="gp-cover-img" />
           )}
-          <div className="gp-photo-header-inner">
+        </div>
+
+        {/* Centered circular avatar + basic details */}
+        <div className="gp-avatar-row">
+          <div className="gp-avatar-circle">
             {artist.photo ? (
-              <img src={artist.photo} alt={artist.name} className="gp-avatar-img" />
+              <img
+                src={artist.photo}
+                alt={artist.name || 'Artist'}
+              />
             ) : (
-              <div className="gp-avatar-placeholder gp-avatar-placeholder-header">
-                {artist.name?.charAt(0) || '?'}
+              <div className="gp-avatar-circle-fallback">
+                {artist.name?.charAt(0) || 'A'}
               </div>
             )}
-            <div className="gp-photo-overlay">
-              {artist.name && <h1 className="gp-name">{artist.name}</h1>}
-              {artist.specialization && <p className="gp-title-overlay">{artist.specialization}</p>}
-              <p className="gp-username">ID: {artist.artistId || artist.username || artistId}</p>
-            </div>
+          </div>
+          <div className="gp-avatar-text">
+            {artist.name && <h1 className="gp-name">{artist.name}</h1>}
+            {artist.specialization && <p className="gp-title-overlay">{artist.specialization}</p>}
+            <p className="gp-username">ID: {artist.artistId || artist.username || artistId}</p>
           </div>
         </div>
 
@@ -234,17 +241,33 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Events / Gallery */}
+        {/* Events / Gallery – compact horizontal strip */}
         {hasGallery && (
           <div className="gp-section">
             <h2 className="gp-section-title">Events</h2>
-            <div className="gp-gallery-grid">
-              {artist.gallery.map((item, idx) => (
-                <div key={idx} className="gp-gallery-item">
-                  <img src={item.url} alt={item.name || 'Event'} className="gp-gallery-img" />
-                  {item.name && <div className="gp-gallery-caption">{item.name}</div>}
-                </div>
-              ))}
+            <div className="gp-gallery-strip-wrapper">
+              <div className="gp-gallery-strip">
+                {artist.gallery.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="gp-gallery-chip"
+                    onClick={() => {
+                      // Reuse art modal for a simple large view behaviour
+                      setSelectedArtItem({
+                        title: item.name || 'Event',
+                        images: [item.url]
+                      });
+                      setShowArtGallery(true);
+                    }}
+                  >
+                    <div className="gp-gallery-chip-thumb">
+                      <img src={item.url} alt={item.name || 'Event'} />
+                    </div>
+                    {item.name && <div className="gp-gallery-chip-title">{item.name}</div>}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
