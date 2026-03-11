@@ -65,7 +65,10 @@ export const landingArtistAPI = {
   verifyOtp: (email, otp, mode) =>
     request('POST', '/api/artist/verify-otp', { body: { email, otp, mode } }),
   checkAccount: (email) =>
-    request('POST', '/api/artist/check-account', { body: { email } })
+    request('POST', '/api/artist/check-account', { body: { email } }),
+  // Public, read-only artist profile used by /artist?id=<id>
+  getPublicProfile: (artistId) =>
+    request('GET', `/api/artist/public/${encodeURIComponent(artistId)}`)
 };
 
 // General Profile (Linktree-like) API
