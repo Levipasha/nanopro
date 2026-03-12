@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
+import { getThemeById } from '../constants/generalThemes';
 
 /**
  * Public artist profile route used for NFC / share links.
@@ -126,14 +127,10 @@ function ArtistPublicView() {
     ? eventSlides[Math.min(eventSlideIndex, eventSlides.length - 1)]
     : null;
 
-  const themeId = artist.profileTheme || 'mono';
-  const themeMap = {
-    mono: { bg: '#0f172a', text: '#ffffff', linkBg: 'rgba(255,255,255,0.08)' },
-    classic: { bg: '#f5f5f5', text: '#111827', linkBg: 'rgba(0,0,0,0.06)' },
-    neon: { bg: '#020617', text: '#22d3ee', linkBg: 'rgba(34,211,238,0.12)' },
-    art: { bg: '#000000', text: '#f97373', linkBg: 'rgba(248,113,113,0.12)' }
-  };
-  const theme = themeMap[themeId] || themeMap.mono;
+  const theme = getThemeById(artist.profileTheme || 'mono');
+  const themeBg = theme?.bg || '#0f172a';
+  const themeText = theme?.text || '#ffffff';
+  const themeLinkBg = theme?.linkBg || 'rgba(255,255,255,0.08)';
 
   const fontId = artist.profileFont || 'outfit';
   const fontMap = {
@@ -149,17 +146,17 @@ function ArtistPublicView() {
     <div
       className="gp-view gp-layout gp-artist-themed"
       style={{
-        '--artist-bg': theme.bg,
-        '--artist-text': theme.text,
-        '--artist-link-bg': theme.linkBg,
-        background: theme.bg
+        '--artist-bg': themeBg,
+        '--artist-text': themeText,
+        '--artist-link-bg': themeLinkBg,
+        background: themeBg
       }}
     >
       <div
-        className="gp-card gp-artist-themed-card"
+        className={`gp-card gp-artist-themed-card ${theme?.isAnimated ? theme.className : ''}`}
         style={{
-          background: theme.bg,
-          color: theme.text,
+          background: theme?.isAnimated ? undefined : themeBg,
+          color: themeText,
           fontFamily
         }}
       >
