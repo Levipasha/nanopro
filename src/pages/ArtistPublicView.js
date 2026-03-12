@@ -17,6 +17,7 @@ function ArtistPublicView() {
   const [artist, setArtist] = useState(null);
   const [showArtGallery, setShowArtGallery] = useState(false);
   const [selectedArtItem, setSelectedArtItem] = useState(null);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
@@ -250,18 +251,26 @@ function ArtistPublicView() {
 
         {/* Centered circular avatar + basic details */}
         <div className="gp-avatar-row">
-          <div className="gp-avatar-circle">
+          <button
+            type="button"
+            className="gp-avatar-circle"
+            onClick={() => {
+              if (!artist.photo) return;
+              setShowProfilePreview(true);
+            }}
+          >
             {artist.photo ? (
               <img
                 src={artist.photo}
                 alt={artist.name || 'Artist'}
+                className="gp-avatar-img"
               />
             ) : (
               <div className="gp-avatar-circle-fallback">
                 {artist.name?.charAt(0) || 'A'}
               </div>
             )}
-          </div>
+          </button>
           <div className="gp-avatar-text">
             {artist.name && <h1 className="gp-name">{artist.name}</h1>}
             {artist.specialization && <p className="gp-title-overlay">{artist.specialization}</p>}
