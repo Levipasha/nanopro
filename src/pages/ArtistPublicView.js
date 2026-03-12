@@ -275,59 +275,7 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Get in touch */}
-        {hasContact && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Get in Touch</h2>
-            <div className="gp-contact-stack">
-              {artist.email && (
-                <div className="gp-contact-item">
-                  <div className="gp-contact-label">Email</div>
-                  <a href={`mailto:${artist.email}`} className="gp-contact-value">
-                    {artist.email}
-                  </a>
-                </div>
-              )}
-              {artist.phone && (
-                <div className="gp-contact-item">
-                  <div className="gp-contact-label">Phone</div>
-                  <a href={`tel:${artist.phone}`} className="gp-contact-value">
-                    {artist.phone}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Show My Art / Add Your Art */}
-        {artItems.length > 0 && (
-          <div className="gp-section">
-            <button
-              className="gp-art-button"
-              style={{
-                background: 'var(--artist-link-bg)',
-                color: 'var(--artist-text)',
-                border: '1px solid var(--artist-text)'
-              }}
-              onClick={() => {
-                setShowArtGallery(true);
-                setSelectedArtItem(null);
-              }}
-            >
-              <span className="gp-art-button-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </span>
-              <span className="gp-art-button-text">Show My Art</span>
-            </button>
-          </div>
-        )}
-
-        {/* Events slideshow (W3Schools-style indicators) */}
+        {/* 1. Events slideshow */}
         {eventSlides.length > 0 && (
           <div className="gp-section">
             <h2 className="gp-section-title">Events</h2>
@@ -377,7 +325,34 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Links – compact 3x3 icon grid (now placed below Events) */}
+        {/* 2. Show My Art / Add Your Art (gallery entry point) */}
+        {artItems.length > 0 && (
+          <div className="gp-section">
+            <button
+              className="gp-art-button"
+              style={{
+                background: 'var(--artist-link-bg)',
+                color: 'var(--artist-text)',
+                border: '1px solid var(--artist-text)'
+              }}
+              onClick={() => {
+                setShowArtGallery(true);
+                setSelectedArtItem(null);
+              }}
+            >
+              <span className="gp-art-button-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </span>
+              <span className="gp-art-button-text">Show My Art</span>
+            </button>
+          </div>
+        )}
+
+        {/* 3. Social media icons (Links grid) */}
         {primaryLinks.length > 0 && (
           <div className="gp-section">
             <h2 className="gp-section-title">Links</h2>
@@ -396,6 +371,31 @@ function ArtistPublicView() {
                   </span>
                 </a>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* 4. Get in touch (below social icons) */}
+        {hasContact && (
+          <div className="gp-section">
+            <h2 className="gp-section-title">Get in Touch</h2>
+            <div className="gp-contact-stack">
+              {artist.email && (
+                <div className="gp-contact-item">
+                  <div className="gp-contact-label">Email</div>
+                  <a href={`mailto:${artist.email}`} className="gp-contact-value">
+                    {artist.email}
+                  </a>
+                </div>
+              )}
+              {artist.phone && (
+                <div className="gp-contact-item">
+                  <div className="gp-contact-label">Phone</div>
+                  <a href={`tel:${artist.phone}`} className="gp-contact-value">
+                    {artist.phone}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         )}
