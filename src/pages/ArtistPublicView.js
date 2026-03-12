@@ -21,6 +21,31 @@ function ArtistPublicView() {
   const [error, setError] = useState(null);
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
 
+  // Lock background scroll when modal open (allow modal scroll only)
+  useEffect(() => {
+    if (!showArtGallery) return;
+
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const prevOverflow = document.body.style.overflow;
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevWidth = document.body.style.width;
+
+    document.body.style.overflow = 'hidden';
+    // iOS-friendly scroll lock
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.width = prevWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [showArtGallery]);
+
   useEffect(() => {
     if (!artistId) {
       setError('Artist profile link is missing an id.');
@@ -132,6 +157,25 @@ function ArtistPublicView() {
   const themeText = theme?.text || '#ffffff';
   const themeLinkBg = theme?.linkBg || 'rgba(255,255,255,0.08)';
 
+  const isDarkColor = (color) => {
+    if (!color) return false;
+    const c = String(color).trim().toLowerCase();
+    // Only handle hex colors here; gradients fallback to "not dark"
+    const hex = c.startsWith('#') ? c.slice(1) : null;
+    if (!hex || (hex.length !== 3 && hex.length !== 6)) return false;
+    const full = hex.length === 3 ? hex.split('').map((ch) => ch + ch).join('') : hex;
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    // Relative luminance approximation
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return luminance < 0.45;
+  };
+
+  const isTextDark = isDarkColor(themeText);
+  const glassPillBg = isTextDark ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)';
+  const glassPillBorder = isTextDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
+
   const fontId = artist.profileFont || 'outfit';
   const fontMap = {
     outfit: "'Outfit', system-ui, -apple-system, sans-serif",
@@ -149,6 +193,8 @@ function ArtistPublicView() {
         '--artist-bg': themeBg,
         '--artist-text': themeText,
         '--artist-link-bg': themeLinkBg,
+        '--artist-glass-pill-bg': glassPillBg,
+        '--artist-glass-pill-border': glassPillBorder,
         background: themeBg
       }}
     >
@@ -248,6 +294,11 @@ function ArtistPublicView() {
           <div className="gp-section">
             <button
               className="gp-art-button"
+              style={{
+                background: 'var(--artist-link-bg)',
+                color: 'var(--artist-text)',
+                border: '1px solid var(--artist-text)'
+              }}
               onClick={() => {
                 setShowArtGallery(true);
                 setSelectedArtItem(null);
@@ -261,7 +312,15 @@ function ArtistPublicView() {
                 </svg>
               </span>
               <span className="gp-art-button-text">Show My Art</span>
-              <span className="gp-art-button-count">{artItems.length}</span>
+              <span
+                className="gp-art-button-count"
+                style={{
+                  border: '1px solid var(--artist-text)',
+                  color: 'var(--artist-text)'
+                }}
+              >
+                {artItems.length}
+              </span>
             </button>
           </div>
         )}
