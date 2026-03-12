@@ -897,13 +897,13 @@
   width: 112px;
   height: 112px;
   border-radius: 50%;
-  border: 3px solid rgba(15, 23, 42, 0.85);
+  border: none; /* remove dark ring */
   overflow: hidden;
-  background: #020617;
+  background: transparent; /* no black background */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.6);
+  box-shadow: none; /* cleaner edge so photo fills circle */
 }
 
 .gp-avatar-circle img {
