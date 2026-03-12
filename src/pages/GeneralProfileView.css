@@ -634,7 +634,6 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  position: relative;
 }
 
 .gp-art-modal-header h2 {
@@ -649,54 +648,21 @@
 }
 
 .gp-art-modal-close {
-  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #e5e7eb;
-  width: 32px;
-  height: 32px;
+  color: rgba(255, 255, 255, 0.92);
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   cursor: pointer;
-}
-
-/* Ribbon/bookmark style close button (like your reference) */
-.gp-close-ribbon {
-  position: absolute;
-  top: -18px;
-  right: 18px;
-  width: 44px;
-  height: 54px;
-  border-radius: 10px 10px 2px 2px;
-  background: #ef4444;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding-top: 10px;
-  color: #fff;
   font-size: 20px;
   line-height: 1;
-  z-index: 5;
-}
-
-.gp-close-ribbon::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -14px;
-  margin: auto;
-  width: 0;
-  height: 0;
-  border-left: 22px solid transparent;
-  border-right: 22px solid transparent;
-  border-top: 14px solid #ef4444;
-}
-
-.gp-close-ribbon:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.65);
-  outline-offset: 3px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .gp-art-modal-grid {
@@ -787,17 +753,24 @@
 }
 
 .gp-art-lightbox-close {
-  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #e5e7eb;
-  width: 32px;
-  height: 32px;
+  color: rgba(255, 255, 255, 0.92);
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
 }
 
 .gp-art-lightbox-images {

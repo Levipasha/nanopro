@@ -346,12 +346,11 @@ function ArtistPublicView() {
               <h2>{selectedArtItem?.title ? selectedArtItem.title : 'Art Collection'}</h2>
               {artItems.length > 0 && <span className="gp-art-modal-count">{artItems.length} pieces</span>}
               <button
-                className="gp-art-modal-close gp-close-ribbon"
+                className="gp-art-modal-close"
                 onClick={() => {
                   setShowArtGallery(false);
                   setSelectedArtItem(null);
                 }}
-                aria-label="Close"
               >
                 ✕
               </button>
@@ -393,10 +392,10 @@ function ArtistPublicView() {
               </div>
             )}
 
-            {artItems.length > 0 && selectedArtItem && (
+            {selectedArtItem && (
               <div className="gp-art-lightbox" onClick={() => setSelectedArtItem(null)}>
                 <div className="gp-art-lightbox-inner" onClick={(e) => e.stopPropagation()}>
-                  <button className="gp-art-lightbox-close gp-close-ribbon" onClick={() => setSelectedArtItem(null)} aria-label="Close">
+                  <button className="gp-art-lightbox-close" onClick={() => setSelectedArtItem(null)}>
                     ✕
                   </button>
                   <h2>{selectedArtItem.title || 'Artwork'}</h2>
