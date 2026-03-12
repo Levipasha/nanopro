@@ -726,16 +726,18 @@ function Profile() {
     setError('');
     setGeneralSuccess('');
     try {
+      const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+      const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
       let photoUrl = generalForm.photo;
       if (generalPhotoFile) {
-        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
+        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, getIdTokenFn);
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const res = await generalProfileAPI.create(
         { ...generalForm, photo: photoUrl, links },
-        () => getIdToken(),
-        getFirebaseUser
+        getIdTokenFn,
+        getFirebaseUserFn
       );
       setGeneralProfile(res.data);
       updateGeneralStep('home');
