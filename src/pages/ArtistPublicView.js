@@ -319,7 +319,6 @@ function ArtistPublicView() {
                     aria-label={`Show slide ${i + 1}`}
                     title={item.name || `Slide ${i + 1}`}
                   >
-                    <img src={item.url} alt={item.name || `Slide ${i + 1}`} loading="lazy" />
                   </button>
                 ))}
               </div>
