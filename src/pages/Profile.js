@@ -734,17 +734,32 @@ function Profile() {
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      const res = await generalProfileAPI.create(
-        { ...generalForm, photo: photoUrl, links },
-        getIdTokenFn,
-        getFirebaseUserFn
-      );
+      const payload = { ...generalForm, photo: photoUrl, links };
+
+      // If a general profile already exists for this account, use update; otherwise create.
+      let res;
+      try {
+        const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
+        if (existing && existing.data) {
+          res = await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
+        } else {
+          res = await generalProfileAPI.create(payload, getIdTokenFn, getFirebaseUserFn);
+        }
+      } catch (innerErr) {
+        // If backend says "You already have a general profile. Use update instead.", retry with update.
+        if ((innerErr.message || '').toLowerCase().includes('already have a general profile')) {
+          res = await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
+        } else {
+          throw innerErr;
+        }
+      }
+
       setGeneralProfile(res.data);
       updateGeneralStep('home');
       setGeneralOnboardingStep(1);
       localStorage.removeItem('general_onboarding_step');
       setGeneralPhotoFile(null);
-      setGeneralSuccess('Profile created successfully!');
+      setGeneralSuccess('Profile saved successfully!');
       setTimeout(() => setGeneralSuccess(''), 2500);
     } catch (err) {
       setError(err.message || 'Failed to create profile.');
