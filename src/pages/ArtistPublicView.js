@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useSearchParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
@@ -107,7 +108,12 @@ function ArtistPublicView() {
   if (loading) {
     return (
       <div className="gp-view gp-loading">
-        <div className="gp-spinner" />
+        <DotLottieReact
+          src="https://lottie.host/72ff4b3f-6efc-49ce-bd25-60eb84e7f56a/uuieaKgy8O.lottie"
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
         <p>Loading artist profile...</p>
       </div>
     );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useParams } from 'react-router-dom';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
@@ -58,7 +59,12 @@ function GeneralProfileView() {
   if (loading) {
     return (
       <div className="gp-view gp-loading">
-        <div className="gp-spinner" />
+        <DotLottieReact
+          src="https://lottie.host/70c04cf5-4bee-45cf-a8a3-e1e67345a066/X8rq0FUjaj.lottie"
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
         <p>Loading profile...</p>
       </div>
     );
