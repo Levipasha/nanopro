@@ -454,6 +454,39 @@ function ArtistPublicView() {
         </div>
       )}
 
+      {/* Profile photo preview card */}
+      {showProfilePreview && artist?.photo && (
+        <div className="gp-photo-modal">
+          <div
+            className="gp-modal-overlay"
+            onClick={() => setShowProfilePreview(false)}
+          />
+          <div className="gp-profile-preview-card">
+            <img
+              src={artist.photo}
+              alt={artist.name || 'Artist'}
+              className="gp-profile-preview-img"
+            />
+            <div className="gp-profile-preview-info">
+              <div className="gp-profile-preview-name-row">
+                {artist.name && <span className="gp-profile-preview-name">{artist.name}</span>}
+                {artist.specialization && <span className="gp-profile-preview-dot" />}
+              </div>
+              {artist.specialization && (
+                <p className="gp-profile-preview-role">{artist.specialization}</p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="gp-modal-close"
+            onClick={() => setShowProfilePreview(false)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Art / Image modal (reuse same UI) */}
       {showArtGallery && (artItems.length > 0 || (selectedArtItem && (selectedArtItem.images || []).length > 0)) && (
         <div
