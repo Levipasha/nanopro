@@ -20,6 +20,8 @@ function ArtistPublicView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
+  const [showEventPreview, setShowEventPreview] = useState(false);
+  const [activeEventPreview, setActiveEventPreview] = useState(null);
 
   // Lock background scroll when modal open (allow modal scroll only)
   useEffect(() => {
@@ -286,11 +288,11 @@ function ArtistPublicView() {
                 className="gp-events-stage"
                 onClick={() => {
                   if (!activeEvent?.url) return;
-                  setSelectedArtItem({
-                    title: activeEvent.name || 'Event',
-                    images: [activeEvent.url]
+                  setActiveEventPreview({
+                    url: activeEvent.url,
+                    name: activeEvent.name || 'Event'
                   });
-                  setShowArtGallery(true);
+                  setShowEventPreview(true);
                 }}
               >
                 <img
@@ -415,6 +417,34 @@ function ArtistPublicView() {
           </span>
         </div>
       </div>
+
+      {/* Lightweight preview for Events slideshow images */}
+      {showEventPreview && activeEventPreview && (
+        <div className="gp-photo-modal">
+          <div
+            className="gp-modal-overlay"
+            onClick={() => {
+              setShowEventPreview(false);
+              setActiveEventPreview(null);
+            }}
+          />
+          <img
+            className="gp-modal-img"
+            src={activeEventPreview.url}
+            alt={activeEventPreview.name || 'Event image'}
+          />
+          <button
+            type="button"
+            className="gp-modal-close"
+            onClick={() => {
+              setShowEventPreview(false);
+              setActiveEventPreview(null);
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Art / Image modal (reuse same UI) */}
       {showArtGallery && (artItems.length > 0 || (selectedArtItem && (selectedArtItem.images || []).length > 0)) && (
