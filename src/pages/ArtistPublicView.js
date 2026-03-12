@@ -121,19 +121,52 @@ function ArtistPublicView() {
   }
 
   const primaryLinks = [];
-  const linkFields = ['website', 'instagram', 'facebook', 'twitter', 'linkedin', 'whatsapp'];
+  const linkFields = [
+    'website',
+    'portfolio',
+    'pinterest',
+    'instagram',
+    'youtube',
+    'tiktok',
+    'twitter',
+    'linkedin',
+    'spotify',
+    'facebook',
+    'whatsapp',
+    'discord',
+    'snapchat',
+    'telegram',
+    'reddit',
+    'threads',
+    'medium',
+    'twitch',
+    'quora',
+    'github',
+  ];
+
   linkFields.forEach((field) => {
     const val = artist[field];
     if (!val) return;
     let url = val;
-    if (field === 'instagram' && !val.startsWith('http')) url = `https://instagram.com/${val.replace('@', '')}`;
-    if (field === 'facebook' && !val.startsWith('http')) url = `https://facebook.com/${val}`;
-    if (field === 'twitter' && !val.startsWith('http')) url = `https://x.com/${val.replace('@', '')}`;
-    if (field === 'linkedin' && !val.startsWith('http')) url = `https://linkedin.com/in/${val}`;
+
+    // Keep backward compatible username-style inputs for some platforms
+    if (field === 'instagram' && !val.startsWith('http')) {
+      url = `https://instagram.com/${val.replace('@', '')}`;
+    }
+    if (field === 'facebook' && !val.startsWith('http')) {
+      url = `https://facebook.com/${val}`;
+    }
+    if (field === 'twitter' && !val.startsWith('http')) {
+      url = `https://x.com/${val.replace('@', '')}`;
+    }
+    if (field === 'linkedin' && !val.startsWith('http')) {
+      url = `https://linkedin.com/in/${val}`;
+    }
     if (field === 'whatsapp' && !val.includes('wa.me')) {
       const clean = val.replace(/\D/g, '');
       if (clean) url = `https://wa.me/${clean}`;
     }
+
     primaryLinks.push({
       id: field,
       title: field.charAt(0).toUpperCase() + field.slice(1),
@@ -242,22 +275,23 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Links */}
+        {/* Links – compact 3x3 icon grid */}
         {primaryLinks.length > 0 && (
           <div className="gp-section">
             <h2 className="gp-section-title">Links</h2>
-            <div className="gp-links">
+            <div className="gp-links-grid">
               {primaryLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="gp-link"
-                  style={{ backgroundColor: 'var(--artist-link-bg)' }}
+                  className="gp-link-icon-only"
+                  title={link.title}
                 >
-                  <span className="gp-link-icon">{getLinkIcon({ platform: link.id })}</span>
-                  <span className="gp-link-text">{link.title}</span>
+                  <span className="gp-link-icon-only-inner">
+                    {getLinkIcon({ platform: link.id })}
+                  </span>
                 </a>
               ))}
             </div>
