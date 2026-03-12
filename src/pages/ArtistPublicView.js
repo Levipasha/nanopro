@@ -275,29 +275,6 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Links – compact 3x3 icon grid */}
-        {primaryLinks.length > 0 && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Links</h2>
-            <div className="gp-links-grid">
-              {primaryLinks.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gp-link-icon-only"
-                  title={link.title}
-                >
-                  <span className="gp-link-icon-only-inner">
-                    {getLinkIcon({ platform: link.id })}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Get in touch */}
         {hasContact && (
           <div className="gp-section">
@@ -396,6 +373,29 @@ function ArtistPublicView() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Links – compact 3x3 icon grid (now placed below Events) */}
+        {primaryLinks.length > 0 && (
+          <div className="gp-section">
+            <h2 className="gp-section-title">Links</h2>
+            <div className="gp-links-grid">
+              {primaryLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gp-link-icon-only"
+                  title={link.title}
+                >
+                  <span className="gp-link-icon-only-inner">
+                    {getLinkIcon({ platform: link.id })}
+                  </span>
+                </a>
+              ))}
             </div>
           </div>
         )}

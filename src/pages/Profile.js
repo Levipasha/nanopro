@@ -73,6 +73,8 @@ const ALL_PLATFORMS = [
   { id: 'github', label: 'GitHub' }
 ];
 
+const MAX_PLATFORM_LINKS = 6;
+
 const SMART_PLATFORMS = ['whatsapp', 'telegram', 'instagram', 'twitter', 'tiktok', 'snapchat', 'threads'];
 
 function buildLinkUrl(platform, link) {
@@ -1192,9 +1194,25 @@ function Profile() {
   };
 
   const togglePlatformInSelector = (id) => {
-    setTempPlatforms(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
+    setTempPlatforms((prev) => {
+      // If already selected in this session, toggle off
+      if (prev.includes(id)) {
+        return prev.filter((p) => p !== id);
+      }
+
+      // Compute how many unique platforms would be visible after this selection
+      const base = new Set(visiblePlatforms || []);
+      const nextTemp = [...prev, id];
+      const combined = new Set([...base, ...nextTemp]);
+
+      if (combined.size > MAX_PLATFORM_LINKS) {
+        // Hard cap: only allow up to MAX_PLATFORM_LINKS platforms in total
+        window.alert(`You can add up to ${MAX_PLATFORM_LINKS} platforms only.`);
+        return prev;
+      }
+
+      return nextTemp;
+    });
   };
 
   const handlePlatformDone = async () => {
