@@ -553,10 +553,12 @@ function Profile() {
   }, [user, otpUser, getFirebaseUser]);
 
   const loadGeneralProfile = useCallback(async () => {
-    if (!user) return;
+    if (!user && !otpUser) return;
+    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
     setGeneralProfileLoading(true);
     try {
-      const res = await generalProfileAPI.getMine(() => getIdToken(), getFirebaseUser);
+      const res = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
       const data = res.data;
       if (data) {
         setGeneralProfile(data);
@@ -580,7 +582,7 @@ function Profile() {
     } finally {
       setGeneralProfileLoading(false);
     }
-  }, [user, getFirebaseUser]);
+  }, [user, otpUser, getFirebaseUser]);
 
   useEffect(() => {
     localStorage.setItem('dash_theme', dashTheme);
@@ -657,7 +659,7 @@ function Profile() {
       if (profileMode !== 'general') {
         loadMyProfiles();
       }
-      if (user && (profileMode === 'choice' || profileMode === 'general')) {
+      if ((user || otpUser) && (profileMode === 'choice' || profileMode === 'general')) {
         loadGeneralProfile();
       }
     }
@@ -796,11 +798,13 @@ function Profile() {
 
   const handleGeneralFieldSave = async (field, value) => {
     if (!generalProfile) return;
+    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
     setGeneralSaving(true);
     setError('');
     try {
       const payload = { [field]: value };
-      const res = await generalProfileAPI.update(payload, () => getIdToken(), getFirebaseUser);
+      const res = await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
       setGeneralProfile(res.data);
       setGeneralForm(prev => ({ ...prev, [field]: value }));
     } catch (err) {
@@ -812,12 +816,14 @@ function Profile() {
 
   const handleGeneralPhotoSave = async (file) => {
     if (!file || !generalProfile) return;
+    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
     setGeneralSaving(true);
     setError('');
     try {
-      const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
+      const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
       const photoUrl = up?.url || '';
-      const res = await generalProfileAPI.update({ photo: photoUrl }, () => getIdToken(), getFirebaseUser);
+      const res = await generalProfileAPI.update({ photo: photoUrl }, getIdTokenFn, getFirebaseUserFn);
       setGeneralProfile(res.data);
       setGeneralForm(prev => ({ ...prev, photo: photoUrl }));
       setGeneralPhotoFile(null);
@@ -832,19 +838,21 @@ function Profile() {
 
   const handleGeneralSaveAll = async () => {
     if (!generalProfile) return;
+    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
+    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
     setGeneralSaving(true);
     setError('');
     try {
       let photoUrl = generalForm.photo;
       if (generalPhotoFile) {
-        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, () => getIdToken());
+        const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, getIdTokenFn);
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const res = await generalProfileAPI.update(
         { ...generalForm, photo: photoUrl, links },
-        () => getIdToken(),
-        getFirebaseUser
+        getIdTokenFn,
+        getFirebaseUserFn
       );
       setGeneralProfile(res.data);
       setGeneralPhotoFile(null);
