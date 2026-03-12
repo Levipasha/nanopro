@@ -12,6 +12,17 @@
   background: #1a1a1a;
 }
 
+/* Artist public theme (force override on deploy) */
+.gp-artist-themed.gp-layout {
+  background: var(--artist-bg) !important;
+  color: var(--artist-text) !important;
+}
+
+.gp-artist-themed-card {
+  background: var(--artist-bg) !important;
+  color: var(--artist-text) !important;
+}
+
 .gp-loading,
 .gp-error {
   justify-content: center;
@@ -395,6 +406,91 @@
 
 .gp-contact-value:hover {
   opacity: 0.9;
+}
+
+/* Events slideshow (main image + thumbnail indicators) */
+.gp-events-slideshow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.gp-events-stage {
+  width: 100%;
+  border: none;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.35);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.5);
+  position: relative;
+}
+
+.gp-events-stage-img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+  animation: gp-events-fade 250ms ease;
+}
+
+.gp-events-stage-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.9rem 0.9rem 0.75rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+  color: #fff;
+  text-align: left;
+}
+
+.gp-events-stage-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.gp-events-dots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.gp-events-dot {
+  border: none;
+  padding: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.55);
+  opacity: 0.65;
+  transition: opacity 0.2s ease, transform 0.2s ease, outline-color 0.2s ease;
+  outline: 2px solid transparent;
+}
+
+.gp-events-dot img {
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-events-dot:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.gp-events-dot.is-active {
+  opacity: 1;
+  outline-color: rgba(255, 255, 255, 0.65);
+}
+
+@keyframes gp-events-fade {
+  from { opacity: 0.75; }
+  to { opacity: 1; }
 }
 
 .gp-gallery-strip-wrapper {

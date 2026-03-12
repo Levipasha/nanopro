@@ -18,7 +18,7 @@ function ArtistPublicView() {
   const [selectedArtItem, setSelectedArtItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const galleryStripRef = useRef(null);
+  const [eventSlideIndex, setEventSlideIndex] = useState(0);
 
   useEffect(() => {
     if (!artistId) {
@@ -50,29 +50,21 @@ function ArtistPublicView() {
     };
   }, [artistId]);
 
-  // Auto-scroll gallery strip (hook must be at top; no-op when no artist/gallery)
+  // Auto-advance Events slideshow every 3s
   useEffect(() => {
     const gallery = artist?.gallery;
     const hasGallery = Array.isArray(gallery) && gallery.length > 0;
-    if (!hasGallery || !galleryStripRef.current) return;
+    if (!hasGallery) return;
 
-    const stripEl = galleryStripRef.current;
-    const gapPx = 14;
-    let index = 0;
+    // Clamp index when gallery size changes
+    setEventSlideIndex((i) => (i >= gallery.length ? 0 : i));
 
     const timer = setInterval(() => {
-      const firstCard = stripEl.firstElementChild;
-      if (!firstCard) return;
-      const cardWidth = firstCard.getBoundingClientRect().width || 0;
-      if (!cardWidth) return;
-
-      index = (index + 1) % gallery.length;
-      const scrollLeft = index * (cardWidth + gapPx);
-      stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-    }, 4000);
+      setEventSlideIndex((i) => (i + 1) % gallery.length);
+    }, 3000);
 
     return () => clearInterval(timer);
-  }, [artist]);
+  }, [artist?.gallery?.length]);
 
   if (!artistId) {
     return (
@@ -131,6 +123,11 @@ function ArtistPublicView() {
   const hasGallery = Array.isArray(artist.gallery) && artist.gallery.length > 0;
   const hasContact = artist.email || artist.phone;
 
+  const eventSlides = (artist.gallery || []).filter((x) => x && x.url);
+  const activeEvent = eventSlides.length > 0
+    ? eventSlides[Math.min(eventSlideIndex, eventSlides.length - 1)]
+    : null;
+
   const themeId = artist.profileTheme || 'mono';
   const themeMap = {
     mono: { bg: '#0f172a', text: '#ffffff', linkBg: 'rgba(255,255,255,0.08)' },
@@ -152,13 +149,16 @@ function ArtistPublicView() {
 
   return (
     <div
-      className="gp-view gp-layout"
+      className="gp-view gp-layout gp-artist-themed"
       style={{
+        '--artist-bg': theme.bg,
+        '--artist-text': theme.text,
+        '--artist-link-bg': theme.linkBg,
         background: theme.bg
       }}
     >
       <div
-        className="gp-card"
+        className="gp-card gp-artist-themed-card"
         style={{
           background: theme.bg,
           color: theme.text,
@@ -213,7 +213,7 @@ function ArtistPublicView() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="gp-link"
-                  style={{ backgroundColor: theme.linkBg }}
+                  style={{ backgroundColor: 'var(--artist-link-bg)' }}
                 >
                   <span className="gp-link-icon">{getLinkIcon({ platform: link.id })}</span>
                   <span className="gp-link-text">{link.title}</span>
@@ -271,30 +271,49 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* Events / Gallery – compact horizontal strip */}
-        {hasGallery && (
+        {/* Events slideshow (W3Schools-style indicators) */}
+        {eventSlides.length > 0 && (
           <div className="gp-section">
             <h2 className="gp-section-title">Events</h2>
-            <div className="gp-gallery-strip-wrapper">
-              <div className="gp-gallery-strip" ref={galleryStripRef}>
-                {artist.gallery.map((item, idx) => (
+
+            <div className="gp-events-slideshow">
+              <button
+                type="button"
+                className="gp-events-stage"
+                onClick={() => {
+                  if (!activeEvent?.url) return;
+                  setSelectedArtItem({
+                    title: activeEvent.name || 'Event',
+                    images: [activeEvent.url]
+                  });
+                  setShowArtGallery(true);
+                }}
+              >
+                <img
+                  key={activeEvent?.url || 'event'}
+                  className="gp-events-stage-img"
+                  src={activeEvent?.url}
+                  alt={activeEvent?.name || 'Event'}
+                  loading="lazy"
+                />
+                {(activeEvent?.name || '') && (
+                  <div className="gp-events-stage-caption">
+                    <div className="gp-events-stage-title">{activeEvent.name}</div>
+                  </div>
+                )}
+              </button>
+
+              <div className="gp-events-dots">
+                {eventSlides.map((item, i) => (
                   <button
-                    key={idx}
+                    key={`${item.url}-${i}`}
                     type="button"
-                    className="gp-gallery-chip"
-                    onClick={() => {
-                      // Reuse art modal for a simple large view behaviour
-                      setSelectedArtItem({
-                        title: item.name || 'Event',
-                        images: [item.url]
-                      });
-                      setShowArtGallery(true);
-                    }}
+                    className={`gp-events-dot ${i === eventSlideIndex ? 'is-active' : ''}`}
+                    onClick={() => setEventSlideIndex(i)}
+                    aria-label={`Show slide ${i + 1}`}
+                    title={item.name || `Slide ${i + 1}`}
                   >
-                    <div className="gp-gallery-chip-thumb">
-                      <img src={item.url} alt={item.name || 'Event'} />
-                    </div>
-                    {item.name && <div className="gp-gallery-chip-title">{item.name}</div>}
+                    <img src={item.url} alt={item.name || `Slide ${i + 1}`} loading="lazy" />
                   </button>
                 ))}
               </div>
@@ -318,8 +337,8 @@ function ArtistPublicView() {
         </div>
       </div>
 
-      {/* Art collection modal */}
-      {showArtGallery && artItems.length > 0 && (
+      {/* Art / Image modal (reuse same UI) */}
+      {showArtGallery && (artItems.length > 0 || (selectedArtItem && (selectedArtItem.images || []).length > 0)) && (
         <div
           className="gp-art-modal-overlay"
           onClick={() => {
@@ -329,8 +348,8 @@ function ArtistPublicView() {
         >
           <div className="gp-art-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gp-art-modal-header">
-              <h2>Art Collection</h2>
-              <span className="gp-art-modal-count">{artItems.length} pieces</span>
+              <h2>{selectedArtItem?.title ? selectedArtItem.title : 'Art Collection'}</h2>
+              {artItems.length > 0 && <span className="gp-art-modal-count">{artItems.length} pieces</span>}
               <button
                 className="gp-art-modal-close"
                 onClick={() => {
@@ -341,32 +360,42 @@ function ArtistPublicView() {
                 ✕
               </button>
             </div>
-            <div className="gp-art-modal-grid">
-              {artItems.map((item) => {
-                const firstImage =
-                  item.images && item.images[0]
-                    ? item.images[0]
-                    : null;
-                return (
-                  <button
-                    key={item.id || item.title}
-                    type="button"
-                    className="gp-art-card"
-                    onClick={() => setSelectedArtItem(item)}
-                  >
-                    {firstImage ? (
-                      <img src={firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
-                    ) : (
-                      <div className="gp-art-card-empty">🎨</div>
-                    )}
-                    <div className="gp-art-card-info">
-                      <h3>{item.title || 'Untitled'}</h3>
-                      {item.description && <p>{item.description}</p>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            {artItems.length > 0 ? (
+              <div className="gp-art-modal-grid">
+                {artItems.map((item) => {
+                  const firstImage =
+                    item.images && item.images[0]
+                      ? item.images[0]
+                      : null;
+                  return (
+                    <button
+                      key={item.id || item.title}
+                      type="button"
+                      className="gp-art-card"
+                      onClick={() => setSelectedArtItem(item)}
+                    >
+                      {firstImage ? (
+                        <img src={firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
+                      ) : (
+                        <div className="gp-art-card-empty">🎨</div>
+                      )}
+                      <div className="gp-art-card-info">
+                        <h3>{item.title || 'Untitled'}</h3>
+                        {item.description && <p>{item.description}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="gp-art-lightbox-inner" style={{ background: 'transparent', padding: 0, maxHeight: 'unset' }}>
+                <div className="gp-art-lightbox-images" style={{ marginTop: 0 }}>
+                  {(selectedArtItem?.images || []).map((imgUrl, i) => (
+                    <img key={i} src={imgUrl} alt={`${selectedArtItem?.title || 'Image'} ${i + 1}`} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedArtItem && (
               <div className="gp-art-lightbox" onClick={() => setSelectedArtItem(null)}>
