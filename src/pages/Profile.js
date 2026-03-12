@@ -1058,10 +1058,20 @@ function Profile() {
         finalValue = `https://wa.me/${cleanNumber}`;
       }
       const payload = { [platform]: finalValue }; // value could be null
-      if (otpUser) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
+      // Support both Firebase-authenticated sessions and OTP sessions.
+      if (otpUser && otpUser.token) {
+        await landingArtistAPI.updateMyProfileWithOtpToken(
+          artist.artistId || artist._id,
+          payload,
+          otpUser.token
+        );
       } else {
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+        await landingArtistAPI.updateMyProfile(
+          artist.artistId || artist._id,
+          payload,
+          () => getIdToken(),
+          getFirebaseUser
+        );
       }
       // Update server-side source of truth
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [platform]: finalValue } : a));
@@ -1362,9 +1372,7 @@ function Profile() {
         <div className="profile-login-card onboarding-card">
           {onboardingStep > 1 && (
             <button className="onboarding-back-arrow" onClick={handleOnboardingBack}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
+              ←
             </button>
           )}
           <div className="onboarding-progress-container">
@@ -1585,7 +1593,7 @@ function Profile() {
                       <button 
                         type="button" 
                         onClick={() => setIsOnboardingSelectorOpen(true)}
-                        style={{ width: '100%', padding: '1rem', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '2px dashed rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                        style={{ width: '100%', maxWidth: '380px', margin: '0 auto', padding: '1rem', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '2px dashed rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
                         onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; }}
                         onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
                       >
@@ -1600,7 +1608,7 @@ function Profile() {
                           type="button"
                           className="selector-close-btn"
                           onClick={() => setIsOnboardingSelectorOpen(false)}
-                        >✕</button>
+                        >←</button>
                       </div>
                       <p className="selector-subtitle">Choose the platforms you want on your profile</p>
                       
@@ -1636,7 +1644,7 @@ function Profile() {
                         onClick={() => setIsOnboardingSelectorOpen(false)}
                         style={{ marginTop: '1.25rem' }}
                       >
-                        Done Selecting ({onboardingPlatforms.length} selected)
+                        Selected ({onboardingPlatforms.length})
                       </button>
                     </div>
                   )}
@@ -1670,7 +1678,7 @@ function Profile() {
                   </div>
                 </div>
 
-                <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
+                <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
                   <label>Gallery Images / GIFs (up to 3)</label>
                   <div className="upload-preview-banner" onClick={() => document.getElementById('gallery-input').click()} style={{ minHeight: '80px', display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '10px' }}>
                     {onboardingGalleryFiles.length > 0 ? (
@@ -2698,6 +2706,7 @@ function Profile() {
                         paddingRight: '2.5rem',
                         borderColor: usernameCheck.status === 'available' ? '#10b981' : usernameCheck.status === 'taken' || usernameCheck.status === 'invalid' ? '#ef4444' : undefined
                       }}
+                      autoComplete="off"
                       value={generalForm.username}
                       onChange={e => {
                         const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -3650,7 +3659,7 @@ function Profile() {
                       Copy your link
                     </button>
                     <a
-                      className="dash-link-btn dash-link-btn-primary"
+                      className="dash-link-btn"
                       href={profileUrl}
                       target="_blank"
                       rel="noreferrer"
@@ -4235,7 +4244,7 @@ function Profile() {
                         }
                       }}
                       disabled={saving}
-                      style={{ padding: '0.9rem 2.5rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, background: 'var(--dash-accent, #8b5cf6)', color: '#fff', border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(139,92,246,0.3)' }}
+                      style={{ padding: '0.9rem 2.5rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, background: '#ffffff', color: '#000000', border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(0,0,0,0.45)' }}
                     >
                       {saving ? 'Creating...' : 'Get Started'}
                     </button>

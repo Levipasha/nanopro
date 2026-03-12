@@ -488,8 +488,9 @@
 .gp-contact-item {
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(8px);
+  background: #000000;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  box-shadow: none;
 }
 
 .gp-contact-label {
@@ -619,21 +620,20 @@
   flex: 0 0 auto;
   width: 150px;
   border-radius: 24px;
-  border: none;
+  border: 1px solid rgba(148, 163, 184, 0.7);
   padding: 0;
   overflow: hidden;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 64, 175, 0.85));
+  background: #000000;
   cursor: pointer;
   scroll-snap-align: start;
   text-align: left;
   color: inherit;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.6);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: none;
+  transition: none;
 }
 
 .gp-gallery-chip:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.75);
+  background: #000000;
 }
 
 .gp-gallery-chip-thumb {
@@ -667,10 +667,10 @@
   gap: 0.5rem;
   padding: 0.8rem 1rem;
   border-radius: 999px;
-  border: none;
+  border: 1px solid rgba(249, 250, 251, 0.9);
   cursor: pointer;
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), rgba(236, 72, 153, 0.9));
-  color: #fff;
+  background: #000000;
+  color: #f9fafb;
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -682,10 +682,11 @@
 }
 
 .gp-art-button-count {
-  background: rgba(15, 23, 42, 0.7);
+  background: #ffffff;
   padding: 0.1rem 0.6rem;
   border-radius: 999px;
   font-size: 0.8rem;
+  color: #000000;
 }
 
 /* Art gallery modal */
@@ -943,7 +944,7 @@
 
 /* Animated Themes Additions */
 .theme-anim-aurora {
-  background: linear-gradient(-45deg, #0f172a, #111827, #1e1b4b, #312e81);
+  background: linear-gradient(-45deg, #020617, #020617, #0b1120, #020617);
   background-size: 400% 400%;
   animation: aurora-flow 15s ease infinite;
 }
@@ -963,7 +964,7 @@
 }
 
 .theme-anim-galaxy {
-  background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #000 100%);
+  background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
   position: relative;
   overflow: hidden;
 }
@@ -976,7 +977,7 @@
   right: -50%;
   bottom: -50%;
   background: transparent;
-  background-image: radial-gradient(#fff 1px, transparent 1px), radial-gradient(#fff 1px, transparent 1px);
+  background-image: radial-gradient(#ffffff 1px, transparent 1px), radial-gradient(#ffffff 1px, transparent 1px);
   background-size: 50px 50px;
   background-position: 0 0, 25px 25px;
   animation: galaxy-spin 60s linear infinite;
@@ -995,7 +996,7 @@
 }
 
 .theme-anim-glass {
-  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  background: linear-gradient(135deg, #020617 0%, #111827 100%);
   background-size: 200% 200%;
   animation: glass-flow 10s ease infinite;
 }
@@ -1015,7 +1016,7 @@
 }
 
 .theme-anim-cyber {
-  background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+  background: linear-gradient(135deg, #020617 0%, #111827 100%);
   position: relative;
   overflow: hidden;
 }
@@ -1027,7 +1028,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background: linear-gradient(rgba(249, 250, 251, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249, 250, 251, 0.08) 1px, transparent 1px);
   background-size: 30px 30px;
   animation: cyber-grid 20s linear infinite;
   z-index: 0;

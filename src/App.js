@@ -559,7 +559,7 @@ function App() {
             <section id="digital-id" className="info-section page-section">
               <div className="info-inner">
                 <h2>Digital ID of You</h2>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                <div className="digital-id-wrap">
                   <ProfileCard
                     name="Your Digital ID"
                     title="Secure, Smart Identity"
@@ -575,6 +575,13 @@ function App() {
                     behindGlowEnabled
                     innerGradient="linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)"
                   />
+                  <button
+                    type="button"
+                    className="digital-id-cta"
+                    onClick={() => navigate('/login')}
+                  >
+                    CREATE YOUR ID
+                  </button>
                 </div>
               </div>
             </section>
