@@ -107,10 +107,12 @@
 .gp-photo-header {
   position: relative;
   width: 100%;
+  /* Fixed banner box so image can fill it cleanly */
   aspect-ratio: 16 / 9;
   max-height: 260px;
   overflow: hidden;
-  background: transparent;
+  /* Use a solid backdrop so plain images don't show the card theme as a frame */
+  background: #ffffff;
   z-index: 0;
 }
 
@@ -118,13 +120,16 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center; /* keep artwork centered in the banner */
   display: block;
   cursor: zoom-in;
-  transition: transform 0.2s ease;
+  /* Gentle zoom so artwork fills box but stays readable */
+  transform: scale(1.1);
+  transform-origin: center center;
 }
 
 .gp-avatar-img:hover {
-  transform: scale(1.02);
+  transform: scale(1.1);
 }
 
 .gp-avatar-placeholder-header {

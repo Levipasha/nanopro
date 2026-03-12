@@ -3060,13 +3060,25 @@ function Profile() {
                       : 'See a live preview of your public profile page'}
               </p>
               {generalActiveTab === 'profile' && (
-                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dash-bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--dash-border)', maxWidth: 'max-content', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace' }}>{gProfileLink}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(gProfileLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: linkCopied ? 'rgba(16,185,129,0.15)' : 'rgba(100,116,139,0.1)', border: 'none', cursor: 'pointer', color: linkCopied ? '#10b981' : '#64748b', padding: '6px 12px', borderRadius: '8px', transition: 'all 0.2s', fontSize: '0.8rem', fontWeight: 600, gap: '4px' }}>
-                    {linkCopied ? '✓ Copied!' : 'Copy'}
+                <div className="dash-profile-link-actions">
+                  <button
+                    type="button"
+                    className="dash-link-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(gProfileLink);
+                      setLinkCopied(true);
+                      setTimeout(() => setLinkCopied(false), 2000);
+                    }}
+                  >
+                    {linkCopied ? 'Copied' : 'Copy your link'}
                   </button>
-                  <a href={gProfileLink} target="_blank" rel="noreferrer" style={{ marginLeft: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.1)', color: '#6366f1', textDecoration: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'background 0.2s' }}>
-                    Open
+                  <a
+                    className="dash-link-btn"
+                    href={gProfileLink}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open your link
                   </a>
                 </div>
               )}
@@ -3133,11 +3145,24 @@ function Profile() {
                     ))}
                   </div>
 
-                  <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
                     <button
                       onClick={handleGeneralSaveAll}
                       disabled={generalSaving}
-                      style={{ padding: '0.85rem 2.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: generalSaving ? 'wait' : 'pointer', opacity: generalSaving ? 0.7 : 1, transition: 'all 0.2s' }}
+                      style={{
+                        padding: '0.85rem 2.5rem',
+                        borderRadius: '18px',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        background: '#ffffff',
+                        color: '#000000',
+                        border: '1px solid #ffffff',
+                        cursor: generalSaving ? 'wait' : 'pointer',
+                        opacity: generalSaving ? 0.7 : 1,
+                        transition: 'all 0.2s',
+                        maxWidth: '380px',
+                        width: '100%'
+                      }}
                     >
                       {generalSaving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -3263,7 +3288,19 @@ function Profile() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
                       {generalForm.links.map((link, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            alignItems: 'flex-start',
+                            padding: '1rem 1.25rem',
+                            background: 'var(--dash-bg-card)',
+                            borderRadius: '14px',
+                            border: '1px solid var(--dash-border)',
+                            position: 'relative'
+                          }}
+                        >
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                               <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
@@ -3281,21 +3318,77 @@ function Profile() {
                               style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.9rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
                             />
                           </div>
-                          <button type="button" onClick={() => removeLink(idx)} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '10px', width: '36px', height: '36px', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '0.25rem', fontWeight: 700 }}>×</button>
+                          <button
+                            type="button"
+                            onClick={() => removeLink(idx)}
+                            style={{
+                            position: 'absolute',
+                              top: '-10px',
+                              right: '-10px',
+                              background: '#ffffff',
+                              color: '#ef4444',
+                              border: '2px solid #ef4444',
+                              borderRadius: '999px',
+                              width: '26px',
+                              height: '26px',
+                              cursor: 'pointer',
+                              fontSize: '0.9rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              fontWeight: 700,
+                              lineHeight: 1,
+                              boxShadow: '0 4px 10px rgba(0,0,0,0.35)'
+                            }}
+                          >
+                            ×
+                          </button>
                         </div>
                       ))}
                     </div>
 
-                    <button type="button" onClick={addLink} style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', border: '2px dashed var(--dash-border)', background: 'transparent', color: 'var(--dash-accent)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', width: '100%' }}>
+                    <button
+                      type="button"
+                      onClick={addLink}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '12px',
+                        border: '2px dashed var(--dash-border)',
+                        background: 'transparent',
+                        color: 'var(--dash-accent)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        width: '100%',
+                        maxWidth: '380px',
+                        marginLeft: 'auto',
+                        marginRight: 'auto'
+                      }}
+                    >
                       + Add Link
                     </button>
                   </section>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <button
                       onClick={handleGeneralSaveAll}
                       disabled={generalSaving}
-                      style={{ padding: '0.85rem 2.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: generalSaving ? 'wait' : 'pointer', opacity: generalSaving ? 0.7 : 1, transition: 'all 0.2s' }}
+                      style={{
+                        padding: '0.85rem 2.5rem',
+                        borderRadius: '18px',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        background: '#ffffff',
+                        color: '#000000',
+                        border: '1px solid #ffffff',
+                        cursor: generalSaving ? 'wait' : 'pointer',
+                        opacity: generalSaving ? 0.7 : 1,
+                        transition: 'all 0.2s',
+                        maxWidth: '380px',
+                        width: '100%'
+                      }}
                     >
                       {generalSaving ? 'Saving...' : 'Save Links'}
                     </button>

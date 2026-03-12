@@ -4588,12 +4588,22 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
+  /* Center theme cards within a comfortable width on all viewports */
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  justify-items: center;
 }
 
 .dash-fonts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1.25rem;
+  /* Center font cards similarly so they align in the middle */
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  justify-items: center;
 }
 
 .dash-theme-indicator {
@@ -4617,6 +4627,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  max-width: 420px;
 }
 
 .dash-design-card > p,
