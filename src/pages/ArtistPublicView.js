@@ -18,6 +18,7 @@ function ArtistPublicView() {
   const [selectedArtItem, setSelectedArtItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const galleryStripRef = useRef(null);
 
   useEffect(() => {
     if (!artistId) {
@@ -48,6 +49,30 @@ function ArtistPublicView() {
       cancelled = true;
     };
   }, [artistId]);
+
+  // Auto-scroll gallery strip (hook must be at top; no-op when no artist/gallery)
+  useEffect(() => {
+    const gallery = artist?.gallery;
+    const hasGallery = Array.isArray(gallery) && gallery.length > 0;
+    if (!hasGallery || !galleryStripRef.current) return;
+
+    const stripEl = galleryStripRef.current;
+    const gapPx = 14;
+    let index = 0;
+
+    const timer = setInterval(() => {
+      const firstCard = stripEl.firstElementChild;
+      if (!firstCard) return;
+      const cardWidth = firstCard.getBoundingClientRect().width || 0;
+      if (!cardWidth) return;
+
+      index = (index + 1) % gallery.length;
+      const scrollLeft = index * (cardWidth + gapPx);
+      stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [artist]);
 
   if (!artistId) {
     return (
@@ -106,8 +131,6 @@ function ArtistPublicView() {
   const hasGallery = Array.isArray(artist.gallery) && artist.gallery.length > 0;
   const hasContact = artist.email || artist.phone;
 
-  const galleryStripRef = useRef(null);
-
   const themeId = artist.profileTheme || 'mono';
   const themeMap = {
     mono: { bg: '#0f172a', text: '#ffffff', linkBg: 'rgba(255,255,255,0.08)' },
@@ -126,28 +149,6 @@ function ArtistPublicView() {
     'mono-font': "'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
   };
   const fontFamily = fontMap[fontId] || fontMap.outfit;
-
-  // Auto-scroll gallery strip horizontally to create slideshow effect
-  useEffect(() => {
-    if (!hasGallery || !galleryStripRef.current) return;
-
-    const stripEl = galleryStripRef.current;
-    const gapPx = 14; // approx 0.9rem gap between cards
-    let index = 0;
-
-    const timer = setInterval(() => {
-      const firstCard = stripEl.firstElementChild;
-      if (!firstCard) return;
-      const cardWidth = firstCard.getBoundingClientRect().width || 0;
-      if (!cardWidth) return;
-
-      index = (index + 1) % artist.gallery.length;
-      const scrollLeft = index * (cardWidth + gapPx);
-      stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-    }, 4000);
-
-    return () => clearInterval(timer);
-  }, [hasGallery, artist.gallery?.length]);
 
   return (
     <div
