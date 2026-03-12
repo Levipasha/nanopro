@@ -160,31 +160,37 @@ function ArtistPublicView() {
           fontFamily
         }}
       >
-        {/* Cover banner */}
-        <div className="gp-photo-header">
-          {artist.backgroundPhoto && (
-            <img src={artist.backgroundPhoto} alt={artist.name || 'Cover'} className="gp-cover-img" />
-          )}
-        </div>
-
-        {/* Centered circular avatar + basic details */}
-        <div className="gp-avatar-row">
-          <div className="gp-avatar-circle">
-            {artist.photo ? (
-              <img
-                src={artist.photo}
-                alt={artist.name || 'Artist'}
-              />
-            ) : (
-              <div className="gp-avatar-circle-fallback">
-                {artist.name?.charAt(0) || 'A'}
+        {/* Hero card (image + glass overlay) */}
+        <div className="gp-hero-card">
+          <img
+            className="gp-hero-img"
+            src={artist.backgroundPhoto || artist.photo || 'https://placehold.co/1200x700/0b1220/FFFFFF?text=Artist'}
+            alt={artist.name || 'Artist'}
+            loading="lazy"
+          />
+          <div className="gp-hero-glass">
+            <div className="gp-hero-row">
+              <div className="gp-hero-avatar">
+                {artist.photo ? (
+                  <img src={artist.photo} alt={artist.name || 'Artist'} loading="lazy" />
+                ) : (
+                  <div className="gp-hero-avatar-fallback">{artist.name?.charAt(0) || 'A'}</div>
+                )}
               </div>
+              <div className="gp-hero-meta">
+                <div className="gp-hero-name-row">
+                  {artist.name && <h1 className="gp-hero-name">{artist.name}</h1>}
+                </div>
+                {artist.specialization && <p className="gp-hero-subtitle">{artist.specialization}</p>}
+                <p className="gp-hero-id">ID: {artist.artistId || artist.username || artistId}</p>
+              </div>
+            </div>
+
+            {artist.bio && (
+              <p className="gp-hero-bio">
+                {artist.bio}
+              </p>
             )}
-          </div>
-          <div className="gp-avatar-text">
-            {artist.name && <h1 className="gp-name">{artist.name}</h1>}
-            {artist.specialization && <p className="gp-title-overlay">{artist.specialization}</p>}
-            <p className="gp-username">ID: {artist.artistId || artist.username || artistId}</p>
           </div>
         </div>
 

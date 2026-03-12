@@ -3622,16 +3622,24 @@ function Profile() {
                 const nfcBaseUrl = process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin);
                 const profileUrl = `${nfcBaseUrl}/artist?id=${myArtists[0].artistId}`;
                 return (
-                  <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--dash-bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--dash-border)', maxWidth: 'max-content' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace' }}>{profileUrl}</span>
-                    <button onClick={() => {
-                      navigator.clipboard.writeText(profileUrl);
-                      alert('Profile URL copied to clipboard!');
-                    }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(100,116,139,0.1)', border: 'none', cursor: 'pointer', color: '#64748b', padding: '6px', borderRadius: '8px', transition: 'background 0.2s', width: '28px', height: '28px' }} title="Copy URL" onMouseOver={e => e.currentTarget.style.background = 'rgba(100,116,139,0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(100,116,139,0.1)'}>
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <div className="dash-profile-link-actions">
+                    <button
+                      type="button"
+                      className="dash-link-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(profileUrl);
+                        alert('Profile link copied!');
+                      }}
+                    >
+                      Copy your link
                     </button>
-                    <a href={profileUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.1)', color: '#6366f1', textDecoration: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.15)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}>
-                      Open
+                    <a
+                      className="dash-link-btn dash-link-btn-primary"
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open your link
                     </a>
                   </div>
                 );

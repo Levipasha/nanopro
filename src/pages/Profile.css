@@ -11,6 +11,11 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Reduce flicker/glitch on mobile route changes */
+.dash-root {
+  transition: none;
+}
+
 /* Dashboard Font Variants */
 .dash-font-outfit {
   font-family: 'Outfit', sans-serif !important;
@@ -30,15 +35,16 @@
 
 /* Theme Variables - Default (Dark – matches landing page) */
 .dash-root {
-  --dash-bg: #0a0a0f;
-  --dash-sidebar-bg: rgba(15, 15, 22, 0.95);
-  --dash-text: #f1f5f9;
-  --dash-subtext: #94a3b8;
-  --dash-border: rgba(255, 255, 255, 0.08);
-  --dash-card-bg: rgba(20, 20, 30, 0.8);
-  --dash-header-bg: rgba(10, 10, 15, 0.6);
-  --dash-accent: #8b5cf6;
-  --dash-bg-card: rgba(20, 20, 30, 0.8);
+  /* Black & white palette */
+  --dash-bg: #000;
+  --dash-sidebar-bg: #000;
+  --dash-text: #fff;
+  --dash-subtext: rgba(255, 255, 255, 0.75);
+  --dash-border: rgba(255, 255, 255, 0.14);
+  --dash-card-bg: rgba(255, 255, 255, 0.06);
+  --dash-header-bg: rgba(255, 255, 255, 0.04);
+  --dash-accent: #fff;
+  --dash-bg-card: rgba(255, 255, 255, 0.06);
   color: #f1f5f9;
 }
 
@@ -70,6 +76,88 @@
 .dash-root {
   background: var(--dash-bg);
   color: var(--dash-text);
+}
+
+/* =========================================================
+   FORCE SINGLE BLACK/WHITE THEME (override all dash themes)
+   Keeps dashboard consistent and avoids mobile flicker.
+   ========================================================= */
+.dash-root,
+.dash-root.dash-theme-midnight,
+.dash-root.dash-theme-glass {
+  --dash-bg: #000 !important;
+  --dash-sidebar-bg: #000 !important;
+  --dash-text: #fff !important;
+  --dash-subtext: rgba(255, 255, 255, 0.75) !important;
+  --dash-border: rgba(255, 255, 255, 0.14) !important;
+  --dash-card-bg: rgba(255, 255, 255, 0.06) !important;
+  --dash-header-bg: rgba(255, 255, 255, 0.04) !important;
+  --dash-accent: #fff !important;
+  --dash-bg-card: rgba(255, 255, 255, 0.06) !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.dash-theme-aura,
+.dash-theme-midnight {
+  background-image: none !important;
+}
+
+.dash-sidebar,
+.dash-main-header {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Dashboard: profile link actions (only buttons) */
+.dash-profile-link-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dash-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--dash-border);
+  background: transparent;
+  color: var(--dash-text);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: none;
+}
+
+.dash-link-btn:hover {
+  opacity: 1;
+  background: transparent;
+}
+
+.dash-link-btn-primary {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.dash-link-btn-primary:hover {
+  background: #fff;
+}
+
+/* Remove hover animations/effects for a clean dashboard */
+.dash-root * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.dash-root *:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .dash-theme-aura {
@@ -6246,6 +6334,7 @@
   color: rgba(255, 255, 255, 0.4);
   line-height: 1.4;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
