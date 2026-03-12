@@ -312,15 +312,6 @@ function ArtistPublicView() {
                 </svg>
               </span>
               <span className="gp-art-button-text">Show My Art</span>
-              <span
-                className="gp-art-button-count"
-                style={{
-                  border: '1px solid var(--artist-text)',
-                  color: 'var(--artist-text)'
-                }}
-              >
-                {artItems.length}
-              </span>
             </button>
           </div>
         )}
@@ -404,15 +395,6 @@ function ArtistPublicView() {
             <div className="gp-art-modal-header">
               <h2>{selectedArtItem?.title ? selectedArtItem.title : 'Art Collection'}</h2>
               {artItems.length > 0 && <span className="gp-art-modal-count">{artItems.length} pieces</span>}
-              <button
-                className="gp-art-modal-close"
-                onClick={() => {
-                  setShowArtGallery(false);
-                  setSelectedArtItem(null);
-                }}
-              >
-                ✕
-              </button>
             </div>
             {artItems.length > 0 ? (
               <div className="gp-art-modal-grid">
@@ -454,9 +436,6 @@ function ArtistPublicView() {
             {selectedArtItem && (
               <div className="gp-art-lightbox" onClick={() => setSelectedArtItem(null)}>
                 <div className="gp-art-lightbox-inner" onClick={(e) => e.stopPropagation()}>
-                  <button className="gp-art-lightbox-close" onClick={() => setSelectedArtItem(null)}>
-                    ✕
-                  </button>
                   <h2>{selectedArtItem.title || 'Artwork'}</h2>
                   <div className="gp-art-lightbox-images">
                     {(selectedArtItem.images || []).map((imgUrl, i) => (

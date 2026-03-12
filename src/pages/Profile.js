@@ -591,7 +591,10 @@ function Profile() {
   useEffect(() => {
     if (myArtists && myArtists.length > 0) {
       const artist = myArtists[0];
-      const active = ALL_PLATFORMS.filter(p => artist[p.id] && artist[p.id].trim() !== '').map(p => p.id);
+      // A platform is "visible" if the field exists (non-null/undefined), even if empty string.
+      const active = ALL_PLATFORMS
+        .filter(p => artist[p.id] !== undefined && artist[p.id] !== null)
+        .map(p => p.id);
       setVisiblePlatforms(active);
     }
   }, [myArtists]);
@@ -1198,25 +1201,20 @@ function Profile() {
     const artist = myArtists[0];
     if (!artist) return;
 
+    // Make selection additive-only: never remove existing platforms here,
+    // only add newly selected ones.
+    const previous = visiblePlatforms || [];
+    const toAdd = tempPlatforms.filter(id => !previous.includes(id));
+
     const updates = {};
-
-    // Platforms to ADD (were not present, now wanted)
-    tempPlatforms.forEach(p => {
-      if (artist[p] === undefined || artist[p] === null) {
-        updates[p] = '';
+    toAdd.forEach(id => {
+      if (artist[id] === undefined || artist[id] === null) {
+        updates[id] = '';
       }
     });
 
-    // Platforms to REMOVE (were present, now deselected)
-    ALL_PLATFORMS.forEach(p => {
-      if (!tempPlatforms.includes(p.id)) {
-        if (artist[p.id] !== undefined && artist[p.id] !== null) {
-          updates[p.id] = null;
-        }
-      }
-    });
-
-    setVisiblePlatforms([...tempPlatforms]);
+    const nextVisible = Array.from(new Set([...previous, ...tempPlatforms]));
+    setVisiblePlatforms(nextVisible);
 
     if (Object.keys(updates).length > 0) {
       try {
