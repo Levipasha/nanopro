@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
@@ -52,19 +52,18 @@ function ArtistPublicView() {
 
   // Auto-advance Events slideshow every 3s
   useEffect(() => {
-    const gallery = artist?.gallery;
-    const hasGallery = Array.isArray(gallery) && gallery.length > 0;
-    if (!hasGallery) return;
+    const galleryLen = Array.isArray(artist?.gallery) ? artist.gallery.length : 0;
+    if (galleryLen <= 0) return;
 
     // Clamp index when gallery size changes
-    setEventSlideIndex((i) => (i >= gallery.length ? 0 : i));
+    setEventSlideIndex((i) => (i >= galleryLen ? 0 : i));
 
     const timer = setInterval(() => {
-      setEventSlideIndex((i) => (i + 1) % gallery.length);
+      setEventSlideIndex((i) => (i + 1) % galleryLen);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [artist?.gallery?.length]);
+  }, [artist?.gallery]);
 
   if (!artistId) {
     return (
@@ -120,7 +119,6 @@ function ArtistPublicView() {
     ? (Array.isArray(artist.artLinks) ? artist.artLinks : Object.values(artist.artLinks))
     : [];
 
-  const hasGallery = Array.isArray(artist.gallery) && artist.gallery.length > 0;
   const hasContact = artist.email || artist.phone;
 
   const eventSlides = (artist.gallery || []).filter((x) => x && x.url);
