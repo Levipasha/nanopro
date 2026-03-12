@@ -10,6 +10,8 @@ function Login() {
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('general_step');
         localStorage.removeItem('profile_mode');
+        // Also clear locked profile type so new signups see the choice screen
+        localStorage.removeItem('profile_type_lock');
     };
 
     const [email, setEmail] = useState('');
