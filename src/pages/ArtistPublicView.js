@@ -352,30 +352,7 @@ function ArtistPublicView() {
           </div>
         )}
 
-        {/* 3. Social media icons (Links grid) */}
-        {primaryLinks.length > 0 && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Links</h2>
-            <div className="gp-links-grid">
-              {primaryLinks.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gp-link-icon-only"
-                  title={link.title}
-                >
-                  <span className="gp-link-icon-only-inner">
-                    {getLinkIcon({ platform: link.id })}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 4. Get in touch (below social icons) */}
+        {/* 3. Get in touch (below gallery, above social icons) */}
         {hasContact && (
           <div className="gp-section">
             <h2 className="gp-section-title">Get in Touch</h2>
@@ -396,6 +373,29 @@ function ArtistPublicView() {
                   </a>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 4. Social media icons (Links grid) */}
+        {primaryLinks.length > 0 && (
+          <div className="gp-section">
+            <h2 className="gp-section-title">Links</h2>
+            <div className="gp-links-grid">
+              {primaryLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gp-link-icon-only"
+                  title={link.title}
+                >
+                  <span className="gp-link-icon-only-inner">
+                    {getLinkIcon({ platform: link.id })}
+                  </span>
+                </a>
+              ))}
             </div>
           </div>
         )}
