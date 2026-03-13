@@ -247,7 +247,7 @@ function Login() {
                             />
 
                             <button className="button-confirm" type="submit" disabled={loading}>
-                                {loading ? 'Sending...' : 'Send Magic Code'}
+                                {loading ? 'Sending...' : 'Send OTP Code'}
                             </button>
 
                             <div className="login-with">
