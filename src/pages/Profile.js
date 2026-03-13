@@ -4308,7 +4308,6 @@ function Profile() {
                                         <button
                                           onClick={() => { navigator.clipboard.writeText(artUrl); }}
                                           className="dash-art-btn-copy"
-                                          style={{ background: theme.color }}
                                         >
                                           Copy URL
                                         </button>

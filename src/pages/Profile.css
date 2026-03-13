@@ -5123,8 +5123,8 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #fff;
-  border: none;
+  color: #ffffff;
+  border: 1px solid #ffffff;
   cursor: pointer;
   flex: 1;
   min-width: 0;
@@ -5137,9 +5137,15 @@
 }
 
 .dash-art-btn-secondary {
-  background: var(--dash-card-bg);
-  color: var(--dash-text);
-  border: 1.5px solid var(--dash-border);
+  background: transparent;
+  color: var(--dash-text, #f9fafb);
+  border: 1px solid var(--dash-border, rgba(148, 163, 184, 0.7));
+}
+
+.dash-art-btn-copy {
+  background: #000000;
+  color: #ffffff;
+  border-color: #ffffff;
 }
 
 @media (max-width: 768px) {
