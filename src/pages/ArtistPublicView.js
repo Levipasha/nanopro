@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
-import { getThemeById } from '../constants/generalThemes';
+import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 
 /**
  * Public artist profile route used for NFC / share links.
@@ -219,14 +219,7 @@ function ArtistPublicView() {
   const glassPillBorder = isTextDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
 
   const fontId = artist.profileFont || 'outfit';
-  const fontMap = {
-    outfit: "'Outfit', system-ui, -apple-system, sans-serif",
-    playfair: "'Playfair Display', system-ui, serif",
-    caveat: "'Caveat', system-ui, cursive",
-    inter: "'Inter', system-ui, -apple-system, sans-serif",
-    'mono-font': "'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-  };
-  const fontFamily = fontMap[fontId] || fontMap.outfit;
+  const fontFamily = resolveFontFamily(fontId);
 
   return (
     <div

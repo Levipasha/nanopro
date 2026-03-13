@@ -656,10 +656,12 @@ function Profile() {
 
   useEffect(() => {
     if (user || otpUser) {
+      // Always load artist profiles for any logged-in session (Firebase or OTP)
       if (profileMode !== 'general') {
         loadMyProfiles();
       }
-      if ((user || otpUser) && (profileMode === 'choice' || profileMode === 'general')) {
+      // Only Firebase (Google) users should ever load General Profile data.
+      if (user && (profileMode === 'choice' || profileMode === 'general')) {
         loadGeneralProfile();
       }
     }
@@ -677,24 +679,41 @@ function Profile() {
     }
   }, [myArtists, onboardingStep, profileMode]);
 
-  // Smart Redirection: If user has an account AND it's already set up, go to its mode.
-  // BUT if they are fresh (no setup), or they have NO profiles, show choice.
   useEffect(() => {
-    if (!artistsLoading && !generalProfileLoading && profileMode === 'choice') {
+    if (artistsLoading || generalProfileLoading) return;
+
+    const hasSetupArtist = myArtists.length > 0 && myArtists[0].isSetup === true;
+    const hasGeneral = !!generalProfile;
+
+    // 1) Brand new user: no artist, no general, and still on choice screen
+    //    -> force choice and clear any stale localStorage.
+    if (!hasSetupArtist && !hasGeneral && profileMode === 'choice') {
+      if (profileMode !== 'choice') {
+        setProfileMode('choice');
+      }
+      if (profileLock) {
+        setProfileLock(null);
+      }
+      try {
+        localStorage.removeItem(PROFILE_MODE_KEY);
+        localStorage.removeItem(PROFILE_LOCK_KEY);
+      } catch (e) { }
+      return;
+    }
+
+    // 2) Existing profiles: only auto-switch when we're currently on the choice screen.
+    if (profileMode === 'choice') {
       const lock = profileLock;
       if (lock === 'artist') {
         handleSelectArtistMode();
         return;
       }
       if (lock === 'general_restaurant') {
-        const hasGeneral = !!generalProfile;
         if (hasGeneral) {
           handleSelectGeneralMode();
         }
         return;
       }
-      const hasSetupArtist = myArtists.length > 0 && myArtists[0].isSetup === true;
-      const hasGeneral = !!generalProfile;
       if (hasSetupArtist && !hasGeneral) {
         handleSelectArtistMode();
       } else if (hasGeneral && !hasSetupArtist) {
@@ -705,6 +724,7 @@ function Profile() {
     myArtists,
     artistsLoading,
     generalProfile,
+    otpUser,
     generalProfileLoading,
     profileMode,
     profileLock,
@@ -914,6 +934,14 @@ function Profile() {
       const auth = { email: data.email, token: data.token };
       setOtpUser(auth);
       localStorage.setItem(OTP_STORAGE_KEY, JSON.stringify(auth));
+      // New OTP login: always start from profile choice (artist/general/restaurant).
+      // Lock will be set after the user explicitly picks a profile type.
+      setProfileMode('choice');
+      setProfileLock(null);
+      try {
+        localStorage.removeItem(PROFILE_MODE_KEY);
+        localStorage.removeItem(PROFILE_LOCK_KEY);
+      } catch (e) { }
       setOtpStep('verified');
       setOtpEmail('');
       setOtpCode('');
@@ -3298,6 +3326,7 @@ function Profile() {
                       {generalForm.links.map((link, idx) => (
                         <div
                           key={idx}
+                          className="profile-general-link-card"
                           style={{
                             display: 'flex',
                             gap: '0.75rem',
@@ -3491,6 +3520,20 @@ function Profile() {
                   </svg>
                 </div>
                 <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                className="dash-mobile-bottom-btn"
+                onClick={handleLogout}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 17l5-5-5-5" />
+                    <path d="M21 12H9" />
+                    <path d="M12 19a7 7 0 1 1 0-14" />
+                  </svg>
+                </div>
+                <span>Sign out</span>
               </button>
             </div>
           </div>

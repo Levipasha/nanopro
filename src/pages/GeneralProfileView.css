@@ -111,8 +111,8 @@
   aspect-ratio: 16 / 9;
   max-height: 260px;
   overflow: hidden;
-  /* Use a solid backdrop so plain images don't show the card theme as a frame */
-  background: #ffffff;
+  /* Let the photo itself fully define the box; no extra frame */
+  background: transparent;
   z-index: 0;
 }
 
@@ -389,14 +389,6 @@
     opacity: 1;
     transform: scale(1);
   }
-}
-
-.gp-avatar-img {
-  cursor: zoom-in;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 999px;
 }
 
 /* Profile photo preview card (artist public) */
