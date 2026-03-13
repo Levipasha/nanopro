@@ -4262,7 +4262,25 @@ function Profile() {
                         <textarea id="art-desc-input" rows={3} placeholder="Tell viewers what makes this artwork special — materials, inspiration, story behind it..." style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.9rem', border: '1.5px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                       </div>
 
-                      <button onClick={handleAddArt} disabled={artSaving} style={{ padding: '0.85rem 2.25rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 700, background: 'var(--dash-accent)', color: '#fff', border: 'none', cursor: artSaving ? 'wait' : 'pointer', opacity: artSaving ? 0.7 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        onClick={handleAddArt}
+                        disabled={artSaving}
+                        style={{
+                          padding: '0.85rem 2.25rem',
+                          borderRadius: '14px',
+                          fontSize: '0.95rem',
+                          fontWeight: 700,
+                          background: '#ffffff',
+                          color: '#000000',
+                          border: '1px solid #ffffff',
+                          cursor: artSaving ? 'wait' : 'pointer',
+                          opacity: artSaving ? 0.7 : 1,
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
                         {artSaving ? (<><span>Uploading...</span></>) : (<><span>✦</span><span>Add to Showcase</span></>)}
                       </button>
                     </div>
