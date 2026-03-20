@@ -290,7 +290,6 @@ function Profile() {
   const [rLinkSelectorOpen, setRLinkSelectorOpen] = useState(false);
   const [rTempPlatforms, setRTempPlatforms] = useState([]);
   const [rSyncFonts, setRSyncFonts] = useState(true);
-  const [restaurantPublishLoading, setRestaurantPublishLoading] = useState(false);
   const [restaurantProfile, setRestaurantProfile] = useState(() => {
     try {
       const raw = localStorage.getItem(RESTAURANT_STORAGE_KEY);
@@ -393,7 +392,7 @@ function Profile() {
     }
   };
 
-  const handleRestaurantPublish = async (profileInput = restaurantProfile, options = {}) => {
+  const handleRestaurantPublish = useCallback(async (profileInput = restaurantProfile, options = {}) => {
     const { silent = false } = options;
     if (!profileInput?.username) {
       alert('Please add a username to your restaurant profile first.');
@@ -405,7 +404,6 @@ function Profile() {
       alert('Please sign in to publish your profile.');
       return false;
     }
-    setRestaurantPublishLoading(true);
     try {
       let photoUrl = profileInput.banner && profileInput.banner.startsWith('http') ? profileInput.banner : '';
       if (profileInput.banner && profileInput.banner.startsWith('data:')) {
@@ -493,10 +491,8 @@ function Profile() {
       if (!silent) alert(err.message || 'Failed to publish. Please try again.');
       else console.warn('Restaurant auto-publish failed:', err);
       return false;
-    } finally {
-      setRestaurantPublishLoading(false);
     }
-  };
+  }, [restaurantProfile, user, otpUser, getFirebaseUser, displayEmail]);
 
   // Dashboard customization state
   const [activeTab, setActiveTab] = useState('profiles'); // 'profiles' | 'design' | 'preview' | 'link-art'
@@ -551,7 +547,7 @@ function Profile() {
     try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
   }, [profileLock]);
 
-  const handleSelectRestaurantMode = () => {
+  const handleSelectRestaurantMode = useCallback(() => {
     setError('');
     setProfileMode('restaurant');
     if (!profileLock) {
@@ -560,16 +556,7 @@ function Profile() {
     }
     try { localStorage.setItem(GENERAL_FLOW_MODE_KEY, 'restaurant'); } catch (e) { }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
-  };
-
-  const handleBackToChoice = (source) => {
-    setError('');
-    setChoiceSource(source || null);
-    setProfileMode('choice');
-    updateOnboardingStep(0);
-    updateGeneralStep('theme');
-    try { localStorage.setItem(PROFILE_MODE_KEY, 'choice'); } catch (e) { }
-  };
+  }, [profileLock]);
 
   const loadMyProfiles = useCallback(async () => {
     if (user) {
@@ -830,7 +817,7 @@ function Profile() {
     return () => {
       if (restaurantSyncTimerRef.current) clearTimeout(restaurantSyncTimerRef.current);
     };
-  }, [isLoggedIn, isRestaurantMode, restaurantProfile, restaurantOnboardingStep]);
+  }, [isLoggedIn, isRestaurantMode, restaurantProfile, restaurantOnboardingStep, handleRestaurantPublish]);
 
   useEffect(() => {
     if (myArtists.length > 0 && myArtists[0].isSetup === false && onboardingStep === 0 && profileMode === 'artist') {
@@ -917,6 +904,7 @@ function Profile() {
     profileLock,
     handleSelectArtistMode,
     handleSelectGeneralMode,
+    handleSelectRestaurantMode,
     restaurantProfile
   ]);
 
