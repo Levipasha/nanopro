@@ -399,7 +399,9 @@ function Profile() {
       return false;
     }
     const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
+    const getFirebaseUserFn = user
+      ? () => ({ uid: user.uid || null, email: user.email || null, name: user.displayName || null })
+      : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
     if (!user && !otpUser) {
       alert('Please sign in to publish your profile.');
       return false;
@@ -449,7 +451,7 @@ function Profile() {
       }).filter(l => l.url);
       const bioParts = [profileInput.bio || ''];
       if (profileInput.phone) bioParts.push(`📞 ${profileInput.phone}`);
-      if (profileInput.email || displayEmail) bioParts.push(`✉ ${profileInput.email || displayEmail}`);
+      if (profileInput.email || user?.email || otpUser?.email) bioParts.push(`✉ ${profileInput.email || user?.email || otpUser?.email}`);
       const payload = {
         username: (profileInput.username || '').toLowerCase().trim(),
         name: profileInput.name || '',
@@ -492,7 +494,7 @@ function Profile() {
       else console.warn('Restaurant auto-publish failed:', err);
       return false;
     }
-  }, [restaurantProfile, user, otpUser, getFirebaseUser, displayEmail]);
+  }, [restaurantProfile, user, otpUser]);
 
   // Dashboard customization state
   const [activeTab, setActiveTab] = useState('profiles'); // 'profiles' | 'design' | 'preview' | 'link-art'
