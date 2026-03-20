@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle, onAuthStateChanged, auth, logout, getGoogleRedirectResult, getIdToken } from '../firebase';
 import { landingArtistAPI, generalProfileAPI } from '../services/api';
@@ -11,6 +10,8 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import './Profile.css';
 import './Profile.mobile.css';
+import ProfileChoiceScreen from '../components/profile/ProfileChoiceScreen';
+import ProfileArtistOnboardingWizard from '../components/profile/ProfileArtistOnboardingWizard';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -49,8 +50,10 @@ const defaultForm = {
 const OTP_STORAGE_KEY = 'landing_otp_auth';
 const RESTAURANT_STORAGE_KEY = 'restaurant_profile';
 const RESTAURANT_ONBOARDING_KEY = 'restaurant_onboarding_step';
+const GENERAL_FLOW_MODE_KEY = 'general_flow_mode';
 
 const ALL_PLATFORMS = [
+  { id: 'google_maps', label: 'Rate us on Google' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'website', label: 'Website' },
@@ -139,6 +142,13 @@ function Profile() {
   const [profileMode, setProfileMode] = useState(() => {
     try {
       const stored = localStorage.getItem(PROFILE_MODE_KEY);
+      const lock = localStorage.getItem(PROFILE_LOCK_KEY);
+      const hasRestaurantLocal = !!localStorage.getItem(RESTAURANT_STORAGE_KEY);
+      // If this account uses general/restaurant flow and restaurant data exists,
+      // restore restaurant dashboard after relogin by default.
+      if (lock === 'general_restaurant' && hasRestaurantLocal && (!stored || stored === 'general' || stored === 'choice')) {
+        return 'restaurant';
+      }
       return stored || 'choice';
     } catch (e) {
       return 'choice';
@@ -168,6 +178,15 @@ function Profile() {
   const [editingHeroField, setEditingHeroField] = useState(null); // 'name' | 'bio' | 'spec' | 'email' | 'phone'
   const [heroUpdates, setHeroUpdates] = useState({}); // local unsaved edits for name/bio/spec/email/phone
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle('dash-platform-selector-open', !!isSelectorOpen);
+    document.documentElement.classList.toggle('dash-platform-selector-open', !!isSelectorOpen);
+    return () => {
+      document.body.classList.remove('dash-platform-selector-open');
+      document.documentElement.classList.remove('dash-platform-selector-open');
+    };
+  }, [isSelectorOpen]);
   const [mobileHeroEditField, setMobileHeroEditField] = useState(null); // 'name' | 'specialization'
   const [mobileHeroDraft, setMobileHeroDraft] = useState('');
   const [isUploading, setIsUploading] = useState(null); // 'photo' | 'backgroundPhoto' | 'gallery_add'
@@ -240,6 +259,8 @@ function Profile() {
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
   const usernameCheckTimer = useRef(null);
+  const restaurantSyncTimerRef = useRef(null);
+  const lastRestaurantSyncSigRef = useRef('');
 
   // Restaurant profile state (localStorage until backend exists)
   const [restaurantForm, setRestaurantForm] = useState({
@@ -280,13 +301,17 @@ function Profile() {
   // Strip large base64 blobs before persisting — images/PDFs stay in React state only
   const persistRestaurant = (profile) => {
     try {
+      // Prevent localStorage blow-ups: keep only small base64 images.
+      const MAX_DATA_URL_LENGTH = 500000; // ~0.5MB string; adjust if needed
+      const keepDataImage = (v) => typeof v === 'string' && v.startsWith('data:image/') && v.length <= MAX_DATA_URL_LENGTH;
       const safe = {
         ...profile,
-        banner: profile.banner && profile.banner.startsWith('http') ? profile.banner : undefined,
+        banner: (profile.banner && profile.banner.startsWith('http')) ? profile.banner : (keepDataImage(profile.banner) ? profile.banner : undefined),
+        // menuPdf base64 can be very large; only persist when it's already uploaded (http url).
         menuPdf: profile.menuPdf && profile.menuPdf.startsWith('http') ? profile.menuPdf : undefined,
         gallery: (profile.gallery || []).map(g => ({
           ...g,
-          url: g.url && g.url.startsWith('http') ? g.url : undefined,
+          url: (g.url && g.url.startsWith('http')) ? g.url : (keepDataImage(g.url) ? g.url : undefined),
         })).filter(g => g.url),
       };
       localStorage.setItem(RESTAURANT_STORAGE_KEY, JSON.stringify(safe));
@@ -336,7 +361,7 @@ function Profile() {
     setPdfNumPages(numPages);
   };
 
-  const saveRestaurantProfile = () => {
+  const saveRestaurantProfile = async () => {
     // Basic validation
     if (!restaurantForm.name.trim()) {
       alert('Restaurant name is required');
@@ -356,9 +381,11 @@ function Profile() {
     };
     
     try {
-      persistRestaurant(payload);
-      localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+      // Keep local form immediately, but persist banner/menuPdf only after upload succeeds.
       setRestaurantProfile(payload);
+      const ok = await handleRestaurantPublish(payload, { silent: true });
+      if (!ok) throw new Error('Failed to publish restaurant profile');
+      localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
       setRestaurantOnboardingStep(0); // 0 means done, show dashboard
     } catch (e) {
       console.error('Failed to save restaurant profile', e);
@@ -366,23 +393,24 @@ function Profile() {
     }
   };
 
-  const handleRestaurantPublish = async () => {
-    if (!restaurantProfile?.username) {
+  const handleRestaurantPublish = async (profileInput = restaurantProfile, options = {}) => {
+    const { silent = false } = options;
+    if (!profileInput?.username) {
       alert('Please add a username to your restaurant profile first.');
-      return;
+      return false;
     }
     const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
     const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
     if (!user && !otpUser) {
       alert('Please sign in to publish your profile.');
-      return;
+      return false;
     }
     setRestaurantPublishLoading(true);
     try {
-      let photoUrl = restaurantProfile.banner && restaurantProfile.banner.startsWith('http') ? restaurantProfile.banner : '';
-      if (restaurantProfile.banner && restaurantProfile.banner.startsWith('data:')) {
+      let photoUrl = profileInput.banner && profileInput.banner.startsWith('http') ? profileInput.banner : '';
+      if (profileInput.banner && profileInput.banner.startsWith('data:')) {
         try {
-          const arr = restaurantProfile.banner.split(',');
+          const arr = profileInput.banner.split(',');
           const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/png';
           const bstr = atob(arr[1]);
           const u8arr = new Uint8Array(bstr.length);
@@ -394,10 +422,10 @@ function Profile() {
           console.warn('Banner upload failed:', e);
         }
       }
-      let menuPdfUrl = restaurantProfile.menuPdf && restaurantProfile.menuPdf.startsWith('http') ? restaurantProfile.menuPdf : '';
-      if (restaurantProfile.menuPdf && restaurantProfile.menuPdf.startsWith('data:')) {
+      let menuPdfUrl = profileInput.menuPdf && profileInput.menuPdf.startsWith('http') ? profileInput.menuPdf : '';
+      if (profileInput.menuPdf && profileInput.menuPdf.startsWith('data:')) {
         try {
-          const arr = restaurantProfile.menuPdf.split(',');
+          const arr = profileInput.menuPdf.split(',');
           const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'application/pdf';
           const bstr = atob(arr[1]);
           const u8arr = new Uint8Array(bstr.length);
@@ -409,7 +437,7 @@ function Profile() {
           console.warn('Menu PDF upload failed:', e);
         }
       }
-      const linkEntries = Object.entries(restaurantProfile.links || {}).filter(([, v]) => v && String(v).trim());
+      const linkEntries = Object.entries(profileInput.links || {}).filter(([, v]) => v && String(v).trim());
       const links = linkEntries.map(([k, v], idx) => {
         let url = String(v).trim();
         const isFullUrl = url.startsWith('http') || url.startsWith('www.');
@@ -421,31 +449,50 @@ function Profile() {
         }
         return { platform: k, title: k.charAt(0).toUpperCase() + k.slice(1), url, order: idx };
       }).filter(l => l.url);
-      const bioParts = [restaurantProfile.bio || ''];
-      if (restaurantProfile.phone) bioParts.push(`📞 ${restaurantProfile.phone}`);
-      if (restaurantProfile.email || displayEmail) bioParts.push(`✉ ${restaurantProfile.email || displayEmail}`);
+      const bioParts = [profileInput.bio || ''];
+      if (profileInput.phone) bioParts.push(`📞 ${profileInput.phone}`);
+      if (profileInput.email || displayEmail) bioParts.push(`✉ ${profileInput.email || displayEmail}`);
       const payload = {
-        username: (restaurantProfile.username || '').toLowerCase().trim(),
-        name: restaurantProfile.name || '',
-        title: restaurantProfile.tagline || '',
+        username: (profileInput.username || '').toLowerCase().trim(),
+        name: profileInput.name || '',
+        title: profileInput.tagline || '',
         bio: bioParts.filter(Boolean).join('\n'),
         photo: photoUrl,
         menuPdf: menuPdfUrl,
-        theme: restaurantProfile.theme || 'mint',
-        font: restaurantProfile.titleFont || restaurantProfile.font || 'outfit',
-        bioFont: restaurantProfile.bodyFont || restaurantProfile.font || 'outfit',
-        links
+        theme: profileInput.theme || 'mint',
+        font: profileInput.titleFont || profileInput.font || 'outfit',
+        bioFont: profileInput.bodyFont || profileInput.font || 'outfit',
+        links,
+        profileType: 'restaurant'
       };
-      const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
+      const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
       if (existing?.data) {
         await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
-        alert('Profile updated! Your link is now live.');
+        if (!silent) alert('Profile updated! Your link is now live.');
       } else {
         await generalProfileAPI.create(payload, getIdTokenFn, getFirebaseUserFn);
-        alert('Profile published! Your link is now live.');
+        if (!silent) alert('Profile published! Your link is now live.');
       }
+
+      // Update local state with uploaded URLs, then persist.
+      // This prevents banner/menuPdf from disappearing after refresh (localStorage strips base64).
+      const updatedRestaurantProfile = {
+        ...profileInput,
+        banner: photoUrl || profileInput.banner || null,
+        menuPdf: menuPdfUrl || profileInput.menuPdf || null,
+        theme: payload.theme || profileInput.theme || 'mint',
+        font: payload.font || profileInput.font || 'outfit',
+        titleFont: payload.font || profileInput.titleFont || profileInput.font || 'outfit',
+        bodyFont: payload.bioFont || profileInput.bodyFont || profileInput.font || 'outfit',
+      };
+      try { persistRestaurant(updatedRestaurantProfile); } catch (e) { }
+      setRestaurantProfile(updatedRestaurantProfile);
+      try { lastRestaurantSyncSigRef.current = JSON.stringify(updatedRestaurantProfile); } catch (e) { }
+      return true;
     } catch (err) {
-      alert(err.message || 'Failed to publish. Please try again.');
+      if (!silent) alert(err.message || 'Failed to publish. Please try again.');
+      else console.warn('Restaurant auto-publish failed:', err);
+      return false;
     } finally {
       setRestaurantPublishLoading(false);
     }
@@ -500,6 +547,7 @@ function Profile() {
       setProfileLock('general_restaurant');
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'general_restaurant'); } catch (e) { }
     }
+    try { localStorage.setItem(GENERAL_FLOW_MODE_KEY, 'general'); } catch (e) { }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
   }, [profileLock]);
 
@@ -510,6 +558,7 @@ function Profile() {
       setProfileLock('general_restaurant');
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'general_restaurant'); } catch (e) { }
     }
+    try { localStorage.setItem(GENERAL_FLOW_MODE_KEY, 'restaurant'); } catch (e) { }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
   };
 
@@ -542,10 +591,9 @@ function Profile() {
       } catch (err) {
         console.warn('Artist profiles load:', err.message);
         setMyArtists([]);
-        if (err.message && (err.message.includes('expired') || err.message.includes('Invalid'))) {
-          setOtpUser(null);
-          localStorage.removeItem(OTP_STORAGE_KEY);
-        }
+        // Do not auto-logout OTP users here.
+        // Restaurant/general dashboards should still work even if artist routes
+        // reject OTP tokens or the user has no artist profile.
       } finally {
         setArtistsLoading(false);
       }
@@ -558,7 +606,51 @@ function Profile() {
     const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
     setGeneralProfileLoading(true);
     try {
-      const res = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
+      // On "choice" screen, always try restaurant first, then general.
+      // This avoids relying on localStorage (which may be empty on fresh login).
+      if (profileMode === 'choice') {
+        const resRestaurant = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
+        if (resRestaurant?.data) {
+          const data = resRestaurant.data;
+          setGeneralProfile(data);
+          updateGeneralStep('home');
+          setGeneralForm({
+            username: data.username || '',
+            name: data.name || '',
+            title: data.title || '',
+            bio: data.bio || '',
+            photo: data.photo || '',
+            theme: data.theme || 'mint',
+            font: data.font || 'outfit',
+            links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+          });
+          return;
+        }
+
+        const resGeneral = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
+        const data = resGeneral?.data;
+        if (data) {
+          setGeneralProfile(data);
+          updateGeneralStep('home');
+          setGeneralForm({
+            username: data.username || '',
+            name: data.name || '',
+            title: data.title || '',
+            bio: data.bio || '',
+            photo: data.photo || '',
+            theme: data.theme || 'mint',
+            font: data.font || 'outfit',
+            links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+          });
+          return;
+        }
+
+        updateGeneralStep('theme');
+        return;
+      }
+
+      const requestedType = profileMode === 'restaurant' ? 'restaurant' : 'general';
+      const res = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, requestedType);
       const data = res.data;
       if (data) {
         setGeneralProfile(data);
@@ -582,7 +674,7 @@ function Profile() {
     } finally {
       setGeneralProfileLoading(false);
     }
-  }, [user, otpUser, getFirebaseUser]);
+  }, [user, otpUser, getFirebaseUser, profileMode]);
 
   useEffect(() => {
     localStorage.setItem('dash_theme', dashTheme);
@@ -593,15 +685,22 @@ function Profile() {
   }, [dashFont]);
 
   useEffect(() => {
-    if (myArtists && myArtists.length > 0) {
-      const artist = myArtists[0];
-      // A platform is "visible" if the field exists (non-null/undefined), even if empty string.
-      const active = ALL_PLATFORMS
-        .filter(p => artist[p.id] !== undefined && artist[p.id] !== null)
-        .map(p => p.id);
-      setVisiblePlatforms(active);
-    }
-  }, [myArtists]);
+    if (!myArtists || myArtists.length === 0) return;
+    const artist = myArtists[0];
+
+    const isNonEmpty = (v) => {
+      if (v === undefined || v === null) return false;
+      if (typeof v === 'string') return v.trim() !== '';
+      return true;
+    };
+
+    // Make preview feel instant: include local (unsaved) inputs too.
+    const active = ALL_PLATFORMS
+      .filter((p) => isNonEmpty(artist[p.id]) || isNonEmpty(pendingLinks[p.id]))
+      .map((p) => p.id);
+
+    setVisiblePlatforms(active);
+  }, [myArtists, pendingLinks]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
@@ -660,12 +759,78 @@ function Profile() {
       if (profileMode !== 'general') {
         loadMyProfiles();
       }
-      // Only Firebase (Google) users should ever load General Profile data.
-      if (user && (profileMode === 'choice' || profileMode === 'general')) {
+      // Load general profile for both Firebase and OTP users (used to restore restaurant/general dashboards).
+      if ((user || otpUser) && (profileMode === 'choice' || profileMode === 'general' || profileMode === 'restaurant')) {
         loadGeneralProfile();
       }
     }
   }, [user, otpUser, loadMyProfiles, loadGeneralProfile, profileMode]);
+
+  useEffect(() => {
+    if (!generalProfile || restaurantProfile) return;
+    if (profileLock !== 'general_restaurant') return;
+    const fallbackEmail = user?.email || otpUser?.email || '';
+    const likelyRestaurant = !!(generalProfile.menuPdf && String(generalProfile.menuPdf).trim());
+    let preferredGeneralMode = 'general';
+    try { preferredGeneralMode = localStorage.getItem(GENERAL_FLOW_MODE_KEY) || 'general'; } catch (e) { }
+    if (preferredGeneralMode !== 'restaurant' && !likelyRestaurant) return;
+
+    const mappedLinks = {};
+    (generalProfile.links || []).forEach((link) => {
+      const raw = (link?.platform || link?.title || '').toString().toLowerCase().trim();
+      const normalized = raw.replace(/\s+/g, '_');
+      const known = ALL_PLATFORMS.find((p) => p.id === normalized)?.id
+        || (raw.includes('google') && raw.includes('map') ? 'google_maps' : null)
+        || (raw.includes('linked') ? 'linkedin' : null)
+        || (raw.includes('whats') ? 'whatsapp' : null)
+        || (raw.includes('insta') ? 'instagram' : null)
+        || (raw.includes('face') ? 'facebook' : null)
+        || (raw.includes('x') || raw.includes('twitter') ? 'twitter' : null)
+        || (raw.includes('site') || raw.includes('web') ? 'website' : null);
+      if (known && link?.url) mappedLinks[known] = link.url;
+    });
+
+    const hydratedRestaurant = {
+      name: generalProfile.name || '',
+      tagline: generalProfile.title || '',
+      bio: generalProfile.bio || '',
+      phone: '',
+      email: fallbackEmail,
+      username: generalProfile.username || '',
+      menuPdf: generalProfile.menuPdf || null,
+      banner: generalProfile.photo || '',
+      gallery: [],
+      links: mappedLinks,
+      theme: generalProfile.theme || 'mint',
+      font: generalProfile.font || 'outfit',
+      titleFont: generalProfile.font || 'outfit',
+      bodyFont: generalProfile.bioFont || generalProfile.font || 'outfit'
+    };
+    setRestaurantProfile(hydratedRestaurant);
+    persistRestaurant(hydratedRestaurant);
+    try { lastRestaurantSyncSigRef.current = JSON.stringify(hydratedRestaurant); } catch (e) { }
+    setProfileMode('restaurant');
+    try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
+  }, [generalProfile, restaurantProfile, profileLock, user, otpUser]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !isRestaurantMode || !restaurantProfile) return undefined;
+    if (restaurantOnboardingStep !== 0 || !restaurantProfile.username) return undefined;
+
+    let signature = '';
+    try { signature = JSON.stringify(restaurantProfile); } catch (e) { return undefined; }
+    if (!signature || signature === lastRestaurantSyncSigRef.current) return undefined;
+
+    if (restaurantSyncTimerRef.current) clearTimeout(restaurantSyncTimerRef.current);
+    restaurantSyncTimerRef.current = setTimeout(async () => {
+      const ok = await handleRestaurantPublish(restaurantProfile, { silent: true });
+      if (ok) lastRestaurantSyncSigRef.current = signature;
+    }, 900);
+
+    return () => {
+      if (restaurantSyncTimerRef.current) clearTimeout(restaurantSyncTimerRef.current);
+    };
+  }, [isLoggedIn, isRestaurantMode, restaurantProfile, restaurantOnboardingStep]);
 
   useEffect(() => {
     if (myArtists.length > 0 && myArtists[0].isSetup === false && onboardingStep === 0 && profileMode === 'artist') {
@@ -709,11 +874,33 @@ function Profile() {
         return;
       }
       if (lock === 'general_restaurant') {
-        if (hasGeneral) {
+        let preferredGeneralMode = 'general';
+        try { preferredGeneralMode = localStorage.getItem(GENERAL_FLOW_MODE_KEY) || 'general'; } catch (e) { }
+        const likelyRestaurant =
+          generalProfile?.profileType === 'restaurant' ||
+          !!(generalProfile?.menuPdf && String(generalProfile.menuPdf).trim());
+        if (restaurantProfile || preferredGeneralMode === 'restaurant' || likelyRestaurant) {
+          handleSelectRestaurantMode();
+        } else if (hasGeneral) {
           handleSelectGeneralMode();
         }
         return;
       }
+
+      // 3) No lock yet (fresh login): infer mode from backend saved profile.
+      // This prevents the "choice screen" from showing again when a restaurant profile already exists.
+      if (!lock && hasGeneral) {
+        const likelyRestaurant =
+          generalProfile?.profileType === 'restaurant' ||
+          !!(generalProfile?.menuPdf && String(generalProfile.menuPdf).trim());
+        if (likelyRestaurant) {
+          handleSelectRestaurantMode();
+        } else {
+          handleSelectGeneralMode();
+        }
+        return;
+      }
+
       if (hasSetupArtist && !hasGeneral) {
         handleSelectArtistMode();
       } else if (hasGeneral && !hasSetupArtist) {
@@ -729,7 +916,8 @@ function Profile() {
     profileMode,
     profileLock,
     handleSelectArtistMode,
-    handleSelectGeneralMode
+    handleSelectGeneralMode,
+    restaurantProfile
   ]);
 
 
@@ -756,12 +944,12 @@ function Profile() {
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      const payload = { ...generalForm, photo: photoUrl, links };
+      const payload = { ...generalForm, photo: photoUrl, links, profileType: 'general' };
 
       // If a general profile already exists for this account, use update; otherwise create.
       let res;
       try {
-        const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn);
+        const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
         if (existing && existing.data) {
           res = await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
         } else {
@@ -961,6 +1149,7 @@ function Profile() {
     localStorage.removeItem('general_onboarding_step');
     localStorage.removeItem(RESTAURANT_STORAGE_KEY);
     localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+    localStorage.removeItem(GENERAL_FLOW_MODE_KEY);
     localStorage.removeItem(PROFILE_MODE_KEY);
     localStorage.removeItem(PROFILE_LOCK_KEY);
     setMyArtists([]);
@@ -1416,484 +1605,47 @@ function Profile() {
   // Onboarding Wizard
   if (isLoggedIn && isArtistMode && onboardingStep > 0) {
     return (
-      <div className="profile-page profile-login-wrap onboarding-screen">
-        <div className="onboarding-bg-shapes">
-          <div className="glass-blob blob-1"></div>
-          <div className="glass-blob blob-2"></div>
-          <div className="glass-blob blob-3"></div>
-        </div>
-        <div className="profile-login-card onboarding-card">
-          {onboardingStep > 1 && (
-            <button className="onboarding-back-arrow" onClick={handleOnboardingBack}>
-              ←
-            </button>
-          )}
-          <div className="onboarding-progress-container">
-            <div className="onboarding-progress-bar" style={{ width: `${(onboardingStep / 3) * 100}%` }} />
-          </div>
-
-          <div className="onboarding-step-content">
-            {onboardingStep === 1 && (
-              <div className="onboarding-step fade-in">
-                <h2>Welcome! Let's get started</h2>
-                <p className="onboarding-subtitle">Personalize your artist identity</p>
-                <div className="onboarding-fields">
-                  <div className="onboarding-field">
-                    <label>Full Name</label>
-                    <input
-                      type="text"
-                      className="onboarding-input"
-                      value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g. Vamshi Krishna"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="onboarding-field">
-                    <label>Username</label>
-                    <div className="artist-id-input-wrapper">
-                      <input
-                        type="text"
-                        className="onboarding-input-id"
-                        style={{ paddingLeft: '1.25rem' }}
-                        value={formData.artistId}
-                        onChange={e => setFormData(prev => ({ ...prev, artistId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                        placeholder="Enter your nickname"
-                      />
-                    </div>
-                    <small className="onboarding-tip">Your profile URL will be: <b>nanoprofile.com/artist/{formData.artistId || 'username'}</b></small>
-                  </div>
-                  <div className="onboarding-field">
-                    <label>Art Form / Specialization</label>
-                    <input
-                      type="text"
-                      className="onboarding-input"
-                      value={formData.specialization}
-                      onChange={e => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
-                      placeholder="e.g. Micro Artist, Painter, Musician"
-                    />
-                  </div>
-                  <div className="onboarding-field">
-                    <label>Email Address</label>
-                    <input
-                      type="email"
-                      className="onboarding-input"
-                      value={formData.email}
-                      onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="e.g. hello@example.com"
-                    />
-                  </div>
-                  <div className="onboarding-field">
-                    <label>Mobile Number</label>
-                    <input
-                      type="tel"
-                      className="onboarding-input"
-                      value={formData.phone}
-                      onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="e.g. +1 234 567 890"
-                    />
-                  </div>
-                </div>
-                <button className="onboarding-btn-primary" onClick={handleOnboardingNext} disabled={!formData.name || !formData.artistId || !formData.specialization}>
-                  Next Step →
-                </button>
-              </div>
-            )}
-
-            {onboardingStep === 2 && (
-              <div className="onboarding-step fade-in">
-                <h2>Connect Your Digital World</h2>
-                <p className="onboarding-subtitle">Link your social media and other platforms</p>
-                <div className="onboarding-fields">
-                  {!isOnboardingSelectorOpen ? (
-                    <>
-                      <div className="dash-links-section onboarding-added-links" style={{ marginBottom: '1.5rem' }}>
-                        {onboardingPlatforms.length === 0 && (
-                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', marginBottom: '1rem' }}>
-                            <p style={{ margin: 0, fontSize: '0.9rem' }}>No platforms added yet.<br/>Click below to add some!</p>
-                          </div>
-                        )}
-                        {onboardingPlatforms.map(platformId => {
-                          const platform = ALL_PLATFORMS.find(p => p.id === platformId);
-                          const inputStyle = { width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: 'var(--dash-text, #f1f5f9)', background: 'rgba(255,255,255,0.06)', boxSizing: 'border-box' };
-                          const previewStyle = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.35rem', wordBreak: 'break-all' };
-
-                          const renderPlatformInput = () => {
-                            if (platformId === 'whatsapp') {
-                              const waPhone = formData._wa_phone || '';
-                              const waMsg = formData._wa_msg || '';
-                              const waLink = waPhone ? `https://wa.me/${waPhone.replace(/[^0-9]/g, '')}${waMsg ? '?text=' + encodeURIComponent(waMsg) : ''}` : '';
-                              return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', flexShrink: 0 }}>+</span>
-                                    <input type="tel" style={inputStyle} value={waPhone} onChange={e => { const v = e.target.value.replace(/[^0-9+\s-]/g, ''); setFormData(prev => ({ ...prev, _wa_phone: v, whatsapp: v ? `https://wa.me/${v.replace(/[^0-9]/g, '')}${prev._wa_msg ? '?text=' + encodeURIComponent(prev._wa_msg) : ''}` : '' })); }} placeholder="91 98765 43210" />
-                                  </div>
-                                  <input type="text" style={inputStyle} value={waMsg} onChange={e => { const v = e.target.value; setFormData(prev => { const phone = (prev._wa_phone || '').replace(/[^0-9]/g, ''); return { ...prev, _wa_msg: v, whatsapp: phone ? `https://wa.me/${phone}${v ? '?text=' + encodeURIComponent(v) : ''}` : '' }; }); }} placeholder="Pre-filled message (optional)" />
-                                  {waLink && <p style={previewStyle}>{waLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'telegram') {
-                              const tgUser = formData._tg_user || '';
-                              const tgLink = tgUser ? `https://t.me/${tgUser.replace('@', '')}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>t.me/</span>
-                                    <input type="text" style={inputStyle} value={tgUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _tg_user: v, telegram: v ? `https://t.me/${v.replace('@', '')}` : '' })); }} placeholder="username" />
-                                  </div>
-                                  {tgLink && <p style={previewStyle}>{tgLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'instagram') {
-                              const igUser = formData._ig_user || '';
-                              const igLink = igUser ? `https://instagram.com/${igUser.replace('@', '')}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={igUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _ig_user: v, instagram: v ? `https://instagram.com/${v}` : '' })); }} placeholder="username" />
-                                  </div>
-                                  {igLink && <p style={previewStyle}>{igLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'twitter') {
-                              const twUser = formData._tw_user || '';
-                              const twLink = twUser ? `https://x.com/${twUser.replace('@', '')}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={twUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tw_user: v, twitter: v ? `https://x.com/${v}` : '' })); }} placeholder="handle" />
-                                  </div>
-                                  {twLink && <p style={previewStyle}>{twLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'tiktok') {
-                              const ttUser = formData._tt_user || '';
-                              const ttLink = ttUser ? `https://tiktok.com/@${ttUser.replace('@', '')}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={ttUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tt_user: v, tiktok: v ? `https://tiktok.com/@${v}` : '' })); }} placeholder="username" />
-                                  </div>
-                                  {ttLink && <p style={previewStyle}>{ttLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'snapchat') {
-                              const scUser = formData._sc_user || '';
-                              const scLink = scUser ? `https://snapchat.com/add/${scUser}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>add/</span>
-                                    <input type="text" style={inputStyle} value={scUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _sc_user: v, snapchat: v ? `https://snapchat.com/add/${v}` : '' })); }} placeholder="username" />
-                                  </div>
-                                  {scLink && <p style={previewStyle}>{scLink}</p>}
-                                </div>
-                              );
-                            }
-                            if (platformId === 'threads') {
-                              const thUser = formData._th_user || '';
-                              const thLink = thUser ? `https://threads.net/@${thUser.replace('@', '')}` : '';
-                              return (
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={thUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _th_user: v, threads: v ? `https://threads.net/@${v}` : '' })); }} placeholder="username" />
-                                  </div>
-                                  {thLink && <p style={previewStyle}>{thLink}</p>}
-                                </div>
-                              );
-                            }
-                            return (
-                              <input type="text" className="dash-link-inline-input" style={inputStyle} value={formData[platformId] || ''} onChange={e => setFormData(prev => ({ ...prev, [platformId]: e.target.value }))} placeholder="https://" />
-                            );
-                          };
-
-                          return (
-                            <div className="dash-link-card fade-in" key={platformId} style={{ background: 'var(--dash-card-bg, rgba(20,20,30,0.8))', borderRadius: '16px', padding: '0.8rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                               <div className="dash-link-icon-circle" style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(139,92,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a78bfa', flexShrink: 0 }}>
-                                 {getLinkIcon({ platform: platform.id })}
-                               </div>
-                               <div className="dash-link-content" style={{ flex: 1, minWidth: 0 }}>
-                                 <div className="dash-link-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                   <span className="dash-link-title" style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>{platform.label}</span>
-                                   <button 
-                                     className="dash-link-remove-btn" 
-                                     onClick={() => {
-                                        setOnboardingPlatforms(prev => prev.filter(id => id !== platform.id));
-                                        setFormData(prev => ({ ...prev, [platform.id]: '' }));
-                                     }}
-                                     style={{ background: 'rgba(239,68,68,0.15)', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f87171', transition: 'all 0.2s ease' }}
-                                   >✕</button>
-                                 </div>
-                                 <div className="dash-link-url">
-                                   {renderPlatformInput()}
-                                 </div>
-                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <button 
-                        type="button" 
-                        onClick={() => setIsOnboardingSelectorOpen(true)}
-                        style={{ width: '100%', maxWidth: '380px', margin: '0 auto', padding: '1rem', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '2px dashed rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; }}
-                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-                      >
-                        <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Platforms
-                      </button>
-                    </>
-                  ) : (
-                    <div className="onboarding-selector-view fade-in">
-                      <div className="selector-header">
-                        <h3>Select Platforms</h3>
-                        <button 
-                          type="button"
-                          className="selector-close-btn"
-                          onClick={() => setIsOnboardingSelectorOpen(false)}
-                        >←</button>
-                      </div>
-                      <p className="selector-subtitle">Choose the platforms you want on your profile</p>
-                      
-                      <div className="dash-selector-grid">
-                        {ALL_PLATFORMS.map((p) => {
-                          const isActive = onboardingPlatforms.includes(p.id);
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
-                              onClick={() => {
-                                if (isActive) {
-                                  setOnboardingPlatforms(prev => prev.filter(id => id !== p.id));
-                                  setFormData(prev => ({ ...prev, [p.id]: '' }));
-                                } else {
-                                  setOnboardingPlatforms(prev => [...prev, p.id]);
-                                }
-                              }}
-                            >
-                              <div className="dash-selector-icon">
-                                {getLinkIcon({ platform: p.id })}
-                              </div>
-                              <span className="dash-selector-label">{p.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      
-                      <button 
-                        type="button"
-                        className="onboarding-btn-primary"
-                        onClick={() => setIsOnboardingSelectorOpen(false)}
-                        style={{ marginTop: '1.25rem' }}
-                      >
-                        Selected ({onboardingPlatforms.length})
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {!isOnboardingSelectorOpen && (
-                  <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
-                    <button className="onboarding-btn-primary" onClick={handleOnboardingNext}>Next Step →</button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {onboardingStep === 3 && (
-              <div className="onboarding-step fade-in">
-                <h2>Show your style</h2>
-                <p className="onboarding-subtitle">Upload your profile, banner, and gallery images</p>
-                <div className="onboarding-images">
-                  <div className="image-upload-box">
-                    <label>Profile Image</label>
-                    <div className="upload-preview-circle" onClick={() => document.getElementById('photo-input').click()}>
-                      {photoFile ? <img src={URL.createObjectURL(photoFile)} alt="Preview" /> : <span>+</span>}
-                    </div>
-                    <input id="photo-input" type="file" hidden onChange={e => setPhotoFile(e.target.files[0])} accept="image/*" />
-                  </div>
-                  <div className="image-upload-box">
-                    <label>Banner Image</label>
-                    <div className="upload-preview-banner" onClick={() => document.getElementById('bg-input').click()}>
-                      {bgFile ? <img src={URL.createObjectURL(bgFile)} alt="Preview" /> : <span>+ Click to upload banner</span>}
-                    </div>
-                    <input id="bg-input" type="file" hidden onChange={e => setBgFile(e.target.files[0])} accept="image/*" />
-                  </div>
-                </div>
-
-                <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
-                  <label>Gallery Images / GIFs (up to 3)</label>
-                  <div className="upload-preview-banner" onClick={() => document.getElementById('gallery-input').click()} style={{ minHeight: '80px', display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '10px' }}>
-                    {onboardingGalleryFiles.length > 0 ? (
-                      onboardingGalleryFiles.map((f, i) => (
-                        <div key={i} style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden' }}>
-                          <img src={URL.createObjectURL(f)} alt="Gallery preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      ))
-                    ) : (
-                      <span style={{ margin: 'auto' }}>+ Click to select up to 3 images</span>
-                    )}
-                  </div>
-                  <input 
-                    id="gallery-input" 
-                    type="file" 
-                    multiple 
-                    hidden 
-                    onChange={e => {
-                      const files = Array.from(e.target.files).slice(0, 3);
-                      setOnboardingGalleryFiles(files);
-                    }} 
-                    accept="image/*,image/gif" 
-                  />
-                </div>
-
-                <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>
-                  <div className="onboarding-field">
-                    <label>Short Bio</label>
-                    <textarea
-                      className="onboarding-textarea"
-                      value={formData.bio}
-                      onChange={e => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                      placeholder="Tell us about yourself..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                {error && <p className="onboarding-error-msg">{error}</p>}
-                <div className="onboarding-actions">
-                  <button className="onboarding-btn-complete" onClick={handleOnboardingComplete} disabled={saving}>
-                    {saving ? 'Setting up...' : 'Complete Setup ✓'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button onClick={handleLogout} className="onboarding-logout-btn">Sign out</button>
-        </div>
-      </div>
+      <ProfileArtistOnboardingWizard
+        onboardingStep={onboardingStep}
+        handleOnboardingBack={handleOnboardingBack}
+        handleOnboardingNext={handleOnboardingNext}
+        handleOnboardingComplete={handleOnboardingComplete}
+        formData={formData}
+        setFormData={setFormData}
+        isOnboardingSelectorOpen={isOnboardingSelectorOpen}
+        setIsOnboardingSelectorOpen={setIsOnboardingSelectorOpen}
+        onboardingPlatforms={onboardingPlatforms}
+        setOnboardingPlatforms={setOnboardingPlatforms}
+        ALL_PLATFORMS={ALL_PLATFORMS}
+        photoFile={photoFile}
+        setPhotoFile={setPhotoFile}
+        bgFile={bgFile}
+        setBgFile={setBgFile}
+        onboardingGalleryFiles={onboardingGalleryFiles}
+        setOnboardingGalleryFiles={setOnboardingGalleryFiles}
+        error={error}
+        saving={saving}
+        handleLogout={handleLogout}
+      />
     );
   }
-
 
   // Mode selection screen (Artist vs General)
   if (isLoggedIn && profileMode === 'choice') {
     return (
-      <div className="profile-page profile-login-wrap">
-        <div className="profile-login-card profile-choice-card">
-          <div className="profile-login-header">
-            <div className="profile-icon">
-              <DotLottieReact
-                src="https://lottie.host/8ee04dfa-c385-45ce-b652-6a37f232bbe5/aXjGCND8pC.lottie"
-                loop
-                autoplay
-                style={{ width: '100%', height: '100%' }}
-              />
-            </div>
-            <h1>
-              {displayName && displayName.includes('@')
-                ? 'Welcome!'
-                : `Welcome, ${(displayName || 'Profile').split(' ')[0]}`}
-            </h1>
-            {displayEmail ? (
-              <p className="profile-header-email" title={displayEmail}>{displayEmail}</p>
-            ) : null}
-            <p className="profile-header-sub">Select which profile you'd like to manage today</p>
-          </div>
-          <div className="profile-choice-grid">
-            {!profileLock && !choiceSource && !generalProfile && !restaurantProfile && (
-              <button className="neo-card neo-card-artist" onClick={handleSelectArtistMode}>
-                <div className="neo-card-content">
-                  <p className="neo-card-plan">Artist Profile</p>
-                  <div className="neo-card-tagline">🎨 Portfolio & NFC</div>
-                  <ul className="neo-check-list">
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Art Gallery &amp; Portfolio
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Social Links
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Custom Themes
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      NFC Tap Ready
-                    </li>
-                  </ul>
-                </div>
-              </button>
-            )}
-            {profileLock !== 'artist' && (<>
-              <button className="neo-card neo-card-general" onClick={handleSelectGeneralMode}>
-                <div className="neo-card-content">
-                  <p className="neo-card-plan">General Profile</p>
-                  <div className="neo-card-tagline">🔗 Link-in-Bio</div>
-                  <ul className="neo-check-list">
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Custom Links &amp; Socials
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Multiple Themes
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Photo &amp; Bio
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      NFC Tap Ready
-                    </li>
-                  </ul>
-                </div>
-              </button>
-              <button className="neo-card neo-card-restaurant" onClick={handleSelectRestaurantMode}>
-                <div className="neo-card-content">
-                  <p className="neo-card-plan">Restaurant</p>
-                  <div className="neo-card-tagline">🍽️ Tap to Order</div>
-                  <ul className="neo-check-list">
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Digital Menu (PDF)
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Contact &amp; Location
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      Custom Themes
-                    </li>
-                    <li className="neo-check-item">
-                      <svg viewBox="0 0 30 30" width="16" height="16"><path d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z" fill="#05060f"/></svg>
-                      NFC Tap Ready
-                    </li>
-                  </ul>
-                </div>
-              </button>
-            </>)}
-          </div>
-        </div>
-      </div>
+      <ProfileChoiceScreen
+        displayName={displayName}
+        displayEmail={displayEmail}
+        profileLock={profileLock}
+        choiceSource={choiceSource}
+        generalProfile={generalProfile}
+        restaurantProfile={restaurantProfile}
+        handleSelectArtistMode={handleSelectArtistMode}
+        handleSelectGeneralMode={handleSelectGeneralMode}
+        handleSelectRestaurantMode={handleSelectRestaurantMode}
+      />
     );
   }
-
   // Restaurant profile: home (profile already created) — same layout as artist dashboard
   if (isLoggedIn && isRestaurantMode && restaurantProfile) {
     return (
@@ -1944,17 +1696,6 @@ function Profile() {
             >
               ← Back to Home
             </button>
-            <button
-              className="dash-sidebar-signout-btn"
-              onClick={() => handleBackToChoice('restaurant')}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'var(--dash-text, #f1f5f9)'
-              }}
-            >
-              ← Switch Profile
-            </button>
             <button className="dash-sidebar-signout-btn" onClick={handleLogout}>Sign out</button>
           </div>
         </aside>
@@ -1982,13 +1723,18 @@ function Profile() {
                     }
                     <div className="dash-profile-hero-overlay" />
 
-                    <label className="dash-hero-bg-trigger" style={{ cursor: 'pointer' }} onClick={() => { setRestaurantForm({ ...restaurantProfile, menuPdf: restaurantProfile.menuPdf || null, banner: restaurantProfile.banner || null, gallery: restaurantProfile.gallery || [], links: restaurantProfile.links || {} }); setRestaurantProfile(null); updateRestaurantOnboardingStep(1); }}>
+                    <button
+                      type="button"
+                      className="dash-hero-bg-trigger"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => { setRestaurantForm({ ...restaurantProfile, menuPdf: restaurantProfile.menuPdf || null, banner: restaurantProfile.banner || null, gallery: restaurantProfile.gallery || [], links: restaurantProfile.links || {} }); setRestaurantProfile(null); updateRestaurantOnboardingStep(1); }}
+                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                       <span>Edit Profile</span>
-                    </label>
+                    </button>
 
                     <div className="dash-profile-hero-content">
                       <div className="dash-hero-text">
@@ -2011,29 +1757,23 @@ function Profile() {
                           navigator.clipboard.writeText(url);
                           alert('Profile URL copied to clipboard!');
                         }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: 'var(--dash-accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: '#111827', color: '#f9fafb', border: '1px solid rgba(255,255,255,0.28)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                         Copy Link
                       </button>
-                      <a href={`${window.location.origin}/link/${restaurantProfile.username || ''}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: 'rgba(99,102,241,0.15)', color: 'var(--dash-accent)', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Open</a>
+                      <a href={`${window.location.origin}/link/${restaurantProfile.username || ''}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: '#0f172a', color: '#ffffff', border: '1px solid rgba(255,255,255,0.24)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Open</a>
                     </div>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>Share this link so customers can view your restaurant profile.</p>
-                    <button
-                      type="button"
-                      onClick={handleRestaurantPublish}
-                      disabled={restaurantPublishLoading}
-                      style={{ marginTop: '0.75rem', padding: '8px 16px', background: restaurantPublishLoading ? 'var(--dash-border)' : '#22c55e', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: restaurantPublishLoading ? 'not-allowed' : 'pointer' }}
-                    >
-                      {restaurantPublishLoading ? 'Publishing…' : 'Publish to make link live'}
-                    </button>
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
+                      Link goes live automatically after creating your restaurant profile.
+                    </p>
                   </div>
 
                   {/* Bio — always editable inline */}
                   <div style={{ marginTop: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>About / Bio</span>
-                      {!rBioEditing && <button onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }} style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>Edit</button>}
+                      {!rBioEditing && <button type="button" onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }} style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>Edit</button>}
                     </div>
                     {rBioEditing ? (
                       <div>
@@ -2046,8 +1786,8 @@ function Profile() {
                           autoFocus
                         />
                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <button onClick={() => { const updated = { ...restaurantProfile, bio: rBioDraft }; setRestaurantProfile(updated); persistRestaurant(updated); setRBioEditing(false); }} style={{ padding: '0.5rem 1.2rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Save</button>
-                          <button onClick={() => setRBioEditing(false)} style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+                          <button type="button" onClick={() => { const updated = { ...restaurantProfile, bio: rBioDraft }; setRestaurantProfile(updated); persistRestaurant(updated); setRBioEditing(false); }} style={{ padding: '0.5rem 1.2rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Save</button>
+                          <button type="button" onClick={() => setRBioEditing(false)} style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -3063,17 +2803,6 @@ function Profile() {
             >
               ← Back to Home
             </button>
-            <button
-              className="dash-sidebar-signout-btn"
-              onClick={() => handleBackToChoice('general')}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'var(--dash-text, #f1f5f9)'
-              }}
-            >
-              ← Switch Profile
-            </button>
             <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
               Sign out
             </button>
@@ -3128,7 +2857,18 @@ function Profile() {
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: 'var(--dash-bg-card)', borderRadius: '16px', border: '1px solid var(--dash-border)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: isMobileViewport ? 'flex-start' : 'center',
+                      gap: '1.5rem',
+                      marginBottom: '2.5rem',
+                      padding: '1.5rem',
+                      background: 'var(--dash-bg-card)',
+                      borderRadius: '16px',
+                      border: '1px solid var(--dash-border)'
+                    }}
+                  >
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'var(--dash-bg)', border: '3px solid var(--dash-border)' }}>
                       {(generalForm.photo || generalPhotoFile) ? (
                         <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -3141,13 +2881,112 @@ function Profile() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.3rem', fontWeight: 700, color: 'var(--dash-text)' }}>{generalProfile.name || 'Unnamed'}</h2>
                       <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--dash-accent)' }}>@{generalProfile.username}</p>
-                      {generalProfile.title && <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--dash-subtext)' }}>{generalProfile.title}</p>}
+                      {/* Mobile: hide tagline in the top header box (keeps UI clean). */}
+                      {generalProfile.title && !isMobileViewport && (
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--dash-subtext)' }}>
+                          {generalProfile.title}
+                        </p>
+                      )}
+
+                      {/* Mobile: move "Change Photo" under username for better alignment */}
+                      {isMobileViewport && (
+                        <div style={{ marginTop: '0.75rem' }}>
+                          <label
+                            style={{
+                              cursor: 'pointer',
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: '1.5px solid var(--dash-border)',
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--dash-text)',
+                              background: 'var(--dash-bg)',
+                              transition: 'all 0.2s',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              whiteSpace: 'nowrap',
+                              lineHeight: 1
+                            }}
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              width="16"
+                              height="16"
+                              style={{ display: 'block' }}
+                            >
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  setGeneralPhotoFile(e.target.files[0]);
+                                  handleGeneralPhotoSave(e.target.files[0]);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      )}
                     </div>
-                    <label style={{ cursor: 'pointer', padding: '8px 16px', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--dash-text)', background: 'var(--dash-bg)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                      Change Photo
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) { setGeneralPhotoFile(e.target.files[0]); handleGeneralPhotoSave(e.target.files[0]); } }} />
-                    </label>
+                    {/* Desktop: keep Change Photo on the right */}
+                    {!isMobileViewport && (
+                      <label
+                        style={{
+                          cursor: 'pointer',
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          border: '1.5px solid var(--dash-border)',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          color: 'var(--dash-text)',
+                          background: 'var(--dash-bg)',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          alignSelf: 'center',
+                          marginLeft: 'auto',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1
+                        }}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          width="16"
+                          height="16"
+                          style={{ display: 'block' }}
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Change Photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              setGeneralPhotoFile(e.target.files[0]);
+                              handleGeneralPhotoSave(e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
                   </div>
 
                   <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -3357,26 +3196,28 @@ function Profile() {
                           </div>
                           <button
                             type="button"
+                            className="profile-general-link-remove"
                             onClick={() => removeLink(idx)}
                             style={{
-                            position: 'absolute',
+                              position: 'absolute',
                               top: '-10px',
                               right: '-10px',
-                              background: '#ffffff',
-                              color: '#ef4444',
-                              border: '2px solid #ef4444',
+                              background: 'transparent',
+                              color: '#ffffff',
+                              border: 'none',
                               borderRadius: '999px',
-                              width: '26px',
-                              height: '26px',
+                              width: '30px',
+                              height: '30px',
                               cursor: 'pointer',
-                              fontSize: '0.9rem',
+                              fontSize: '1.05rem',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
                               fontWeight: 700,
                               lineHeight: 1,
-                              boxShadow: '0 4px 10px rgba(0,0,0,0.35)'
+                              boxShadow: 'none',
+                              outline: 'none'
                             }}
                           >
                             ×
@@ -3688,7 +3529,39 @@ function Profile() {
                   <div key={idx} className="profile-edit-field profile-edit-link-block">
                     <div className="profile-edit-link-header">
                       <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
-                      <button type="button" onClick={() => removeLink(idx)} className="profile-edit-remove" title="Remove link">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeLink(idx)}
+                        className="profile-edit-remove"
+                        title="Remove link"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          boxShadow: 'none',
+                          outline: 'none',
+                          color: '#ffffff',
+                          width: 22,
+                          height: 22,
+                          padding: 0,
+                          borderRadius: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.color = '#ffffff';
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.outline = 'none';
+                          e.currentTarget.style.color = '#ffffff';
+                        }}
+                      >
+                        ×
+                      </button>
                     </div>
                     <div className="profile-edit-link-fields">
                       <input placeholder="Title (e.g. My Website)" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} className="profile-edit-link-title" />

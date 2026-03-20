@@ -1,0 +1,49 @@
+.home-hero-section .hero-feature-item {
+  border-radius: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.16);
+}
+
+.home-hero-section .hero-feature-item:hover {
+  transform: translate(6px, -2px);
+  box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.22);
+}
+
+.home-hero-section .feature-name {
+  font-family: "Press Start 2P", "Roboto Mono", monospace;
+  font-size: clamp(0.64rem, 1.1vw, 0.76rem);
+  letter-spacing: 0.06em;
+  line-height: 1.55;
+  text-transform: uppercase;
+}
+
+.home-hero-section .feature-detail {
+  font-family: "Press Start 2P", "Roboto Mono", monospace;
+  font-size: clamp(0.5rem, 0.9vw, 0.6rem);
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+  opacity: 0.92;
+}
+
+.home-hero-section .feature-arrow {
+  font-family: "Press Start 2P", "Roboto Mono", monospace;
+  font-size: 0.86rem;
+  opacity: 0.95;
+}
+
+@media (max-width: 768px) {
+  .home-hero-section .hero-feature-item {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+
+  .home-hero-section .feature-name {
+    font-size: 0.58rem;
+    line-height: 1.45;
+  }
+
+  .home-hero-section .feature-detail {
+    font-size: 0.48rem;
+    line-height: 1.6;
+  }
+}

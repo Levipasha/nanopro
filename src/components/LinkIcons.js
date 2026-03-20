@@ -1,6 +1,12 @@
 import React from 'react';
 
 const icons = {
+  google_maps: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+      <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+      <path d="M12 7.2l.8 1.6 1.8.3-1.3 1.3.3 1.8-1.6-.9-1.6.9.3-1.8-1.3-1.3 1.8-.3z" />
+    </svg>
+  ),
   website: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -116,6 +122,17 @@ export const getLinkIcon = (link) => {
   const platform = (link.platform || '').toLowerCase();
   const url = (link.url || '').toLowerCase();
   const title = (link.title || '').toLowerCase();
+  if (
+    platform === 'google_maps' ||
+    platform === 'googlemaps' ||
+    platform === 'google' ||
+    title.includes('rate us on google') ||
+    title.includes('google map') ||
+    title.includes('google maps') ||
+    url.includes('google.com/maps') ||
+    url.includes('maps.app.goo.gl') ||
+    url.includes('g.page')
+  ) return icons.google_maps;
   if (platform === 'portfolio' || title.includes('portfolio')) return icons.portfolio;
   if (platform === 'pinterest' || url.includes('pinterest')) return icons.pinterest;
   if (platform === 'instagram' || url.includes('instagram')) return icons.instagram;

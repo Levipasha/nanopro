@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
 import { getLinkIcon } from '../components/LinkIcons';
@@ -8,15 +9,49 @@ import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
 
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
 function GeneralProfileView() {
   const { username } = useParams();
+  const [searchParams] = useSearchParams();
+  const isMock = searchParams.get('mock') === '1';
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imgError, setImgError] = useState(false);
   const [showEnlarged, setShowEnlarged] = useState(false);
+  const [showMenuViewer, setShowMenuViewer] = useState(false);
+  const [menuPage, setMenuPage] = useState(1);
+  const [menuTotalPages, setMenuTotalPages] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [pageTurnDir, setPageTurnDir] = useState('');
 
   useEffect(() => {
+    if (isMock) {
+      const MOCK_RESTAURANT = {
+        username: 'mock-restaurant',
+        name: 'Sakura Kitchen',
+        title: 'Modern Japanese Cuisine',
+        bio: 'Authentic Japanese flavors reimagined with local ingredients. From sushi to ramen, every dish tells a story of tradition meeting innovation.',
+        photo: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&h=500&fit=crop',
+        menuPdf: '',
+        theme: 'mint',
+        font: 'outfit',
+        bioFont: 'outfit',
+        links: [
+          { title: 'Instagram', url: 'https://instagram.com/exampleinsta', platform: 'instagram', order: 0 },
+          { title: 'WhatsApp', url: 'https://wa.me/9183746501', platform: 'whatsapp', order: 1 },
+          { title: 'Website', url: 'https://example.com', platform: 'website', order: 2 }
+        ],
+        social: {}
+      };
+
+      setProfile(MOCK_RESTAURANT);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const res = await generalProfileAPI.getByUsername(username);
@@ -32,7 +67,7 @@ function GeneralProfileView() {
       }
     };
     if (username) fetchProfile();
-  }, [username]);
+  }, [username, isMock]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -54,6 +89,27 @@ function GeneralProfileView() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => alert('Link copied!'));
+  };
+
+  const openMenuViewer = () => {
+    setMenuPage(1);
+    setShowMenuViewer(true);
+  };
+
+  const closeMenuViewer = () => {
+    setShowMenuViewer(false);
+    setPageTurnDir('');
+  };
+
+  const turnPage = (direction) => {
+    if (!menuTotalPages) return;
+    const nextPage = direction === 'next'
+      ? Math.min(menuPage + 1, menuTotalPages)
+      : Math.max(menuPage - 1, 1);
+    if (nextPage === menuPage) return;
+    setPageTurnDir(direction);
+    setMenuPage(nextPage);
+    window.setTimeout(() => setPageTurnDir(''), 220);
   };
 
   if (loading) {
@@ -161,16 +217,15 @@ function GeneralProfileView() {
         {/* Link buttons */}
         <div className="gp-links">
           {profile.menuPdf && (
-            <a
-              href={profile.menuPdf.startsWith('http') ? profile.menuPdf : `https://${profile.menuPdf}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={openMenuViewer}
               className="gp-link gp-link-menu"
               style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
             >
               <span className="gp-link-icon">📄</span>
               <span className="gp-link-text">See my menu</span>
-            </a>
+            </button>
           )}
           {links.map((link, idx) => (
             <a
@@ -202,6 +257,53 @@ function GeneralProfileView() {
               className="gp-modal-img"
               onClick={(e) => e.stopPropagation()}
             />
+          </div>
+        )}
+
+        {/* Menu PDF Book Viewer */}
+        {showMenuViewer && profile.menuPdf && (
+          <div className="gp-menu-modal" onClick={closeMenuViewer}>
+            <div className="gp-modal-overlay" />
+            <div className="gp-menu-book" onClick={(e) => e.stopPropagation()}>
+              <button className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">×</button>
+
+              <div className="gp-menu-topbar">
+                <span className="gp-menu-title">Menu Preview</span>
+                <span className="gp-menu-page-indicator">
+                  Page {menuPage}{menuTotalPages ? ` / ${menuTotalPages}` : ''}
+                </span>
+              </div>
+
+              <div
+                className={`gp-menu-page-shell ${pageTurnDir ? `turn-${pageTurnDir}` : ''}`}
+                onTouchStart={(e) => setTouchStartX(e.changedTouches[0].clientX)}
+                onTouchEnd={(e) => {
+                  if (touchStartX == null) return;
+                  const dx = e.changedTouches[0].clientX - touchStartX;
+                  if (dx < -40) turnPage('next');
+                  if (dx > 40) turnPage('prev');
+                  setTouchStartX(null);
+                }}
+              >
+                <Document
+                  file={profile.menuPdf}
+                  onLoadSuccess={({ numPages }) => {
+                    setMenuTotalPages(numPages || 0);
+                    if (menuPage > numPages) setMenuPage(1);
+                  }}
+                  loading={<div className="gp-menu-loading">Loading menu...</div>}
+                  error={<div className="gp-menu-error">Unable to load this menu PDF.</div>}
+                >
+                  <Page pageNumber={menuPage} width={Math.min(window.innerWidth * 0.82, 720)} />
+                </Document>
+              </div>
+
+              <div className="gp-menu-controls">
+                <button type="button" onClick={() => turnPage('prev')} disabled={menuPage <= 1}>◀ Prev</button>
+                <button type="button" onClick={() => turnPage('next')} disabled={menuTotalPages ? menuPage >= menuTotalPages : true}>Next ▶</button>
+              </div>
+              <p className="gp-menu-hint">Swipe left/right to flip pages like a book.</p>
+            </div>
           </div>
         )}
       </div>

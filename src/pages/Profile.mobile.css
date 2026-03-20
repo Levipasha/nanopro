@@ -120,3 +120,203 @@
     cursor: not-allowed;
   }
 }
+
+@media (max-width: 768px) {
+  /* Prevent accidental horizontal drift in artist dashboard */
+  .dash-root,
+  .dash-content,
+  .dash-main,
+  .dash-mobile-preview-page,
+  .dash-mobile-preview-frame-wrap {
+    max-width: 100vw;
+    overflow-x: hidden !important;
+  }
+
+  /* Keep platform selector perfectly centered */
+  .dash-selector-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    /* Guaranteed visual gap from both sides (incl. notch safe-area) */
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    padding-left: max(16px, env(safe-area-inset-left)) !important;
+    padding-right: max(16px, env(safe-area-inset-right)) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .dash-selector-modal {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    /* Use overlay padding as the constraint, prevents “tilt” */
+    width: 100% !important;
+    max-width: 460px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .dash-selector-header {
+    text-align: left;
+    padding: 1.4rem 1.2rem 0.9rem;
+  }
+
+  .dash-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    padding: 0 1.1rem 1rem;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    align-items: stretch;
+    box-sizing: border-box;
+  }
+
+  .dash-selector-item {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .dash-selector-actions {
+    padding: 0.9rem 1.2rem 1.2rem;
+    gap: 12px;
+  }
+}
+
+/* Force-center platform selector even in desktop-width “mobile preview” */
+html.dash-platform-selector-open,
+body.dash-platform-selector-open {
+  overflow: hidden;
+}
+
+body.dash-platform-selector-open .dash-selector-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  padding-left: max(16px, env(safe-area-inset-left)) !important;
+  padding-right: max(16px, env(safe-area-inset-right)) !important;
+}
+
+body.dash-platform-selector-open .dash-selector-modal {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 460px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Event image remove button: simple X (no big red dot) */
+.dash-gallery-item .dash-gallery-remove-btn {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  z-index: 3 !important;
+}
+
+.dash-gallery-item .dash-gallery-remove-btn:hover {
+  background: transparent !important;
+  color: #ffffff !important;
+  transform: scale(1.06);
+}
+
+/* Global black/white override: remove gradients from option UI */
+.dash-root,
+.dash-main,
+.dash-content,
+.dash-single-profile,
+.dash-info-card,
+.dash-profile-hero,
+.dash-preview-panel,
+.dash-link-card,
+.dash-gallery-item,
+.dash-selector-modal,
+.dash-selector-item,
+.dash-selector-actions,
+.dash-mobile-edit-modal,
+.dash-mobile-bottom-nav,
+.dash-mobile-bottom-nav-inner {
+  background: #000 !important;
+  background-image: none !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.dash-selector-btn-done,
+.dash-selector-btn-cancel,
+.dash-mobile-edit-btn,
+.dash-mobile-edit-btn.primary,
+.dash-mobile-edit-btn.ghost,
+.dash-add-platform-btn,
+.show-art-btn,
+.dash-link-btn {
+  background: #000 !important;
+  background-image: none !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  box-shadow: none !important;
+}
+
+.dash-selector-btn-done:hover,
+.dash-selector-btn-cancel:hover,
+.dash-mobile-edit-btn:hover,
+.dash-add-platform-btn:hover,
+.show-art-btn:hover,
+.dash-link-btn:hover {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+/* Mobile bottom nav (pill) must have visible contrast on dark background.
+   Profile.overrides.css currently sets these buttons to dark text (#020617),
+   so on mobile where the nav background is forced to black, buttons become invisible. */
+.dash-mobile-bottom-btn {
+  color: #fff !important;
+}
+
+.dash-mobile-bottom-btn svg,
+.dash-mobile-bottom-btn svg * {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+.dash-mobile-bottom-btn span {
+  color: #fff !important;
+}
+
+.dash-mobile-bottom-btn-active {
+  color: #fff !important;
+}

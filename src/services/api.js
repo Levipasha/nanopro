@@ -73,8 +73,8 @@ export const landingArtistAPI = {
 
 // General Profile (Linktree-like) API
 export const generalProfileAPI = {
-  getMine: (getIdToken, getFirebaseUser) =>
-    request('GET', '/api/general-profile/me', { getIdToken, getFirebaseUser }),
+  getMine: (getIdToken, getFirebaseUser, profileType = 'general') =>
+    request('GET', `/api/general-profile/me?type=${encodeURIComponent(profileType)}`, { getIdToken, getFirebaseUser }),
   create: (body, getIdToken, getFirebaseUser) =>
     request('POST', '/api/general-profile', { body, getIdToken, getFirebaseUser }),
   update: (body, getIdToken, getFirebaseUser) =>

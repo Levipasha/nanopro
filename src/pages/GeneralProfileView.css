@@ -273,6 +273,7 @@
 .gp-link-menu {
   font-size: 1.05rem;
   padding: 1.1rem 1.25rem;
+  cursor: pointer;
 }
 
 .gp-link-icon {
@@ -281,6 +282,123 @@
   align-items: center;
   justify-content: center;
   color: inherit;
+}
+
+/* Book-style menu PDF viewer */
+.gp-menu-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.gp-menu-book {
+  position: relative;
+  width: min(92vw, 860px);
+  max-height: 90vh;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #111827;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+}
+
+.gp-menu-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f9fafb;
+}
+
+.gp-menu-title {
+  font-weight: 700;
+}
+
+.gp-menu-page-indicator {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.gp-menu-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.gp-menu-page-shell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 58vh;
+  padding: 1rem;
+  background: radial-gradient(circle at center, #1f2937 0%, #0b1220 100%);
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.gp-menu-page-shell.turn-next {
+  transform: perspective(1200px) rotateY(-8deg);
+}
+
+.gp-menu-page-shell.turn-prev {
+  transform: perspective(1200px) rotateY(8deg);
+}
+
+.gp-menu-page-shell .react-pdf__Page {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.gp-menu-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem 0.4rem;
+}
+
+.gp-menu-controls button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #000;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gp-menu-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gp-menu-hint {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.gp-menu-loading,
+.gp-menu-error {
+  color: #e5e7eb;
+  padding: 2rem;
+  text-align: center;
 }
 
 .gp-link-icon svg {
