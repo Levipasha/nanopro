@@ -1,5 +1,25 @@
 import React from 'react';
 import { getLinkIcon } from '../LinkIcons';
+import PhoneINInput from '../PhoneINInput';
+import { buildWhatsAppUrlFromFullINPhone } from '../../utils/indianPhone';
+
+function OnboardingGalleryTilePreview({ file }) {
+  // Create/revoke in an effect only. useMemo + revoke cleanup breaks under React Strict Mode
+  // (cleanup revokes the URL while useMemo still returns the same stale string).
+  const [url, setUrl] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  const isVideo = file.type.startsWith('video/');
+  if (!url) return null;
+  return isVideo ? (
+    <video src={url} muted playsInline preload="metadata" />
+  ) : (
+    <img src={url} alt="" />
+  );
+}
 
 export default function ProfileArtistOnboardingWizard({
   onboardingStep,
@@ -24,24 +44,14 @@ export default function ProfileArtistOnboardingWizard({
   handleLogout,
 }) {
   return (
-
       <div className="profile-page profile-login-wrap onboarding-screen">
-        <div className="onboarding-bg-shapes">
-          <div className="glass-blob blob-1"></div>
-          <div className="glass-blob blob-2"></div>
-          <div className="glass-blob blob-3"></div>
-        </div>
-        <div className="profile-login-card onboarding-card">
+        <div className="profile-login-card profile-choice-card general-onboarding-card">
           {onboardingStep > 1 && (
-            <button className="onboarding-back-arrow" onClick={handleOnboardingBack}>
-              ←
-            </button>
+            <button type="button" className="profile-back-btn" onClick={handleOnboardingBack}>← Back</button>
           )}
-          <div className="onboarding-progress-container">
-            <div className="onboarding-progress-bar" style={{ width: `${(onboardingStep / 3) * 100}%` }} />
+          <div className="general-onboarding-progress">
+            <div className="general-onboarding-progress-bar" style={{ width: `${(onboardingStep / 3) * 100}%` }} />
           </div>
-
-          <div className="onboarding-step-content">
             {onboardingStep === 1 && (
               <div className="onboarding-step fade-in">
                 <h2>Welcome! Let's get started</h2>
@@ -94,12 +104,10 @@ export default function ProfileArtistOnboardingWizard({
                   </div>
                   <div className="onboarding-field">
                     <label>Mobile Number</label>
-                    <input
-                      type="tel"
-                      className="onboarding-input"
+                    <PhoneINInput
+                      wrapClassName="onboarding-phone-in"
                       value={formData.phone}
-                      onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="e.g. +1 234 567 890"
+                      onChange={(v) => setFormData((prev) => ({ ...prev, phone: v }))}
                     />
                   </div>
                 </div>
@@ -118,28 +126,37 @@ export default function ProfileArtistOnboardingWizard({
                     <>
                       <div className="dash-links-section onboarding-added-links" style={{ marginBottom: '1.5rem' }}>
                         {onboardingPlatforms.length === 0 && (
-                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', marginBottom: '1rem' }}>
-                            <p style={{ margin: 0, fontSize: '0.9rem' }}>No platforms added yet.<br/>Click below to add some!</p>
+                          <div className="general-onboarding-artist-empty">
+                            <p>No platforms added yet.<br/>Click below to add some!</p>
                           </div>
                         )}
                         {onboardingPlatforms.map(platformId => {
                           const platform = ALL_PLATFORMS.find(p => p.id === platformId);
-                          const inputStyle = { width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: 'var(--dash-text, #f1f5f9)', background: 'rgba(255,255,255,0.06)', boxSizing: 'border-box' };
-                          const previewStyle = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.35rem', wordBreak: 'break-all' };
+                          const inputClass = 'onboarding-input';
+                          const inputExtra = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.8rem', fontSize: '0.85rem', borderRadius: '10px' };
 
                           const renderPlatformInput = () => {
                             if (platformId === 'whatsapp') {
-                              const waPhone = formData._wa_phone || '';
                               const waMsg = formData._wa_msg || '';
-                              const waLink = waPhone ? `https://wa.me/${waPhone.replace(/[^0-9]/g, '')}${waMsg ? '?text=' + encodeURIComponent(waMsg) : ''}` : '';
+                              const waStored = formData._wa_phone || '';
+                              const waLink = buildWhatsAppUrlFromFullINPhone(waStored, waMsg);
                               return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', flexShrink: 0 }}>+</span>
-                                    <input type="tel" style={inputStyle} value={waPhone} onChange={e => { const v = e.target.value.replace(/[^0-9+\s-]/g, ''); setFormData(prev => ({ ...prev, _wa_phone: v, whatsapp: v ? `https://wa.me/${v.replace(/[^0-9]/g, '')}${prev._wa_msg ? '?text=' + encodeURIComponent(prev._wa_msg) : ''}` : '' })); }} placeholder="91 98765 43210" />
-                                  </div>
-                                  <input type="text" style={inputStyle} value={waMsg} onChange={e => { const v = e.target.value; setFormData(prev => { const phone = (prev._wa_phone || '').replace(/[^0-9]/g, ''); return { ...prev, _wa_msg: v, whatsapp: phone ? `https://wa.me/${phone}${v ? '?text=' + encodeURIComponent(v) : ''}` : '' }; }); }} placeholder="Pre-filled message (optional)" />
-                                  {waLink && <p style={previewStyle}>{waLink}</p>}
+                                  <PhoneINInput
+                                    wrapClassName="onboarding-phone-in"
+                                    inputClassName={inputClass}
+                                    style={inputExtra}
+                                    value={waStored}
+                                    onChange={(v) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        _wa_phone: v,
+                                        whatsapp: buildWhatsAppUrlFromFullINPhone(v, prev._wa_msg || '')
+                                      }))
+                                    }
+                                  />
+                                  <input type="text" className={inputClass} style={inputExtra} value={waMsg} onChange={e => { const v = e.target.value; setFormData(prev => ({ ...prev, _wa_msg: v, whatsapp: buildWhatsAppUrlFromFullINPhone(prev._wa_phone || '', v) })); }} placeholder="Pre-filled message (optional)" />
+                                  {waLink && <p className="general-onboarding-url-preview">{waLink}</p>}
                                 </div>
                               );
                             }
@@ -149,10 +166,10 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>t.me/</span>
-                                    <input type="text" style={inputStyle} value={tgUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _tg_user: v, telegram: v ? `https://t.me/${v.replace('@', '')}` : '' })); }} placeholder="username" />
+                                    <span className="general-onboarding-input-prefix">t.me/</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={tgUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _tg_user: v, telegram: v ? `https://t.me/${v.replace('@', '')}` : '' })); }} placeholder="username" />
                                   </div>
-                                  {tgLink && <p style={previewStyle}>{tgLink}</p>}
+                                  {tgLink && <p className="general-onboarding-url-preview">{tgLink}</p>}
                                 </div>
                               );
                             }
@@ -162,10 +179,10 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={igUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _ig_user: v, instagram: v ? `https://instagram.com/${v}` : '' })); }} placeholder="username" />
+                                    <span className="general-onboarding-input-prefix">@</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={igUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _ig_user: v, instagram: v ? `https://instagram.com/${v}` : '' })); }} placeholder="username" />
                                   </div>
-                                  {igLink && <p style={previewStyle}>{igLink}</p>}
+                                  {igLink && <p className="general-onboarding-url-preview">{igLink}</p>}
                                 </div>
                               );
                             }
@@ -175,10 +192,10 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={twUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tw_user: v, twitter: v ? `https://x.com/${v}` : '' })); }} placeholder="handle" />
+                                    <span className="general-onboarding-input-prefix">@</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={twUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tw_user: v, twitter: v ? `https://x.com/${v}` : '' })); }} placeholder="handle" />
                                   </div>
-                                  {twLink && <p style={previewStyle}>{twLink}</p>}
+                                  {twLink && <p className="general-onboarding-url-preview">{twLink}</p>}
                                 </div>
                               );
                             }
@@ -188,10 +205,10 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={ttUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tt_user: v, tiktok: v ? `https://tiktok.com/@${v}` : '' })); }} placeholder="username" />
+                                    <span className="general-onboarding-input-prefix">@</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={ttUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _tt_user: v, tiktok: v ? `https://tiktok.com/@${v}` : '' })); }} placeholder="username" />
                                   </div>
-                                  {ttLink && <p style={previewStyle}>{ttLink}</p>}
+                                  {ttLink && <p className="general-onboarding-url-preview">{ttLink}</p>}
                                 </div>
                               );
                             }
@@ -201,10 +218,10 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>add/</span>
-                                    <input type="text" style={inputStyle} value={scUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _sc_user: v, snapchat: v ? `https://snapchat.com/add/${v}` : '' })); }} placeholder="username" />
+                                    <span className="general-onboarding-input-prefix">add/</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={scUser} onChange={e => { const v = e.target.value.replace(/\s/g, ''); setFormData(prev => ({ ...prev, _sc_user: v, snapchat: v ? `https://snapchat.com/add/${v}` : '' })); }} placeholder="username" />
                                   </div>
-                                  {scLink && <p style={previewStyle}>{scLink}</p>}
+                                  {scLink && <p className="general-onboarding-url-preview">{scLink}</p>}
                                 </div>
                               );
                             }
@@ -214,33 +231,33 @@ export default function ProfileArtistOnboardingWizard({
                               return (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', flexShrink: 0 }}>@</span>
-                                    <input type="text" style={inputStyle} value={thUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _th_user: v, threads: v ? `https://threads.net/@${v}` : '' })); }} placeholder="username" />
+                                    <span className="general-onboarding-input-prefix">@</span>
+                                    <input type="text" className={inputClass} style={inputExtra} value={thUser} onChange={e => { const v = e.target.value.replace(/\s/g, '').replace('@', ''); setFormData(prev => ({ ...prev, _th_user: v, threads: v ? `https://threads.net/@${v}` : '' })); }} placeholder="username" />
                                   </div>
-                                  {thLink && <p style={previewStyle}>{thLink}</p>}
+                                  {thLink && <p className="general-onboarding-url-preview">{thLink}</p>}
                                 </div>
                               );
                             }
                             return (
-                              <input type="text" className="dash-link-inline-input" style={inputStyle} value={formData[platformId] || ''} onChange={e => setFormData(prev => ({ ...prev, [platformId]: e.target.value }))} placeholder="https://" />
+                              <input type="text" className={`dash-link-inline-input ${inputClass}`} style={inputExtra} value={formData[platformId] || ''} onChange={e => setFormData(prev => ({ ...prev, [platformId]: e.target.value }))} placeholder="https://" />
                             );
                           };
 
                           return (
-                            <div className="dash-link-card fade-in" key={platformId} style={{ background: 'var(--dash-card-bg, rgba(20,20,30,0.8))', borderRadius: '16px', padding: '0.8rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                               <div className="dash-link-icon-circle" style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(139,92,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a78bfa', flexShrink: 0 }}>
+                            <div className="dash-link-card fade-in general-onboarding-dash-link" key={platformId}>
+                               <div className="dash-link-icon-circle">
                                  {getLinkIcon({ platform: platform.id })}
                                </div>
                                <div className="dash-link-content" style={{ flex: 1, minWidth: 0 }}>
                                  <div className="dash-link-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                   <span className="dash-link-title" style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>{platform.label}</span>
-                                   <button 
-                                     className="dash-link-remove-btn" 
+                                   <span className="dash-link-title">{platform.label}</span>
+                                   <button
+                                     type="button"
+                                     className="dash-link-remove-btn general-onboarding-dash-remove"
                                      onClick={() => {
                                         setOnboardingPlatforms(prev => prev.filter(id => id !== platform.id));
                                         setFormData(prev => ({ ...prev, [platform.id]: '' }));
                                      }}
-                                     style={{ background: 'rgba(239,68,68,0.15)', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f87171', transition: 'all 0.2s ease' }}
                                    >✕</button>
                                  </div>
                                  <div className="dash-link-url">
@@ -252,12 +269,10 @@ export default function ProfileArtistOnboardingWizard({
                         })}
                       </div>
                       
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
+                        className="general-onboarding-add-platforms"
                         onClick={() => setIsOnboardingSelectorOpen(true)}
-                        style={{ width: '100%', maxWidth: '380px', margin: '0 auto', padding: '1rem', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '2px dashed rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; }}
-                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
                       >
                         <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Platforms
                       </button>
@@ -341,16 +356,61 @@ export default function ProfileArtistOnboardingWizard({
                 </div>
 
                 <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
-                  <label>Gallery Images / GIFs (up to 3)</label>
-                  <div className="upload-preview-banner" onClick={() => document.getElementById('gallery-input').click()} style={{ minHeight: '80px', display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '10px' }}>
+                  <label>Gallery — images, GIFs, or videos up to 30s (max 3)</label>
+                  <p className="onboarding-gallery-hint">Add one or many at a time (up to 3 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
+                  <div
+                    className="upload-preview-banner onboarding-gallery-grid"
+                    onClick={() => {
+                      if (onboardingGalleryFiles.length >= 3) return;
+                      document.getElementById('gallery-input').click();
+                    }}
+                    role={onboardingGalleryFiles.length >= 3 ? undefined : 'button'}
+                    style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer' }}
+                  >
                     {onboardingGalleryFiles.length > 0 ? (
-                      onboardingGalleryFiles.map((f, i) => (
-                        <div key={i} style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden' }}>
-                          <img src={URL.createObjectURL(f)} alt="Gallery preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      onboardingGalleryFiles.map((f, i) => {
+                        const isVideo = f.type.startsWith('video/');
+                        return (
+                        <div
+                          key={`${f.name}-${f.lastModified}-${i}`}
+                          className="onboarding-gallery-tile"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="onboarding-gallery-tile-crop">
+                            <OnboardingGalleryTilePreview file={f} />
+                          </div>
+                          <button
+                            type="button"
+                            className="onboarding-gallery-remove"
+                            aria-label={`Remove ${isVideo ? 'video' : 'image'} ${i + 1}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOnboardingGalleryFiles((prev) => prev.filter((_, j) => j !== i));
+                            }}
+                          >
+                            x
+                          </button>
                         </div>
-                      ))
-                    ) : (
-                      <span style={{ margin: 'auto' }}>+ Click to select up to 3 images</span>
+                        );
+                      })
+                    ) : null}
+                    {onboardingGalleryFiles.length < 3 && (
+                      <span
+                        className={
+                          onboardingGalleryFiles.length > 0
+                            ? 'onboarding-gallery-add-more'
+                            : 'onboarding-gallery-placeholder'
+                        }
+                        style={
+                          onboardingGalleryFiles.length > 0
+                            ? { gridColumn: `span ${3 - onboardingGalleryFiles.length}` }
+                            : undefined
+                        }
+                      >
+                        {onboardingGalleryFiles.length > 0
+                          ? `+ Add more (${3 - onboardingGalleryFiles.length} left)`
+                          : '+ Click to add images (up to 3)'}
+                      </span>
                     )}
                   </div>
                   <input 
@@ -358,11 +418,13 @@ export default function ProfileArtistOnboardingWizard({
                     type="file" 
                     multiple 
                     hidden 
-                    onChange={e => {
-                      const files = Array.from(e.target.files).slice(0, 3);
-                      setOnboardingGalleryFiles(files);
+                    onChange={(e) => {
+                      const add = Array.from(e.target.files || []);
+                      e.target.value = '';
+                      if (!add.length) return;
+                      setOnboardingGalleryFiles((prev) => [...prev, ...add].slice(0, 3));
                     }} 
-                    accept="image/*,image/gif" 
+                    accept="image/*,image/gif,video/*" 
                   />
                 </div>
 
@@ -379,7 +441,7 @@ export default function ProfileArtistOnboardingWizard({
                   </div>
                 </div>
 
-                {error && <p className="onboarding-error-msg">{error}</p>}
+                {error && <p className="profile-error-msg">{error}</p>}
                 <div className="onboarding-actions">
                   <button className="onboarding-btn-complete" onClick={handleOnboardingComplete} disabled={saving}>
                     {saving ? 'Setting up...' : 'Complete Setup ✓'}
@@ -387,11 +449,9 @@ export default function ProfileArtistOnboardingWizard({
                 </div>
               </div>
             )}
-          </div>
 
-          <button onClick={handleLogout} className="onboarding-logout-btn">Sign out</button>
+          <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
       </div>
-    
   );
 }

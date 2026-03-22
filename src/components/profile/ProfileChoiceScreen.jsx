@@ -34,17 +34,41 @@ export default function ProfileChoiceScreen({
               {displayEmail}
             </p>
           ) : null}
-          <p className="profile-header-sub">Select which profile you'd like to manage today</p>
+          <p className="profile-header-sub">Which profile fits you?</p>
         </div>
 
         <div className="profile-choice-grid">
           {!profileLock && !choiceSource && !generalProfile && !restaurantProfile && (
-            <button className="neo-card neo-card-artist" onClick={handleSelectArtistMode}>
-              <div className="neo-card-content">
-                <p className="neo-card-plan">Artist Profile</p>
-                <div className="neo-card-tagline">🎨 Portfolio &amp; NFC</div>
-                <ul className="neo-check-list">
-                  <li className="neo-check-item">
+            <button
+              className="profile-product-card profile-product-card--artist"
+              onClick={handleSelectArtistMode}
+              type="button"
+            >
+              <div className="profile-product-media profile-product-media--artist">
+                <div className="profile-product-icon-circle" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="profile-product-media-icon"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 21a9 9 0 0 1 0 -18c4.97 0 9 3.582 9 8c0 1.06 -.474 2.078 -1.318 2.828c-.844 .75 -1.989 1.172 -3.182 1.172h-2.5a2 2 0 0 0 -1 3.75a1.3 1.3 0 0 1 -1 2.25" />
+                    <path d="M7.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                    <path d="M11.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                    <path d="M15.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="profile-product-body">
+                <p className="profile-product-plan">Artist Profile</p>
+                <div className="profile-product-tagline">Portfolio &amp; NFC</div>
+                <ul className="profile-product-features">
+                  <li className="profile-product-feature">
                     <svg viewBox="0 0 30 30" width="16" height="16">
                       <path
                         d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -53,7 +77,7 @@ export default function ProfileChoiceScreen({
                     </svg>
                     Art Gallery &amp; Portfolio
                   </li>
-                  <li className="neo-check-item">
+                  <li className="profile-product-feature">
                     <svg viewBox="0 0 30 30" width="16" height="16">
                       <path
                         d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -62,7 +86,7 @@ export default function ProfileChoiceScreen({
                     </svg>
                     Social Links
                   </li>
-                  <li className="neo-check-item">
+                  <li className="profile-product-feature">
                     <svg viewBox="0 0 30 30" width="16" height="16">
                       <path
                         d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -71,7 +95,7 @@ export default function ProfileChoiceScreen({
                     </svg>
                     Custom Themes
                   </li>
-                  <li className="neo-check-item">
+                  <li className="profile-product-feature">
                     <svg viewBox="0 0 30 30" width="16" height="16">
                       <path
                         d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -82,17 +106,49 @@ export default function ProfileChoiceScreen({
                   </li>
                 </ul>
               </div>
+
+              <div className="profile-product-footer">
+                <span className="profile-product-cta">
+                  <svg viewBox="0 0 24 24" className="profile-product-cta-heart" aria-hidden="true">
+                    <path d="M12 21s-7-4.534-9.5-8.5C.5 9 2.5 6 5.5 6c1.74 0 3.41.81 4.5 2.09C11.09 6.81 12.76 6 14.5 6c3 0 5 3 3 6.5C19 16.466 12 21 12 21z" />
+                  </svg>
+                  Create Profile
+                </span>
+              </div>
             </button>
           )}
 
           {profileLock !== 'artist' && (
             <>
-              <button className="neo-card neo-card-general" onClick={handleSelectGeneralMode}>
-                <div className="neo-card-content">
-                  <p className="neo-card-plan">General Profile</p>
-                  <div className="neo-card-tagline">🔗 Link-in-Bio</div>
-                  <ul className="neo-check-list">
-                    <li className="neo-check-item">
+              <button
+                className="profile-product-card profile-product-card--general"
+                onClick={handleSelectGeneralMode}
+                type="button"
+              >
+                <div className="profile-product-media profile-product-media--general">
+                  <div className="profile-product-icon-circle" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="profile-product-media-icon"
+                      aria-hidden="true"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 15l6 -6" />
+                      <path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+                      <path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="profile-product-body">
+                  <p className="profile-product-plan">General Profile</p>
+                  <div className="profile-product-tagline">Link-in-Bio</div>
+                  <ul className="profile-product-features">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -101,7 +157,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Custom Links &amp; Socials
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -110,7 +166,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Multiple Themes
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -119,7 +175,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Photo &amp; Bio
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -130,17 +186,44 @@ export default function ProfileChoiceScreen({
                     </li>
                   </ul>
                 </div>
+
+                <div className="profile-product-footer">
+                  <span className="profile-product-cta">
+                    <svg viewBox="0 0 24 24" className="profile-product-cta-heart" aria-hidden="true">
+                      <path d="M12 21s-7-4.534-9.5-8.5C.5 9 2.5 6 5.5 6c1.74 0 3.41.81 4.5 2.09C11.09 6.81 12.76 6 14.5 6c3 0 5 3 3 6.5C19 16.466 12 21 12 21z" />
+                    </svg>
+                    Create Profile
+                  </span>
+                </div>
               </button>
 
               <button
-                className="neo-card neo-card-restaurant"
+                className="profile-product-card profile-product-card--restaurant"
                 onClick={handleSelectRestaurantMode}
+                type="button"
               >
-                <div className="neo-card-content">
-                  <p className="neo-card-plan">Restaurant</p>
-                  <div className="neo-card-tagline">🍽️ Tap to Order</div>
-                  <ul className="neo-check-list">
-                    <li className="neo-check-item">
+                <div className="profile-product-media profile-product-media--restaurant">
+                  <div className="profile-product-icon-circle" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="profile-product-media-icon"
+                      aria-hidden="true"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12zm0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="profile-product-body">
+                  <p className="profile-product-plan">Restaurant</p>
+                  <div className="profile-product-tagline">Tap to Order</div>
+                  <ul className="profile-product-features">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -149,7 +232,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Digital Menu (PDF)
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -158,7 +241,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Contact &amp; Location
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -167,7 +250,7 @@ export default function ProfileChoiceScreen({
                       </svg>
                       Custom Themes
                     </li>
-                    <li className="neo-check-item">
+                    <li className="profile-product-feature">
                       <svg viewBox="0 0 30 30" width="16" height="16">
                         <path
                           d="M27.5 7.53l-3.035-2.988a.786.786 0 0 0-1.117 0L11.035 16.668l-4.21-4.145a.786.786 0 0 0-1.122 0L2.641 15.54a.786.786 0 0 0 0 1.1l7.804 7.684a.786.786 0 0 0 1.122 0L27.5 8.633a.786.786 0 0 0 0-1.102z"
@@ -177,6 +260,15 @@ export default function ProfileChoiceScreen({
                       NFC Tap Ready
                     </li>
                   </ul>
+                </div>
+
+                <div className="profile-product-footer">
+                  <span className="profile-product-cta">
+                    <svg viewBox="0 0 24 24" className="profile-product-cta-heart" aria-hidden="true">
+                      <path d="M12 21s-7-4.534-9.5-8.5C.5 9 2.5 6 5.5 6c1.74 0 3.41.81 4.5 2.09C11.09 6.81 12.76 6 14.5 6c3 0 5 3 3 6.5C19 16.466 12 21 12 21z" />
+                    </svg>
+                    Create Profile
+                  </span>
                 </div>
               </button>
             </>

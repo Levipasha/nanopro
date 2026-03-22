@@ -32,6 +32,15 @@
 }
 
 @media (max-width: 768px) {
+  /* Less empty space before Testimonials (About section removed) */
+  .home-hero-section {
+    padding-bottom: 32px;
+  }
+
+  .home-hero-section .hero-left {
+    margin-bottom: 24px;
+  }
+
   .home-hero-section .hero-feature-item {
     padding: 14px 12px;
     gap: 12px;

@@ -107,8 +107,6 @@ export default function HomeHero() {
                             <div className="orbit-dot dot-2"></div>
                             <div className="orbit-dot dot-3"></div>
                             <div className="orbit-dot dot-4"></div>
-
-                            <div className="tap-hint">● TAP TO OPEN PROFILE</div>
                         </div>
                     </div>
                 </div>

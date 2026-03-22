@@ -13,10 +13,8 @@ async function request(method, path, { body, getIdToken, getFirebaseUser, header
   }
   if (getFirebaseUser) {
     const user = typeof getFirebaseUser === 'function' ? getFirebaseUser() : getFirebaseUser;
-    if (user?.uid) {
-      headers['X-Firebase-UID'] = user.uid;
-      if (user.email) headers['X-Firebase-Email'] = user.email;
-    }
+    if (user?.uid) headers['X-Firebase-UID'] = user.uid;
+    if (user?.email) headers['X-Firebase-Email'] = user.email;
   }
   const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
   const res = await fetch(`${base}${path}`, {
@@ -25,7 +23,10 @@ async function request(method, path, { body, getIdToken, getFirebaseUser, header
     body: body ? JSON.stringify(body) : undefined
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || data.error || `Request failed: ${res.status}`);
+  if (!res.ok) {
+    const errText = [data.message, data.error].filter(Boolean).join(' — ') || `Request failed: ${res.status}`;
+    throw new Error(errText);
+  }
   return data;
 }
 
@@ -42,28 +43,21 @@ async function uploadPhoto(file, getIdToken) {
     body: form
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || data.error || 'Upload failed');
+  if (!res.ok) {
+    const errText = [data.message, data.error].filter(Boolean).join(' — ') || 'Upload failed';
+    throw new Error(errText);
+  }
   return data;
 }
 
 export const landingArtistAPI = {
   getMyProfiles: (getIdToken, getFirebaseUser) =>
     request('GET', '/api/artist/my-profiles', { getIdToken, getFirebaseUser }),
-  getMyProfilesWithOtpToken: (otpToken) =>
-    request('GET', '/api/artist/my-profiles', { headers: { Authorization: `Bearer ${otpToken}` } }),
   createMyProfile: (body, getIdToken, getFirebaseUser) =>
     request('POST', '/api/artist/my-profiles', { body, getIdToken, getFirebaseUser }),
-  createMyProfileWithOtpToken: (body, otpToken) =>
-    request('POST', '/api/artist/my-profiles', { body, headers: { Authorization: `Bearer ${otpToken}` } }),
   updateMyProfile: (artistId, body, getIdToken, getFirebaseUser) =>
     request('PUT', `/api/artist/me/${encodeURIComponent(artistId)}`, { body, getIdToken, getFirebaseUser }),
-  updateMyProfileWithOtpToken: (artistId, body, otpToken) =>
-    request('PUT', `/api/artist/me/${encodeURIComponent(artistId)}`, { body, headers: { Authorization: `Bearer ${otpToken}` } }),
   uploadPhoto,
-  sendOtp: (email, mode) =>
-    request('POST', '/api/artist/send-otp', { body: { email, mode } }),
-  verifyOtp: (email, otp, mode) =>
-    request('POST', '/api/artist/verify-otp', { body: { email, otp, mode } }),
   checkAccount: (email) =>
     request('POST', '/api/artist/check-account', { body: { email } }),
   // Public, read-only artist profile used by /artist?id=<id>

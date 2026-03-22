@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import HomeNavbar from '../components/home/HomeNavbar';
 import HomeFooter from '../components/home/HomeFooter';
- 
+import ShowcaseProfileIframe from '../components/ShowcaseProfileIframe';
+import './ShowcaseHero.overrides.css';
 
 export default function RestaurantShowcase() {
     // Mock preview (no dependency on the profiles you created).
@@ -21,7 +22,6 @@ export default function RestaurantShowcase() {
 
                 <section className="showcase-hero">
                     <div className="showcase-hero-inner">
-                        <span className="showcase-badge">FOR RESTAURANTS</span>
                         <h1 className="showcase-title">Your Menu.<br />One Tap. Done.</h1>
                         <p className="showcase-subtitle">Digital menus, reservations, and your restaurant story — delivered to any phone the moment they tap.</p>
                         <div className="showcase-cta-row">
@@ -59,11 +59,7 @@ export default function RestaurantShowcase() {
                 <section id="preview" className="showcase-preview">
                     <h2 className="showcase-section-title">Example Restaurant Profile</h2>
                     <div className="showcase-profile-card-pc">
-                        <iframe
-                            title="Restaurant Preview"
-                            src={iframeSrc}
-                            className="showcase-profile-iframe"
-                        />
+                        <ShowcaseProfileIframe title="Restaurant Preview" src={iframeSrc} />
                     </div>
                 </section>
 

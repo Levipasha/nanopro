@@ -1,0 +1,12 @@
+/* Overrides bundled App.part14 rule (fixed 760px) until JS sets height from content */
+iframe.showcase-profile-iframe {
+  width: 560px;
+  max-width: 100%;
+  min-height: 400px;
+  height: 760px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  overflow: hidden;
+  display: block;
+}

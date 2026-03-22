@@ -1,0 +1,57 @@
+/* Mobile: remove hamburger icon (nav-toggle) */
+@media (max-width: 1024px) {
+  .nav-toggle {
+    display: none !important;
+  }
+}
+
+/* Visible sign-in (Google) — right side when logged out */
+.nav-profile-signin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.nav-profile-signin:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+/* Current route — matches nano-navbar accent (teal) */
+.nav-link.nav-link--active {
+  color: #7dd3b0;
+  text-shadow: 0 0 24px rgba(125, 211, 176, 0.45);
+}
+
+.nav-link.nav-link--active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #7dd3b0, transparent);
+  box-shadow: 0 0 12px rgba(125, 211, 176, 0.6);
+}
+
+.nav-links-wrap .nav-link {
+  position: relative;
+}
+

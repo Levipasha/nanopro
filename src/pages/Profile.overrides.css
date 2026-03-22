@@ -61,6 +61,57 @@
   color: #000 !important;
 }
 
+/* Artist/General/Restaurant hero background: remove linear-gradient */
+.dash-profile-hero {
+  background: #000 !important;
+  background-image: none !important;
+}
+
+.dash-profile-hero-bg {
+  background: #000 !important;
+  background-image: none !important;
+}
+
+.dash-profile-hero-overlay {
+  background: rgba(0, 0, 0, 0.65) !important;
+  background-image: none !important;
+  pointer-events: none !important;
+}
+
+/* If the base dashboard uses ::before/::after overlays, don't block clicks */
+.dash-profile-hero::before,
+.dash-profile-hero::after,
+.dash-profile-bio-section::before,
+.dash-profile-bio-section::after {
+  pointer-events: none !important;
+}
+
+/* Dashboard background: remove remaining gradients/patterns */
+.dash-root,
+.dash-root.dash-theme-aura,
+.dash-theme-aura,
+.dash-content,
+.dash-profile-layout,
+.dash-single-profile,
+.dash-profile-bio-section,
+.dash-contact-grid,
+.dash-links-section {
+  background: #000 !important;
+  background-image: none !important;
+}
+
+/* Also kill any dotted/gradient pseudo layers (if any exist) */
+.dash-root::before,
+.dash-root::after,
+.dash-profile-layout::before,
+.dash-profile-layout::after,
+.dash-single-profile::before,
+.dash-single-profile::after {
+  background: none !important;
+  background-image: none !important;
+  pointer-events: none !important;
+}
+
 /* Mobile: keep "Copy your link / Open your link" on one row with equal sizing */
 @media (max-width: 768px) {
   .dash-profile-link-actions {
@@ -70,6 +121,58 @@
 
   .dash-profile-link-actions .dash-link-btn {
     white-space: nowrap;
+  }
+}
+
+/* Icon-only profile link actions (Artist + General headers) */
+.dash-profile-link-iconbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+.dash-icon-pill {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  background: #000 !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.dash-icon-pill:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.dash-icon-pill svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+@media (max-width: 768px) {
+  .dash-profile-link-iconbar {
+    gap: 12px !important;
+    padding: 8px 10px !important;
+  }
+
+  .dash-icon-pill {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 13px !important;
   }
 }
 
@@ -231,5 +334,373 @@
   outline: none !important;
   box-shadow: none !important;
   transform: none !important;
+}
+
+/* Profile choice cards: make them look like "product cards" (image-top + info + CTA) */
+.profile-choice-grid .profile-product-card {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  border: none !important;
+  background: #ffffff !important;
+  color: #0b1220 !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18) !important;
+  transform: none !important;
+  transition: transform 160ms ease, box-shadow 160ms ease !important;
+  position: relative !important;
+}
+
+.profile-choice-grid .profile-product-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.24) !important;
+}
+
+.profile-product-card--artist,
+.profile-product-card--general,
+.profile-product-card--restaurant {
+  background: #ffffff !important;
+}
+
+.profile-product-media {
+  position: absolute !important;
+  top: 10px !important;
+  left: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+}
+
+.profile-product-icon-circle {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+}
+
+.profile-product-media-icon {
+  width: 26px !important;
+  height: 26px !important;
+  color: #0b1220 !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.1 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.profile-product-body {
+  padding: 54px 18px 8px !important;
+  text-align: center !important;
+  flex: 1 !important;
+}
+
+.profile-product-plan {
+  margin: 0 0 6px !important;
+  font-family: system-ui, sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 20px !important;
+}
+
+.profile-product-tagline {
+  font-family: system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  opacity: 0.85 !important;
+  margin-bottom: 6px !important;
+}
+
+.profile-product-features {
+  list-style: none !important;
+  margin: 10px 0 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.profile-product-feature {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  justify-content: center !important;
+  color: #000000 !important;
+  font-weight: 650 !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+
+.profile-product-feature svg {
+  flex-shrink: 0 !important;
+}
+
+.profile-product-footer {
+  padding: 14px 18px 18px !important;
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: auto !important;
+}
+
+.profile-product-cta {
+  width: 100% !important;
+  max-width: 260px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 14px 18px !important;
+  border-radius: 999px !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-family: system-ui, sans-serif !important;
+  text-transform: none !important;
+}
+
+.profile-product-cta-heart {
+  width: 18px !important;
+  height: 18px !important;
+  color: #ffffff !important;
+  fill: currentColor !important;
+}
+
+.profile-product-card:active {
+  transform: translateY(-1px) !important;
+}
+
+/* Light onboarding (artist wizard step 2): global dash rules use #000 + white icons.
+   On white cards that hides the “Add Platforms” CTA and breaks the platform picker. */
+.general-onboarding-card .dash-links-section.onboarding-added-links {
+  background: transparent !important;
+}
+
+.general-onboarding-card .general-onboarding-artist-empty {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border: 1px dashed rgba(0, 0, 0, 0.12) !important;
+  color: #64748b !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-item {
+  background: #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-item .dash-selector-label {
+  color: #334155 !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-icon {
+  color: #1e293b !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-icon svg,
+.general-onboarding-card .onboarding-selector-view .dash-selector-icon svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-item.is-active {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border-color: #6366f1 !important;
+  color: #1e1b4b !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-item.is-active .dash-selector-label {
+  color: #1e1b4b !important;
+}
+
+.general-onboarding-card .onboarding-selector-view .dash-selector-item.is-active .dash-selector-icon {
+  color: #4338ca !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .dash-link-icon-circle {
+  color: #6366f1 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .dash-link-icon-circle svg,
+.general-onboarding-card .general-onboarding-dash-link .dash-link-icon-circle svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Added platform rows: overrides force .dash-link-card to #000 but part23 sets dark titles → unreadable.
+   Restore a light card so titles, labels, and inputs match the wizard. */
+.general-onboarding-card .general-onboarding-dash-link.dash-link-card {
+  background: #fff !important;
+  color: #1a1b2e !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link.dash-link-card::before {
+  display: none !important;
+  content: none !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link.dash-link-card:hover {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .dash-link-title {
+  color: #0f172a !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .general-onboarding-input-prefix {
+  color: #475569 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .onboarding-input,
+.general-onboarding-card .general-onboarding-dash-link input:not([type="hidden"]) {
+  color: #111827 !important;
+  caret-color: #111827 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .onboarding-input::placeholder,
+.general-onboarding-card .general-onboarding-dash-link input::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .phone-in-field {
+  color: #111827 !important;
+  caret-color: #111827 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .phone-in-field::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-link .general-onboarding-url-preview {
+  color: #64748b !important;
+}
+
+/* Onboarding step 3: gallery strip — global .upload-preview-banner img is position:absolute to the
+   full banner; tiles need position:relative so up to 3 previews show as equal mini slots. */
+.general-onboarding-card .upload-preview-banner.onboarding-gallery-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+  min-height: 100px !important;
+  height: auto !important;
+  padding: 12px !important;
+}
+
+.general-onboarding-card .upload-preview-banner.onboarding-gallery-grid .onboarding-gallery-placeholder {
+  grid-column: 1 / -1 !important;
+  margin: auto !important;
+  text-align: center !important;
+}
+
+.general-onboarding-card .onboarding-gallery-tile {
+  position: relative !important;
+  aspect-ratio: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-height: 110px !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.general-onboarding-card .onboarding-gallery-tile-crop {
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.general-onboarding-card .upload-preview-banner.onboarding-gallery-grid .onboarding-gallery-tile-crop img,
+.general-onboarding-card .upload-preview-banner.onboarding-gallery-grid .onboarding-gallery-tile-crop video {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.general-onboarding-card .onboarding-gallery-remove {
+  position: absolute !important;
+  top: 2px !important;
+  right: 4px !important;
+  z-index: 2 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}
+
+.general-onboarding-card .onboarding-gallery-remove:hover {
+  background: transparent !important;
+  opacity: 0.75 !important;
+}
+
+.general-onboarding-card .onboarding-gallery-hint {
+  font-size: 0.8rem !important;
+  color: #64748b !important;
+  margin: 0 0 0.5rem 0 !important;
+  line-height: 1.4 !important;
+}
+
+.general-onboarding-card .upload-preview-banner.onboarding-gallery-grid .onboarding-gallery-add-more {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 72px !important;
+  border: 2px dashed rgba(0, 0, 0, 0.12) !important;
+  border-radius: 12px !important;
+  color: #64748b !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  padding: 8px !important;
+  text-align: center !important;
+}
+
+/* Mobile onboarding (Profile.part13): .profile-choice-card uses height:100vh + overflow:hidden,
+   which clips long link steps — page cannot scroll to Next Step. */
+@media (max-width: 768px) {
+  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card) {
+    height: auto !important;
+    min-height: 100dvh !important;
+    min-height: 100svh !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 0.75rem 0.5rem max(1.25rem, env(safe-area-inset-bottom, 0px)) !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card)
+    .profile-login-card.profile-choice-card.general-onboarding-card {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+    text-align: left !important;
+  }
 }
 

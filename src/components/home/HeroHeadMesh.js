@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import headMeshUrl from './free_head_mesh_01.glb';
+import futureEyeUrl from '../../future-eye102.glb';
 
 export default function HeroHeadMesh() {
   const containerRef = useRef(null);
@@ -53,7 +53,7 @@ export default function HeroHeadMesh() {
     let model;
 
     loader.load(
-      headMeshUrl,
+      futureEyeUrl,
       (gltf) => {
         model = gltf.scene;
         model.traverse((child) => {
@@ -87,7 +87,8 @@ export default function HeroHeadMesh() {
     const animate = () => {
       frameId = requestAnimationFrame(animate);
       if (model) {
-        model.rotation.y += 0.005;
+        // Slightly faster spin for the hero 3D model
+        model.rotation.y += 0.012;
       }
       renderer.render(scene, camera);
     };

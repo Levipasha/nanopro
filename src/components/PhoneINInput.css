@@ -1,0 +1,111 @@
+.phone-in-input-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+}
+
+.phone-in-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.phone-in-field {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 100%;
+  border: none !important;
+  outline: none;
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: transparent;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  /* Explicit: global profile/onboarding input rules can set light text on white */
+  color: #111827;
+  caret-color: #111827;
+}
+
+.phone-in-field::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.phone-in-field:focus {
+  outline: none;
+}
+
+.phone-in-input-wrap:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Dark / profile-edit panels */
+.dash-root .phone-in-input-wrap,
+.profile-edit-modal .phone-in-input-wrap {
+  border-color: var(--dash-border, rgba(255, 255, 255, 0.2));
+  background: var(--dash-bg, rgba(0, 0, 0, 0.2));
+}
+
+.dash-root .phone-in-prefix,
+.profile-edit-modal .phone-in-prefix {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--dash-text, #fff);
+  border-right-color: var(--dash-border, rgba(255, 255, 255, 0.15));
+}
+
+.dash-root .phone-in-field,
+.profile-edit-modal .phone-in-field {
+  color: var(--dash-text, #fff);
+}
+
+.dash-root .phone-in-input-wrap:focus-within,
+.profile-edit-modal .phone-in-input-wrap:focus-within {
+  border-color: rgba(99, 102, 241, 0.7);
+}
+
+.onboarding-phone-in.phone-in-input-wrap,
+.general-onboarding-card .phone-in-input-wrap,
+.onboarding-field .phone-in-input-wrap {
+  width: 100%;
+}
+
+/* Beat any global `input { color: #fff }` inside light onboarding cards */
+.onboarding-phone-in .phone-in-field,
+.general-onboarding-card .phone-in-field,
+.onboarding-field .phone-in-field {
+  color: #111827;
+  caret-color: #111827;
+}
+
+.onboarding-phone-in .phone-in-field::placeholder,
+.general-onboarding-card .phone-in-field::placeholder,
+.onboarding-field .phone-in-field::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.dash-hero-phone-in.phone-in-input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-edit-phone-in.phone-in-input-wrap {
+  width: 100%;
+}

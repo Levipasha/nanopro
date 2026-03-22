@@ -1,5 +1,6 @@
 import React from 'react';
 import { API_URL } from '../../services/api';
+import './HomeContact.overrides.css';
 
 export default function HomeContact() {
     const handleSubmit = async (e) => {

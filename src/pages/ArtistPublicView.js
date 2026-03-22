@@ -5,6 +5,7 @@ import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
 import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
+import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 
 /**
  * Public artist profile route used for NFC / share links.
@@ -14,6 +15,8 @@ function ArtistPublicView() {
   const [searchParams] = useSearchParams();
   const artistId = searchParams.get('id');
   const artId = searchParams.get('art');
+  const isMock = searchParams.get('mock') === '1' || artistId === 'mock-artist';
+  const isEmbed = searchParams.get('embed') === '1';
 
   const [artist, setArtist] = useState(null);
   const [showArtGallery, setShowArtGallery] = useState(false);
@@ -24,6 +27,8 @@ function ArtistPublicView() {
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
   const [showEventPreview, setShowEventPreview] = useState(false);
   const [activeEventPreview, setActiveEventPreview] = useState(null);
+
+  useShowcaseEmbedHeight(isEmbed);
 
   // Lock background scroll when modal open (allow modal scroll only)
   useEffect(() => {
@@ -61,6 +66,74 @@ function ArtistPublicView() {
     setLoading(true);
     setError(null);
 
+    if (isMock) {
+      // Hard-coded mock showcase data (so landing page doesn't depend on user-created profiles)
+      const makeSvgDataUrl = (text, bg1 = '#0f172a', bg2 = '#1e293b') => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${bg1}" />
+              <stop offset="1" stop-color="${bg2}" />
+            </linearGradient>
+          </defs>
+          <rect width="1200" height="800" fill="url(#g)" />
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+            fill="#ffffff" font-family="Arial, sans-serif" font-size="72" font-weight="700">${text}</text>
+        </svg>`;
+        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      };
+
+      const MOCK_ARTIST = {
+        artistId: 'mock-artist',
+        name: 'Example Artist Profile',
+        specialization: 'Visual Artist • Contemporary Works',
+        profileTheme: 'midnight',
+        profileFont: 'outfit',
+        email: 'example.artist@example.com',
+        phone: '',
+        backgroundPhoto: makeSvgDataUrl('Example Artist', '#0b1220', '#111827'),
+        photo: makeSvgDataUrl('Artist', '#111827', '#0b1220'),
+        bio:
+          'Exploring texture, light, and form through mixed media. This is a static showcase profile used in the landing page.',
+        // Social/contact fields used by this page
+        website: 'https://example.com',
+        portfolio: 'https://example.com/portfolio',
+        instagram: 'exampleinsta',
+        whatsapp: '9183746501',
+        // Events slideshow images
+        gallery: [
+          {
+            url: makeSvgDataUrl('Gallery Night', '#0f172a', '#4f46e5'),
+            name: 'Gallery Night',
+          }
+        ],
+        // Art tiles shown in the “Show My Art” modal
+        artLinks: [
+          {
+            id: 'mock-art-1',
+            title: 'Neon Study #1',
+            description: 'A neon-inspired exploration of color gradients.',
+            images: [
+              makeSvgDataUrl('Neon Study #1', '#0ea5e9', '#a855f7')
+            ]
+          },
+          {
+            id: 'mock-art-2',
+            title: 'Texture & Shadow',
+            description: 'Light-driven texture composition.',
+            images: [
+              makeSvgDataUrl('Texture & Shadow', '#111827', '#db2777')
+            ]
+          }
+        ],
+      };
+
+      setArtist(MOCK_ARTIST);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     landingArtistAPI
       .getPublicProfile(artistId)
       .then((data) => {
@@ -78,7 +151,7 @@ function ArtistPublicView() {
     return () => {
       cancelled = true;
     };
-  }, [artistId]);
+  }, [artistId, isMock]);
 
   // Auto-advance Events slideshow every 3s
   useEffect(() => {
@@ -223,7 +296,7 @@ function ArtistPublicView() {
 
   return (
     <div
-      className="gp-view gp-layout gp-artist-themed"
+      className={`gp-view gp-layout gp-artist-themed${isEmbed ? ' gp-embed-showcase' : ''}`}
       style={{
         '--artist-bg': themeBg,
         '--artist-text': themeText,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle, onAuthStateChanged, auth, logout, getGoogleRedirectResult, getIdToken } from '../firebase';
 import { landingArtistAPI, generalProfileAPI } from '../services/api';
@@ -12,6 +12,14 @@ import './Profile.css';
 import './Profile.mobile.css';
 import ProfileChoiceScreen from '../components/profile/ProfileChoiceScreen';
 import ProfileArtistOnboardingWizard from '../components/profile/ProfileArtistOnboardingWizard';
+import PhoneINInput from '../components/PhoneINInput';
+import {
+  getINDisplayDigits,
+  toINFullPhone,
+  getINDisplayDigitsFromWhatsAppStored,
+  toWhatsAppUrlFromINPhone
+} from '../utils/indianPhone';
+import { assertGalleryFileKind, assertVideoMaxDuration } from '../utils/galleryMedia';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -47,10 +55,10 @@ const defaultForm = {
   profileFont: 'outfit'
 };
 
-const OTP_STORAGE_KEY = 'landing_otp_auth';
 const RESTAURANT_STORAGE_KEY = 'restaurant_profile';
 const RESTAURANT_ONBOARDING_KEY = 'restaurant_onboarding_step';
 const GENERAL_FLOW_MODE_KEY = 'general_flow_mode';
+const PROFILE_PREF_BY_EMAIL_KEY = 'profile_pref_by_email_v1';
 
 const ALL_PLATFORMS = [
   { id: 'google_maps', label: 'Rate us on Google' },
@@ -159,16 +167,6 @@ function Profile() {
     try { return localStorage.getItem(PROFILE_LOCK_KEY) || null; } catch (e) { return null; }
   });
   const [user, setUser] = useState(null);
-  const [otpUser, setOtpUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem(OTP_STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (data?.email && data?.token) return { email: data.email, token: data.token };
-      }
-    } catch (e) { }
-    return null;
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -194,6 +192,8 @@ function Profile() {
   const [previewKey, setPreviewKey] = useState(0); // For auto-refreshing iframe
   const [myArtists, setMyArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(false);
+  /** True after GET /my-profiles finishes for this account (avoids one dashboard frame before onboarding). */
+  const [artistListReady, setArtistListReady] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
   const [formData, setFormData] = useState(defaultForm);
   const [photoFile, setPhotoFile] = useState(null);
@@ -205,21 +205,13 @@ function Profile() {
   const [visiblePlatforms, setVisiblePlatforms] = useState([]);
   const [newGalleryName, setNewGalleryName] = useState('');
   const [saving, setSaving] = useState(false);
-  // Legacy OTP login state (currently unused, kept for future expansion)
-  // eslint-disable-next-line no-unused-vars
-  const [otpEmail, setOtpEmail] = useState('');
-  // eslint-disable-next-line no-unused-vars
-  const [otpCode, setOtpCode] = useState('');
-  // eslint-disable-next-line no-unused-vars
-  const [otpStep, setOtpStep] = useState('idle');
-  // eslint-disable-next-line no-unused-vars
-  const [otpSendLoading, setOtpSendLoading] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
 
   // General profile (Linktree-like) state
   const [generalProfile, setGeneralProfile] = useState(null);
   const [generalProfileLoading, setGeneralProfileLoading] = useState(false);
+  const generalProfileRef = useRef(null);
+  generalProfileRef.current = generalProfile;
+  const lastGeneralUidRef = useRef(undefined);
   const [generalStep, setGeneralStep] = useState(() => {
     try {
       return localStorage.getItem('general_step') || 'theme';
@@ -236,11 +228,36 @@ function Profile() {
     try {
       const s = localStorage.getItem('general_onboarding_step');
       return s ? parseInt(s, 10) : 1;
-    } catch (e) { return 1; }
+    } catch (e) {
+      return 1;
+    }
   });
   const updateGeneralOnboardingStep = (step) => {
     setGeneralOnboardingStep(step);
     localStorage.setItem('general_onboarding_step', step.toString());
+  };
+
+  // Store which profile type user chose for a specific email.
+  const getPrefByEmail = (email) => {
+    if (!email) return null;
+    try {
+      const raw = localStorage.getItem(PROFILE_PREF_BY_EMAIL_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.[email] || null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const setPrefByEmail = (email, pref) => {
+    if (!email || !pref) return;
+    try {
+      const raw = localStorage.getItem(PROFILE_PREF_BY_EMAIL_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      parsed[email] = pref;
+      localStorage.setItem(PROFILE_PREF_BY_EMAIL_KEY, JSON.stringify(parsed));
+    } catch (e) { }
   };
   const [generalForm, setGeneralForm] = useState({
     username: '',
@@ -261,6 +278,7 @@ function Profile() {
   const usernameCheckTimer = useRef(null);
   const restaurantSyncTimerRef = useRef(null);
   const lastRestaurantSyncSigRef = useRef('');
+  const restaurantBannerInputRef = useRef(null);
 
   // Restaurant profile state (localStorage until backend exists)
   const [restaurantForm, setRestaurantForm] = useState({
@@ -287,15 +305,30 @@ function Profile() {
   const [restaurantActiveTab, setRestaurantActiveTab] = useState('info');
   const [rBioEditing, setRBioEditing] = useState(false);
   const [rBioDraft, setRBioDraft] = useState('');
+  const [rHeroEditingField, setRHeroEditingField] = useState(null); // 'name' | 'tagline'
+  const [rHeroDraftName, setRHeroDraftName] = useState('');
+  const [rHeroDraftTagline, setRHeroDraftTagline] = useState('');
   const [rLinkSelectorOpen, setRLinkSelectorOpen] = useState(false);
   const [rTempPlatforms, setRTempPlatforms] = useState([]);
   const [rSyncFonts, setRSyncFonts] = useState(true);
   const [restaurantProfile, setRestaurantProfile] = useState(() => {
     try {
       const raw = localStorage.getItem(RESTAURANT_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Older saved payloads may have embedded phone/email inside `bio`.
+      // Clean it so About/Bio only shows the description.
+      const bioRaw = parsed?.bio || '';
+      const bio = stripPhoneEmailLinesFromBioString(bioRaw);
+      const phone = parsed?.phone || extractPhoneFromBioString(bioRaw) || '';
+      const email = parsed?.email || extractEmailFromBioString(bioRaw) || '';
+      return { ...parsed, bio, phone, email };
     } catch (e) { return null; }
   });
+  // Prevent auto-hydrating restaurantProfile while user is in the edit/onboarding flow.
+  // Using a ref avoids any "state update ordering" issues between setRestaurantProfile(null)
+  // and updateRestaurantOnboardingStep(1).
+  const restaurantEditInProgressRef = useRef(false);
 
   // Strip large base64 blobs before persisting — images/PDFs stay in React state only
   const persistRestaurant = (profile) => {
@@ -327,6 +360,29 @@ function Profile() {
     setRestaurantOnboardingStep(step);
     localStorage.setItem(RESTAURANT_ONBOARDING_KEY, step.toString());
   };
+
+  const startRestaurantHeroEdit = (field) => {
+    if (!restaurantProfile) return;
+    setRHeroEditingField(field);
+    if (field === 'name') setRHeroDraftName(restaurantProfile.name || '');
+    if (field === 'tagline') setRHeroDraftTagline(restaurantProfile.tagline || '');
+  };
+
+  const cancelRestaurantHeroEdit = () => {
+    setRHeroEditingField(null);
+  };
+
+  const saveRestaurantHeroEdit = () => {
+    if (!restaurantProfile || !rHeroEditingField) return;
+
+    const updated = { ...restaurantProfile };
+    if (rHeroEditingField === 'name') updated.name = rHeroDraftName;
+    if (rHeroEditingField === 'tagline') updated.tagline = rHeroDraftTagline;
+
+    setRestaurantProfile(updated);
+    persistRestaurant(updated);
+    setRHeroEditingField(null);
+  };
   const handlePdfUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
@@ -340,6 +396,33 @@ function Profile() {
     }
   };
 
+  // Helpers for parsing backend "bio" that may include phone/email lines.
+  function extractPhoneFromBioString(bioString) {
+    if (!bioString) return '';
+    // Matches: "📞 +9183..." or any long digit sequence starting with + / digit.
+    const m = bioString.match(/📞\s*([+\d][\d\s()-]{8,})/i) || bioString.match(/([+\d][\d\s()-]{10,})/);
+    return m?.[1]?.trim() || '';
+  }
+
+  function extractEmailFromBioString(bioString) {
+    if (!bioString) return '';
+    const m = bioString.match(/✉\s*([^\s]+)/i) || bioString.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+    return m?.[1]?.trim() || '';
+  }
+
+  function stripPhoneEmailLinesFromBioString(bioString) {
+    if (!bioString) return '';
+    const lines = bioString.split('\n').map(l => l.trim());
+    const cleaned = lines.filter(l => {
+      if (!l) return false;
+      // backend stores phone/email as separate lines with emojis
+      if (l.startsWith('📞')) return false;
+      if (l.startsWith('✉')) return false;
+      return true;
+    });
+    return cleaned.join('\n').trim();
+  }
+
   const handleRestaurantBannerUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
@@ -349,6 +432,26 @@ function Profile() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Restaurant dashboard "Change banner" (no onboarding form).
+  const handleRestaurantBannerChangeDashboard = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file.');
+      return;
+    }
+    if (!restaurantProfile) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const updated = { ...restaurantProfile, banner: event.target.result };
+      setRestaurantProfile(updated);
+      persistRestaurant(updated);
+    };
+    reader.readAsDataURL(file);
+    // Allow re-selecting the same file
+    try { e.target.value = ''; } catch { }
   };
 
   const removePdf = () => {
@@ -385,9 +488,11 @@ function Profile() {
       const ok = await handleRestaurantPublish(payload, { silent: true });
       if (!ok) throw new Error('Failed to publish restaurant profile');
       localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+      restaurantEditInProgressRef.current = false;
       setRestaurantOnboardingStep(0); // 0 means done, show dashboard
     } catch (e) {
       console.error('Failed to save restaurant profile', e);
+      restaurantEditInProgressRef.current = false;
       alert('Failed to save. Please try again.');
     }
   };
@@ -398,14 +503,12 @@ function Profile() {
       alert('Please add a username to your restaurant profile first.');
       return false;
     }
-    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user
-      ? () => ({ uid: user.uid || null, email: user.email || null, name: user.displayName || null })
-      : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
-    if (!user && !otpUser) {
+    if (!user) {
       alert('Please sign in to publish your profile.');
       return false;
     }
+    const getIdTokenFn = () => getIdToken();
+    const getFirebaseUserFn = () => ({ uid: user.uid || null, email: user.email || null, name: user.displayName || null });
     try {
       let photoUrl = profileInput.banner && profileInput.banner.startsWith('http') ? profileInput.banner : '';
       if (profileInput.banner && profileInput.banner.startsWith('data:')) {
@@ -451,14 +554,15 @@ function Profile() {
       }).filter(l => l.url);
       const bioParts = [profileInput.bio || ''];
       if (profileInput.phone) bioParts.push(`📞 ${profileInput.phone}`);
-      if (profileInput.email || user?.email || otpUser?.email) bioParts.push(`✉ ${profileInput.email || user?.email || otpUser?.email}`);
+      if (profileInput.email || user?.email) bioParts.push(`✉ ${profileInput.email || user?.email}`);
       const payload = {
         username: (profileInput.username || '').toLowerCase().trim(),
         name: profileInput.name || '',
         title: profileInput.tagline || '',
         bio: bioParts.filter(Boolean).join('\n'),
-        photo: photoUrl,
-        menuPdf: menuPdfUrl,
+        // Avoid sending empty strings; some backends treat '' as invalid.
+        photo: photoUrl || undefined,
+        menuPdf: menuPdfUrl || undefined,
         theme: profileInput.theme || 'mint',
         font: profileInput.titleFont || profileInput.font || 'outfit',
         bioFont: profileInput.bodyFont || profileInput.font || 'outfit',
@@ -494,7 +598,7 @@ function Profile() {
       else console.warn('Restaurant auto-publish failed:', err);
       return false;
     }
-  }, [restaurantProfile, user, otpUser]);
+  }, [restaurantProfile, user]);
 
   // Dashboard customization state
   const [activeTab, setActiveTab] = useState('profiles'); // 'profiles' | 'design' | 'preview' | 'link-art'
@@ -536,7 +640,7 @@ function Profile() {
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'artist'); } catch (e) { }
     }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
-  }, [profileLock]);
+  }, [profileLock, user]);
 
   const handleSelectGeneralMode = useCallback(() => {
     setError('');
@@ -547,7 +651,9 @@ function Profile() {
     }
     try { localStorage.setItem(GENERAL_FLOW_MODE_KEY, 'general'); } catch (e) { }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'general'); } catch (e) { }
-  }, [profileLock]);
+    const email = user?.email;
+    if (email) setPrefByEmail(email, 'general');
+  }, [profileLock, user]);
 
   const handleSelectRestaurantMode = useCallback(() => {
     setError('');
@@ -558,41 +664,29 @@ function Profile() {
     }
     try { localStorage.setItem(GENERAL_FLOW_MODE_KEY, 'restaurant'); } catch (e) { }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
-  }, [profileLock]);
+    const email = user?.email;
+    if (email) setPrefByEmail(email, 'restaurant');
+  }, [profileLock, user]);
 
   const loadMyProfiles = useCallback(async () => {
-    if (user) {
-      setArtistsLoading(true);
-      try {
-        const res = await landingArtistAPI.getMyProfiles(() => getIdToken(), getFirebaseUser);
-        setMyArtists(res.data || []);
-      } catch (err) {
-        console.warn('Artist profiles load:', err.message);
-        setMyArtists([]);
-      } finally {
-        setArtistsLoading(false);
-      }
-    } else if (otpUser) {
-      setArtistsLoading(true);
-      try {
-        const res = await landingArtistAPI.getMyProfilesWithOtpToken(otpUser.token);
-        setMyArtists(res.data || []);
-      } catch (err) {
-        console.warn('Artist profiles load:', err.message);
-        setMyArtists([]);
-        // Do not auto-logout OTP users here.
-        // Restaurant/general dashboards should still work even if artist routes
-        // reject OTP tokens or the user has no artist profile.
-      } finally {
-        setArtistsLoading(false);
-      }
+    if (!user) return;
+    setArtistsLoading(true);
+    try {
+      const res = await landingArtistAPI.getMyProfiles(() => getIdToken(), getFirebaseUser);
+      setMyArtists(res.data || []);
+    } catch (err) {
+      console.warn('Artist profiles load:', err.message);
+      setMyArtists([]);
+    } finally {
+      setArtistsLoading(false);
+      setArtistListReady(true);
     }
-  }, [user, otpUser, getFirebaseUser]);
+  }, [user, getFirebaseUser]);
 
   const loadGeneralProfile = useCallback(async () => {
-    if (!user && !otpUser) return;
-    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
+    if (!user) return;
+    const getIdTokenFn = () => getIdToken();
+    const getFirebaseUserFn = getFirebaseUser;
     setGeneralProfileLoading(true);
     try {
       // On "choice" screen, always try restaurant first, then general.
@@ -663,7 +757,27 @@ function Profile() {
     } finally {
       setGeneralProfileLoading(false);
     }
-  }, [user, otpUser, getFirebaseUser, profileMode]);
+  }, [user, getFirebaseUser, profileMode]);
+
+  useLayoutEffect(() => {
+    const uid = user?.uid || null;
+    const uidChanged = uid !== lastGeneralUidRef.current;
+    if (uidChanged) {
+      lastGeneralUidRef.current = uid;
+      setGeneralProfile(null);
+      setArtistListReady(false);
+      if (!uid) {
+        setGeneralProfileLoading(false);
+        return;
+      }
+      setGeneralProfileLoading(true);
+      return;
+    }
+    if (!user) return;
+    if (!(profileMode === 'choice' || profileMode === 'general' || profileMode === 'restaurant')) return;
+    if (generalProfileRef.current) return;
+    setGeneralProfileLoading(true);
+  }, [user, profileMode, user?.uid]);
 
   useEffect(() => {
     localStorage.setItem('dash_theme', dashTheme);
@@ -718,7 +832,7 @@ function Profile() {
     }
   }, [activeTab, isMobileViewport, designSubTab]);
 
-  const isLoggedIn = !!(user || otpUser);
+  const isLoggedIn = !!user;
   const isArtistMode = profileMode === 'artist';
   const isGeneralMode = profileMode === 'general';
   const isRestaurantMode = profileMode === 'restaurant';
@@ -743,22 +857,22 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    if (user || otpUser) {
-      // Always load artist profiles for any logged-in session (Firebase or OTP)
+    if (user) {
       if (profileMode !== 'general') {
         loadMyProfiles();
       }
-      // Load general profile for both Firebase and OTP users (used to restore restaurant/general dashboards).
-      if ((user || otpUser) && (profileMode === 'choice' || profileMode === 'general' || profileMode === 'restaurant')) {
+      if (profileMode === 'choice' || profileMode === 'general' || profileMode === 'restaurant') {
         loadGeneralProfile();
       }
     }
-  }, [user, otpUser, loadMyProfiles, loadGeneralProfile, profileMode]);
+  }, [user, loadMyProfiles, loadGeneralProfile, profileMode]);
 
   useEffect(() => {
     if (!generalProfile || restaurantProfile) return;
     if (profileLock !== 'general_restaurant') return;
-    const fallbackEmail = user?.email || otpUser?.email || '';
+    // If user is actively editing/onboarding their restaurant, don't auto-hydrate/override.
+    if (restaurantEditInProgressRef.current) return;
+    const fallbackEmail = user?.email || '';
     const likelyRestaurant = !!(generalProfile.menuPdf && String(generalProfile.menuPdf).trim());
     let preferredGeneralMode = 'general';
     try { preferredGeneralMode = localStorage.getItem(GENERAL_FLOW_MODE_KEY) || 'general'; } catch (e) { }
@@ -779,12 +893,16 @@ function Profile() {
       if (known && link?.url) mappedLinks[known] = link.url;
     });
 
+    const cleanedBio = stripPhoneEmailLinesFromBioString(generalProfile.bio || '');
+    const extractedPhone = extractPhoneFromBioString(generalProfile.bio || '');
+    const extractedEmail = extractEmailFromBioString(generalProfile.bio || '');
+
     const hydratedRestaurant = {
       name: generalProfile.name || '',
       tagline: generalProfile.title || '',
-      bio: generalProfile.bio || '',
-      phone: '',
-      email: fallbackEmail,
+      bio: cleanedBio || '',
+      phone: extractedPhone || '',
+      email: extractedEmail || fallbackEmail,
       username: generalProfile.username || '',
       menuPdf: generalProfile.menuPdf || null,
       banner: generalProfile.photo || '',
@@ -798,9 +916,13 @@ function Profile() {
     setRestaurantProfile(hydratedRestaurant);
     persistRestaurant(hydratedRestaurant);
     try { lastRestaurantSyncSigRef.current = JSON.stringify(hydratedRestaurant); } catch (e) { }
+    // Mark onboarding as complete so we don't show "Step 1" again after relogin,
+    // and so auto-sync can publish updates.
+    setRestaurantOnboardingStep(0);
+    try { localStorage.setItem(RESTAURANT_ONBOARDING_KEY, '0'); } catch (e) { }
     setProfileMode('restaurant');
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
-  }, [generalProfile, restaurantProfile, profileLock, user, otpUser]);
+  }, [generalProfile, restaurantProfile, profileLock, user]);
 
   useEffect(() => {
     if (!isLoggedIn || !isRestaurantMode || !restaurantProfile) return undefined;
@@ -821,17 +943,38 @@ function Profile() {
     };
   }, [isLoggedIn, isRestaurantMode, restaurantProfile, restaurantOnboardingStep, handleRestaurantPublish]);
 
+  useLayoutEffect(() => {
+    if (profileMode !== 'artist' || onboardingStep !== 0) return;
+    if (!artistListReady) return;
+
+    const first = myArtists[0];
+    if (first?.isSetup === true) return;
+
+    // New signups have no artist row yet — myArtists is empty — so we must still open the wizard.
+    // useLayoutEffect: run before paint so the dashboard never flashes ahead of the wizard.
+    updateOnboardingStep(1);
+    setFormData(prev => ({
+      ...prev,
+      name: first?.name || user?.displayName || user?.email?.split('@')[0] || '',
+      email: first?.email || user?.email || ''
+    }));
+  }, [myArtists, onboardingStep, profileMode, artistListReady, user]);
+
+  // Google OAuth sets Firebase `user` asynchronously; onboarding may open before `user` exists.
+  // Fill email / display name from the Google account only while those fields are still empty.
   useEffect(() => {
-    if (myArtists.length > 0 && myArtists[0].isSetup === false && onboardingStep === 0 && profileMode === 'artist') {
-      updateOnboardingStep(1);
-      // Pre-fill name and email only; leave username (artistId) empty so user can enter their own nickname
-      setFormData(prev => ({
-        ...prev,
-        name: myArtists[0].name || '',
-        email: myArtists[0].email || ''
-      }));
-    }
-  }, [myArtists, onboardingStep, profileMode]);
+    if (profileMode !== 'artist') return;
+    if (onboardingStep < 1 || onboardingStep > 3) return;
+    const email = user?.email || '';
+    const displayName = user?.displayName || '';
+    if (!email && !displayName) return;
+    setFormData((prev) => {
+      const next = { ...prev };
+      if (email && !String(prev.email || '').trim()) next.email = email;
+      if (displayName && !String(prev.name || '').trim()) next.name = displayName;
+      return next;
+    });
+  }, [user?.email, user?.displayName, profileMode, onboardingStep]);
 
   useEffect(() => {
     if (artistsLoading || generalProfileLoading) return;
@@ -900,7 +1043,6 @@ function Profile() {
     myArtists,
     artistsLoading,
     generalProfile,
-    otpUser,
     generalProfileLoading,
     profileMode,
     profileLock,
@@ -918,6 +1060,10 @@ function Profile() {
 
   const handleGeneralCreate = async (e) => {
     e.preventDefault();
+    if (!generalForm.name.trim()) {
+      setError('Name is required.');
+      return;
+    }
     if (!generalForm.username.trim()) {
       setError('Username is required.');
       return;
@@ -926,8 +1072,8 @@ function Profile() {
     setError('');
     setGeneralSuccess('');
     try {
-      const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-      const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: otpUser.email, email: otpUser.email } : null) : () => null);
+      const getIdTokenFn = () => getIdToken();
+      const getFirebaseUserFn = getFirebaseUser;
       let photoUrl = generalForm.photo;
       if (generalPhotoFile) {
         const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, getIdTokenFn);
@@ -989,6 +1135,8 @@ function Profile() {
     }));
   };
 
+  const nfcFrontendBase = (process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+
   const getProfileLink = () => {
     const base = window.location.origin;
     return `${base}/link/${generalProfile?.username || generalForm.username}`;
@@ -996,8 +1144,8 @@ function Profile() {
 
   const handleGeneralFieldSave = async (field, value) => {
     if (!generalProfile) return;
-    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
+    const getIdTokenFn = () => getIdToken();
+    const getFirebaseUserFn = getFirebaseUser;
     setGeneralSaving(true);
     setError('');
     try {
@@ -1014,8 +1162,8 @@ function Profile() {
 
   const handleGeneralPhotoSave = async (file) => {
     if (!file || !generalProfile) return;
-    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
+    const getIdTokenFn = () => getIdToken();
+    const getFirebaseUserFn = getFirebaseUser;
     setGeneralSaving(true);
     setError('');
     try {
@@ -1036,8 +1184,8 @@ function Profile() {
 
   const handleGeneralSaveAll = async () => {
     if (!generalProfile) return;
-    const getIdTokenFn = user ? () => getIdToken() : (otpUser ? () => Promise.resolve(otpUser.token) : () => Promise.resolve(null));
-    const getFirebaseUserFn = user ? getFirebaseUser : (otpUser ? () => (otpUser?.email ? { uid: null, email: otpUser.email } : null) : () => null);
+    const getIdTokenFn = () => getIdToken();
+    const getFirebaseUserFn = getFirebaseUser;
     setGeneralSaving(true);
     setError('');
     try {
@@ -1074,66 +1222,9 @@ function Profile() {
     }
   };
 
-  // Legacy OTP handlers (kept for future use)
-  // eslint-disable-next-line no-unused-vars
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    const email = otpEmail.trim();
-    if (!email) {
-      setError('Please enter your profile email.');
-      return;
-    }
-    setError('');
-    setOtpSendLoading(true);
-    try {
-      await landingArtistAPI.sendOtp(email);
-      setOtpStep('sent');
-      setOtpCode('');
-    } catch (err) {
-      setError(err.message || 'Failed to send code.');
-    } finally {
-      setOtpSendLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    const email = otpEmail.trim();
-    const code = otpCode.trim();
-    if (!email || !code) {
-      setError('Please enter the 6-digit code.');
-      return;
-    }
-    setError('');
-    setOtpVerifyLoading(true);
-    try {
-      const data = await landingArtistAPI.verifyOtp(email, code);
-      const auth = { email: data.email, token: data.token };
-      setOtpUser(auth);
-      localStorage.setItem(OTP_STORAGE_KEY, JSON.stringify(auth));
-      // New OTP login: always start from profile choice (artist/general/restaurant).
-      // Lock will be set after the user explicitly picks a profile type.
-      setProfileMode('choice');
-      setProfileLock(null);
-      try {
-        localStorage.removeItem(PROFILE_MODE_KEY);
-        localStorage.removeItem(PROFILE_LOCK_KEY);
-      } catch (e) { }
-      setOtpStep('verified');
-      setOtpEmail('');
-      setOtpCode('');
-    } catch (err) {
-      setError(err.message || 'Invalid or expired code.');
-    } finally {
-      setOtpVerifyLoading(false);
-    }
-  };
-
   const handleLogout = () => {
     if (user) logout();
-    setOtpUser(null);
-    localStorage.removeItem(OTP_STORAGE_KEY);
+    try { localStorage.removeItem('landing_otp_auth'); } catch (e) { }
     localStorage.removeItem('onboarding_step');
     localStorage.removeItem('general_step');
     localStorage.removeItem('general_onboarding_step');
@@ -1208,7 +1299,7 @@ function Profile() {
     if (!newGalleryFile) return;
     setGalleryUploading(true);
     try {
-      const tokenForUpload = otpUser ? otpUser.token : (await getIdToken());
+      const tokenForUpload = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(newGalleryFile, tokenForUpload);
       const url = up && up.url ? up.url : null;
       if (url) {
@@ -1244,7 +1335,7 @@ function Profile() {
     setSaving(true);
     setError('');
     try {
-      const tokenForUpload = otpUser ? otpUser.token : (await getIdToken());
+      const tokenForUpload = await getIdToken();
       let photoUrl = formData.photo;
       let bgUrl = formData.backgroundPhoto;
       if (photoFile) {
@@ -1261,16 +1352,12 @@ function Profile() {
         backgroundPhoto: bgUrl,
         artworkCount: formData.artworkCount === '' ? undefined : Number(formData.artworkCount)
       };
-      if (otpUser) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(editingArtist.artistId || editingArtist._id, payload, otpUser.token);
-      } else {
-        await landingArtistAPI.updateMyProfile(
-          editingArtist.artistId || editingArtist._id,
-          payload,
-          () => getIdToken(),
-          getFirebaseUser
-        );
-      }
+      await landingArtistAPI.updateMyProfile(
+        editingArtist.artistId || editingArtist._id,
+        payload,
+        () => getIdToken(),
+        getFirebaseUser
+      );
       await loadMyProfiles();
       closeEdit();
     } finally {
@@ -1290,21 +1377,12 @@ function Profile() {
         finalValue = `https://wa.me/${cleanNumber}`;
       }
       const payload = { [platform]: finalValue }; // value could be null
-      // Support both Firebase-authenticated sessions and OTP sessions.
-      if (otpUser && otpUser.token) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(
-          artist.artistId || artist._id,
-          payload,
-          otpUser.token
-        );
-      } else {
-        await landingArtistAPI.updateMyProfile(
-          artist.artistId || artist._id,
-          payload,
-          () => getIdToken(),
-          getFirebaseUser
-        );
-      }
+      await landingArtistAPI.updateMyProfile(
+        artist.artistId || artist._id,
+        payload,
+        () => getIdToken(),
+        getFirebaseUser
+      );
       // Update server-side source of truth
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [platform]: finalValue } : a));
       // Clear local pending state after successful save
@@ -1328,11 +1406,7 @@ function Profile() {
     setSavingLink(field); // reuse savingLink state for spinner
     try {
       const payload = { [field]: value, ...extraPayload };
-      if (otpUser) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
-      } else {
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-      }
+      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, ...payload } : a));
       setEditingHeroField(null);
       setHeroUpdates(prev => {
@@ -1371,15 +1445,11 @@ function Profile() {
     if (!artist || !file) return;
     setIsUploading(field);
     try {
-      const token = otpUser ? otpUser.token : (await getIdToken());
+      const token = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(file, token);
       if (up && up.url) {
         const payload = { [field]: up.url };
-        if (otpUser) {
-          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
-        } else {
-          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-        }
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [field]: up.url } : a));
         // Auto-refresh preview
         setPreviewKey(prev => prev + 1);
@@ -1396,17 +1466,13 @@ function Profile() {
     if (!artist || !file) return;
     setGalleryUploading(true);
     try {
-      const token = otpUser ? otpUser.token : (await getIdToken());
+      const token = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(file, token);
       if (up && up.url) {
         const newItem = { url: up.url, name: name || 'New Event' };
         const newGallery = [...(artist.gallery || []), newItem];
         const payload = { gallery: newGallery };
-        if (otpUser) {
-          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
-        } else {
-          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-        }
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
         setPreviewKey(prev => prev + 1);
       }
@@ -1423,11 +1489,7 @@ function Profile() {
     try {
       const newGallery = (artist.gallery || []).filter((_, i) => i !== idx);
       const payload = { gallery: newGallery };
-      if (otpUser) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
-      } else {
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-      }
+      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
       setPreviewKey(prev => prev + 1);
     } catch (err) {
@@ -1478,11 +1540,7 @@ function Profile() {
 
     if (Object.keys(updates).length > 0) {
       try {
-        if (otpUser) {
-          await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, updates, otpUser.token);
-        } else {
-          await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, updates, () => getIdToken(), getFirebaseUser);
-        }
+        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, updates, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, i) => i === 0 ? { ...a, ...updates } : a));
       } catch (err) {
         console.error('Failed to sync platforms:', err);
@@ -1509,12 +1567,7 @@ function Profile() {
             name: formData.name || 'New Artist'
           };
           
-          let createRes;
-          if (otpUser) {
-            createRes = await landingArtistAPI.createMyProfileWithOtpToken(createPayload, otpUser.token);
-          } else {
-            createRes = await landingArtistAPI.createMyProfile(createPayload, () => getIdToken(), getFirebaseUser);
-          }
+          const createRes = await landingArtistAPI.createMyProfile(createPayload, () => getIdToken(), getFirebaseUser);
           
           if (!createRes.success) {
             throw new Error(createRes.message || 'Failed to initialize profile');
@@ -1543,22 +1596,22 @@ function Profile() {
         payload.backgroundPhoto = up?.url || payload.backgroundPhoto;
       }
 
-      // Upload gallery files
+      // Upload gallery files (images / GIFs / videos ≤30s, validated client-side)
       if (onboardingGalleryFiles && onboardingGalleryFiles.length > 0) {
         const galleryUrls = [];
         for (let i = 0; i < onboardingGalleryFiles.length; i++) {
-          const up = await landingArtistAPI.uploadPhoto(onboardingGalleryFiles[i], () => getIdToken());
+          const file = onboardingGalleryFiles[i];
+          assertGalleryFileKind(file);
+          await assertVideoMaxDuration(file);
+          const up = await landingArtistAPI.uploadPhoto(file, () => getIdToken());
           if (up?.url) {
-            galleryUrls.push({ url: up.url, name: `Gallery Image ${i + 1}` });
+            const isVid = file.type.startsWith('video/');
+            galleryUrls.push({ url: up.url, name: isVid ? `Gallery video ${i + 1}` : `Gallery image ${i + 1}` });
           }
         }
         payload.gallery = [...(payload.gallery || []), ...galleryUrls];
       }
-      if (otpUser) {
-        await landingArtistAPI.updateMyProfileWithOtpToken(artist.artistId || artist._id, payload, otpUser.token);
-      } else {
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-      }
+      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
 
       // Refresh data
       await loadMyProfiles();
@@ -1572,9 +1625,9 @@ function Profile() {
   };
 
   // Global display variables moved up to fix ReferenceError
-  const displayName = user?.displayName || user?.email || otpUser?.email || 'Profile';
-  const displayEmail = user?.email || otpUser?.email || '';
-  const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || otpUser?.email?.charAt(0) || '?';
+  const displayName = user?.displayName || user?.email || 'Profile';
+  const displayEmail = user?.email || '';
+  const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || '?';
 
   useEffect(() => {
     if (!loading && !isLoggedIn) {
@@ -1591,6 +1644,14 @@ function Profile() {
   }
 
   if (!isLoggedIn) return null;
+
+  if (isLoggedIn && isArtistMode && onboardingStep === 0 && !artistListReady) {
+    return (
+      <div className="profile-page profile-loading">
+        <p>Loading your artist profile…</p>
+      </div>
+    );
+  }
 
   // Onboarding Wizard
   if (isLoggedIn && isArtistMode && onboardingStep > 0) {
@@ -1617,6 +1678,15 @@ function Profile() {
         saving={saving}
         handleLogout={handleLogout}
       />
+    );
+  }
+
+  // Avoid flashing the choice UI while artist / general profiles are still loading from the API
+  if (isLoggedIn && profileMode === 'choice' && (artistsLoading || generalProfileLoading)) {
+    return (
+      <div className="profile-page profile-loading">
+        <p>Loading your account…</p>
+      </div>
     );
   }
 
@@ -1717,20 +1787,79 @@ function Profile() {
                       type="button"
                       className="dash-hero-bg-trigger"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => { setRestaurantForm({ ...restaurantProfile, menuPdf: restaurantProfile.menuPdf || null, banner: restaurantProfile.banner || null, gallery: restaurantProfile.gallery || [], links: restaurantProfile.links || {} }); setRestaurantProfile(null); updateRestaurantOnboardingStep(1); }}
+                      onClick={() => {
+                        restaurantBannerInputRef.current?.click();
+                      }}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      <span>Edit Profile</span>
+                      <span>Edit Banner</span>
                     </button>
+                    <input
+                      ref={restaurantBannerInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleRestaurantBannerChangeDashboard}
+                    />
 
                     <div className="dash-profile-hero-content">
                       <div className="dash-hero-text">
-                        <h2 className="dash-hero-name">{restaurantProfile.name}</h2>
+                        {rHeroEditingField === 'name' ? (
+                          <div className="dash-hero-editable-wrapper">
+                            <div className="dash-hero-edit-row">
+                              <input
+                                className="dash-hero-inline-input name"
+                                autoFocus
+                                value={rHeroDraftName}
+                                onChange={(e) => setRHeroDraftName(e.target.value)}
+                              />
+                              <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
+                                Save
+                              </button>
+                              <button type="button" className="cancel" onClick={cancelRestaurantHeroEdit} style={{ background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <h2
+                            className="dash-profile-hero-name clickable"
+                            onClick={() => startRestaurantHeroEdit('name')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <span>{restaurantProfile.name || 'Add restaurant name'}</span>
+                          </h2>
+                        )}
                         <p className="dash-hero-spec">@{restaurantProfile.username}</p>
-                        <p className="dash-hero-bio">{restaurantProfile.tagline}</p>
+                        {rHeroEditingField === 'tagline' ? (
+                          <div className="dash-hero-editable-wrapper">
+                            <div className="dash-hero-edit-row">
+                              <input
+                                className="dash-hero-inline-input"
+                                autoFocus
+                                value={rHeroDraftTagline}
+                                onChange={(e) => setRHeroDraftTagline(e.target.value)}
+                              />
+                              <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
+                                Save
+                              </button>
+                              <button type="button" className="cancel" onClick={cancelRestaurantHeroEdit} style={{ background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p
+                            className="dash-hero-bio"
+                            onClick={() => startRestaurantHeroEdit('tagline')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {restaurantProfile.tagline || 'Add tagline...'}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1747,12 +1876,28 @@ function Profile() {
                           navigator.clipboard.writeText(url);
                           alert('Profile URL copied to clipboard!');
                         }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: '#111827', color: '#f9fafb', border: '1px solid rgba(255,255,255,0.28)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        className="dash-icon-pill"
+                        style={{ width: '44px', height: '44px' }}
+                        aria-label="Copy profile link"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-                        Copy Link
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="9" y="9" width="13" height="13" rx="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
                       </button>
-                      <a href={`${window.location.origin}/link/${restaurantProfile.username || ''}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '6px 12px', background: '#0f172a', color: '#ffffff', border: '1px solid rgba(255,255,255,0.24)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Open</a>
+                      <a
+                        href={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="dash-icon-pill"
+                        style={{ width: '44px', height: '44px', textDecoration: 'none' }}
+                        aria-label="Open profile link"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M7 17L17 7" />
+                          <path d="M7 7h10v10" />
+                        </svg>
+                      </a>
                     </div>
                     <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
                       Link goes live automatically after creating your restaurant profile.
@@ -1781,7 +1926,22 @@ function Profile() {
                         </div>
                       </div>
                     ) : (
-                      <div onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }} style={{ padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px', color: restaurantProfile.bio ? 'var(--dash-text)' : 'var(--dash-subtext)', fontSize: '0.95rem', lineHeight: 1.6, cursor: 'text', minHeight: '3rem' }}>
+                      <div
+                        onClick={() => { setRBioDraft(restaurantProfile.bio || ''); setRBioEditing(true); }}
+                        style={{
+                          padding: '0.85rem 1rem',
+                          background: 'var(--dash-bg-card)',
+                          border: '1px solid var(--dash-border)',
+                          borderRadius: '12px',
+                          color: restaurantProfile.bio ? 'var(--dash-text)' : 'var(--dash-subtext)',
+                          fontSize: '0.95rem',
+                          lineHeight: 1.6,
+                          cursor: 'text',
+                          minHeight: '3rem',
+                          // restaurantProfile.bio is saved as a multi-line string; preserve line breaks.
+                          whiteSpace: 'pre-line'
+                        }}
+                      >
                         {restaurantProfile.bio || 'Click to add a bio…'}
                       </div>
                     )}
@@ -2342,7 +2502,12 @@ function Profile() {
               <div className="onboarding-fields">
                 <div className="onboarding-field">
                   <label>Phone</label>
-                  <input type="tel" className="onboarding-input" value={restaurantForm.phone} onChange={e => setRestaurantForm(prev => ({ ...prev, phone: e.target.value }))} placeholder="+91 98765 43210" autoFocus />
+                  <PhoneINInput
+                    wrapClassName="onboarding-phone-in"
+                    value={restaurantForm.phone}
+                    onChange={(v) => setRestaurantForm((prev) => ({ ...prev, phone: v }))}
+                    autoFocus
+                  />
                 </div>
                 <div className="onboarding-field">
                   <label>Email</label>
@@ -2456,6 +2621,14 @@ function Profile() {
     );
   }
 
+  if (isLoggedIn && isGeneralMode && generalProfileLoading) {
+    return (
+      <div className="profile-page profile-loading">
+        <p>Loading your profile...</p>
+      </div>
+    );
+  }
+
   // General Profile: 4-step onboarding (no profile yet)
   if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading) {
     const genStep = generalOnboardingStep;
@@ -2554,10 +2727,10 @@ function Profile() {
                   <div className="onboarding-theme-selector-wrap">
                     <div className="onboarding-theme-selector onboarding-theme-grid">
                       {GENERAL_THEMES.slice(0, 8).map((t) => (
-                        <button 
-                          key={t.id} 
-                          type="button" 
-                          className={`theme-pick-btn ${generalForm.theme === t.id ? 'active' : ''}`} 
+                        <button
+                          key={t.id}
+                          type="button"
+                          className={`theme-pick-btn ${generalForm.theme === t.id ? 'active' : ''}`}
                           onClick={() => setGeneralForm(prev => ({ ...prev, theme: t.id }))}
                           style={{
                             background: t.bg,
@@ -2578,10 +2751,10 @@ function Profile() {
                   <div className="onboarding-theme-selector-wrap">
                     <div className="onboarding-theme-selector onboarding-theme-grid">
                       {[{ id: 'outfit', label: 'Outfit' }, { id: 'playfair', label: 'Playfair' }, { id: 'caveat', label: 'Caveat' }, { id: 'mono-font', label: 'Mono' }].map((f) => (
-                        <button 
-                          key={f.id} 
-                          type="button" 
-                          className={`theme-pick-btn ${generalForm.font === f.id ? 'active' : ''}`} 
+                        <button
+                          key={f.id}
+                          type="button"
+                          className={`theme-pick-btn ${generalForm.font === f.id ? 'active' : ''}`}
                           onClick={() => setGeneralForm(prev => ({ ...prev, font: f.id }))}
                           style={{
                             background: 'rgba(255,255,255,0.05)',
@@ -2606,7 +2779,7 @@ function Profile() {
 
           {genStep === 3 && (
             <div className="onboarding-step fade-in">
-              <h2>Step 3 – Photo & bio</h2>
+              <h2>Step 3 – Photo &amp; bio</h2>
               <p className="onboarding-subtitle">Profile photo and short bio</p>
               <div className="onboarding-fields">
                 <div className="onboarding-field">
@@ -2655,7 +2828,11 @@ function Profile() {
                     </div>
                     {link.platform === 'whatsapp' && (
                       <div style={{ marginBottom: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <input className="onboarding-input" placeholder="Phone number (e.g. 919876543210)" value={link.waPhone || ''} onChange={e => updateLink(idx, 'waPhone', e.target.value)} />
+                        <PhoneINInput
+                          wrapClassName="onboarding-phone-in"
+                          value={toINFullPhone(getINDisplayDigits(link.waPhone || ''))}
+                          onChange={(v) => updateLink(idx, 'waPhone', v)}
+                        />
                         <input className="onboarding-input" placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={e => updateLink(idx, 'waMessage', e.target.value)} />
                       </div>
                     )}
@@ -2815,25 +2992,70 @@ function Profile() {
                       : 'See a live preview of your public profile page'}
               </p>
               {generalActiveTab === 'profile' && (
-                <div className="dash-profile-link-actions">
+                <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
                   <button
                     type="button"
-                    className="dash-link-btn"
+                    className="dash-icon-pill"
                     onClick={() => {
                       navigator.clipboard.writeText(gProfileLink);
                       setLinkCopied(true);
                       setTimeout(() => setLinkCopied(false), 2000);
                     }}
+                    aria-label={linkCopied ? 'Copied' : 'Copy profile link'}
                   >
-                    {linkCopied ? 'Copied' : 'Copy your link'}
+                    {linkCopied ? (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    ) : (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
                   </button>
+
                   <a
-                    className="dash-link-btn"
+                    className="dash-icon-pill"
                     href={gProfileLink}
                     target="_blank"
                     rel="noreferrer"
+                    aria-label="Open profile link"
                   >
-                    Open your link
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 17L17 7" />
+                      <path d="M7 7h10v10" />
+                    </svg>
                   </a>
                 </div>
               )}
@@ -3557,7 +3779,11 @@ function Profile() {
                       <input placeholder="Title (e.g. My Website)" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} className="profile-edit-link-title" />
                       {link.platform === 'whatsapp' && (
                         <>
-                          <input placeholder="Phone number (e.g. 919876543210)" value={link.waPhone || ''} onChange={(e) => updateLink(idx, 'waPhone', e.target.value)} className="profile-edit-link-url" />
+                          <PhoneINInput
+                            wrapClassName="profile-edit-phone-in"
+                            value={toINFullPhone(getINDisplayDigits(link.waPhone || ''))}
+                            onChange={(v) => updateLink(idx, 'waPhone', v)}
+                          />
                           <input placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={(e) => updateLink(idx, 'waMessage', e.target.value)} className="profile-edit-link-url" />
                         </>
                       )}
@@ -3581,15 +3807,6 @@ function Profile() {
             </div>
           </form>
         </div>
-      </div>
-    );
-  }
-
-  // General Profile loading
-  if (isLoggedIn && isGeneralMode && generalProfileLoading) {
-    return (
-      <div className="profile-page profile-loading">
-        <p>Loading your profile...</p>
       </div>
     );
   }
@@ -3668,27 +3885,55 @@ function Profile() {
                       : 'Connect your external portfolios, galleries, and art marketplaces'}
               </p>
               {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
-                const nfcBaseUrl = process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin);
-                const profileUrl = `${nfcBaseUrl}/artist?id=${myArtists[0].artistId}`;
+                const profileUrl = `${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`;
                 return (
-                  <div className="dash-profile-link-actions">
+                  <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
                     <button
                       type="button"
-                      className="dash-link-btn"
+                      className="dash-icon-pill"
+                      aria-label="Copy profile link"
                       onClick={() => {
                         navigator.clipboard.writeText(profileUrl);
                         alert('Profile link copied!');
                       }}
                     >
-                      Copy your link
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
                     </button>
+
                     <a
-                      className="dash-link-btn"
+                      className="dash-icon-pill"
                       href={profileUrl}
                       target="_blank"
                       rel="noreferrer"
+                      aria-label="Open profile link"
                     >
-                      Open your link
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M7 17L17 7" />
+                        <path d="M7 7h10v10" />
+                      </svg>
                     </a>
                   </div>
                 );
@@ -3705,7 +3950,7 @@ function Profile() {
                 <iframe
                   key={previewKey}
                   title="Artist Preview"
-                  src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                  src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
                   className="dash-mobile-preview-iframe"
                   sandbox="allow-scripts allow-same-origin"
                 />
@@ -3741,7 +3986,7 @@ function Profile() {
                   <iframe
                     key={previewKey}
                     title="Profile Design Preview"
-                    src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                    src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
                     className="dash-design-mobile-preview-iframe"
                     sandbox="allow-scripts allow-same-origin"
                   />
@@ -3993,7 +4238,7 @@ function Profile() {
                     <iframe
                       key={previewKey}
                       title="Profile Design Preview"
-                      src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${myArtists[0].artistId}`}
+                      src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
                       className="dash-preview-iframe"
                       sandbox="allow-scripts allow-same-origin"
                     />
@@ -4022,9 +4267,7 @@ function Profile() {
               const artShowcase = myArtists[0].artLinks || [];
               const items = Array.isArray(artShowcase) ? artShowcase : [];
               const artistToken = myArtists[0].artistId || myArtists[0]._id;
-              const nfcBaseUrl = process.env.REACT_APP_NFC_FRONTEND_URL ||
-                (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin);
-              const getArtUrl = (artId) => `${nfcBaseUrl}/artist?id=${artistToken}&art=${artId}`;
+              const getArtUrl = (artId) => `${nfcFrontendBase}/artist?id=${artistToken}&art=${artId}`;
               const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
 
               const handleArtImagePick = (e) => {
@@ -4070,11 +4313,9 @@ function Profile() {
 
               // Pick first item for preview by default
               const previewArtId = artPreviewId || (items[0]?.id ?? null);
-              const nfcFrontend = process.env.REACT_APP_NFC_FRONTEND_URL ||
-                (window.location.hostname === 'localhost' ? 'http://localhost:5173' : window.location.origin);
               const artPreviewSrc = previewArtId
-                ? `${nfcFrontend}/artist?id=${artistToken}&art=${previewArtId}`
-                : `${nfcFrontend}/artist?id=${artistToken}`;
+                ? `${nfcFrontendBase}/artist?id=${artistToken}&art=${previewArtId}`
+                : `${nfcFrontendBase}/artist?id=${artistToken}`;
 
               return (
                 <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
@@ -4274,8 +4515,6 @@ function Profile() {
                           setSaving(true);
                           if (user) {
                             await landingArtistAPI.createMyProfile({ name: user.displayName || 'New Artist' }, () => getIdToken(), getFirebaseUser);
-                          } else if (otpUser) {
-                            await landingArtistAPI.createMyProfileWithOtpToken({ name: 'New Artist' }, otpUser.token);
                           }
                           await loadMyProfiles();
                         } catch (err) {
@@ -4601,10 +4840,10 @@ function Profile() {
                                 <span className="dash-contact-label">Phone</span>
                                 {editingHeroField === 'phone' ? (
                                   <div className="dash-hero-edit-row">
-                                    <input
-                                      className="dash-hero-inline-input"
+                                    <PhoneINInput
+                                      wrapClassName="dash-hero-phone-in"
                                       value={heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || '')}
-                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, phone: e.target.value }))}
+                                      onChange={(v) => setHeroUpdates((prev) => ({ ...prev, phone: v }))}
                                     />
                                     <button onClick={() => handleUpdateHeroField('phone', heroUpdates.phone)}>Save</button>
                                     <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
@@ -4706,7 +4945,7 @@ function Profile() {
                             <iframe
                               key={previewKey}
                               title="Profile Preview"
-                              src={`${process.env.REACT_APP_NFC_FRONTEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? `http://${window.location.hostname}:5173` : window.location.origin)}/artist?id=${artist.artistId}`}
+                              src={`${nfcFrontendBase}/artist?id=${artist.artistId}`}
                               className="dash-preview-iframe"
                               sandbox="allow-scripts allow-same-origin"
                             />
@@ -4835,7 +5074,10 @@ function Profile() {
                   </div>
                   <div className="profile-edit-field">
                     <label>Phone</label>
-                    <input name="phone" type="tel" value={formData.phone} onChange={handleInputChange} placeholder="+1 234 567 8900" />
+                    <PhoneINInput
+                      value={formData.phone}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, phone: v }))}
+                    />
                   </div>
                   <div className="profile-edit-field">
                     <label>Website</label>
@@ -4843,7 +5085,13 @@ function Profile() {
                   </div>
                   <div className="profile-edit-field">
                     <label>WhatsApp</label>
-                    <input name="whatsapp" value={formData.whatsapp} onChange={handleInputChange} placeholder="With country code" />
+                    <PhoneINInput
+                      value={toINFullPhone(getINDisplayDigitsFromWhatsAppStored(formData.whatsapp))}
+                      onChange={(v) =>
+                        setFormData((prev) => ({ ...prev, whatsapp: toWhatsAppUrlFromINPhone(v) }))
+                      }
+                      placeholder="10-digit mobile"
+                    />
                   </div>
                 </section>
 

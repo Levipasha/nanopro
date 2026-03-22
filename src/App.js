@@ -5,6 +5,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import GeneralProfileView from './pages/GeneralProfileView';
 import ArtistPublicView from './pages/ArtistPublicView';
+import StudentPublicView from './pages/StudentPublicView';
 import Home from './pages/Home';
 import ArtistShowcase from './pages/ArtistShowcase';
 import StudentShowcase from './pages/StudentShowcase';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/signup" element={<Login />} />
         <Route path="/link/:username" element={<GeneralProfileView />} />
         <Route path="/artist" element={<ArtistPublicView />} />
+        <Route path="/student" element={<StudentPublicView />} />
         <Route path="/artist-showcase" element={<ArtistShowcase />} />
         <Route path="/student-showcase" element={<StudentShowcase />} />
         <Route path="/restaurant-showcase" element={<RestaurantShowcase />} />

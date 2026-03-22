@@ -3,16 +3,12 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import HomeNavbar from '../components/home/HomeNavbar';
 import HomeFooter from '../components/home/HomeFooter';
- 
+import ShowcaseProfileIframe from '../components/ShowcaseProfileIframe';
+import './ShowcaseHero.overrides.css';
 
 export default function ArtistShowcase() {
-    const nfcFrontend = process.env.REACT_APP_NFC_FRONTEND_URL ||
-        (['localhost', '127.0.0.1'].includes(window.location.hostname)
-            ? `http://${window.location.hostname}:5173`
-            : window.location.origin);
-
-    // Mock preview (no dependency on the profiles you created).
-    const iframeSrc = `${nfcFrontend}/artist?id=mock-artist&mock=1`;
+    // Hard-coded mock preview (always renders inside this landing page)
+    const iframeSrc = `${window.location.origin}/artist?id=mock-artist&mock=1`;
 
     return (
         <>
@@ -26,7 +22,6 @@ export default function ArtistShowcase() {
 
                 <section className="showcase-hero">
                     <div className="showcase-hero-inner">
-                        <span className="showcase-badge">FOR ARTISTS</span>
                         <h1 className="showcase-title">Your Art.<br />One Tap Away.</h1>
                         <p className="showcase-subtitle">Gallery, bio, links, and events — everything your audience needs, delivered instantly through NFC.</p>
                         <div className="showcase-cta-row">
@@ -64,11 +59,7 @@ export default function ArtistShowcase() {
                 <section id="preview" className="showcase-preview">
                     <h2 className="showcase-section-title">Example Artist Profile</h2>
                     <div className="showcase-profile-card-pc">
-                        <iframe
-                            title="Artist Preview"
-                            src={iframeSrc}
-                            className="showcase-profile-iframe"
-                        />
+                        <ShowcaseProfileIframe title="Artist Preview" src={iframeSrc} />
                     </div>
                 </section>
 

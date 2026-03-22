@@ -1185,3 +1185,13 @@
 .gp-card-themed .gp-title-overlay * {
   font-family: var(--font-heading, "Outfit", sans-serif) !important;
 }
+
+/* Embedded in showcase iframe (?embed=1): natural document height, parent page scrolls */
+.gp-embed-showcase.gp-view {
+  min-height: 0;
+}
+
+.gp-embed-showcase .gp-card {
+  min-height: 0;
+  overflow: visible;
+}

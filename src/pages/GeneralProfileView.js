@@ -8,6 +8,7 @@ import { getLinkIcon } from '../components/LinkIcons';
 import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
+import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -15,6 +16,7 @@ function GeneralProfileView() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const isMock = searchParams.get('mock') === '1';
+  const isEmbed = searchParams.get('embed') === '1';
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,6 +27,8 @@ function GeneralProfileView() {
   const [menuTotalPages, setMenuTotalPages] = useState(0);
   const [touchStartX, setTouchStartX] = useState(null);
   const [pageTurnDir, setPageTurnDir] = useState('');
+
+  useShowcaseEmbedHeight(isEmbed);
 
   useEffect(() => {
     if (isMock) {
@@ -145,7 +149,7 @@ function GeneralProfileView() {
   const activeBodyFont = profile.bioFont || activeHeadingFont;
 
   return (
-    <div className="gp-view gp-layout">
+    <div className={`gp-view gp-layout${isEmbed ? ' gp-embed-showcase' : ''}`}>
       <Helmet>
         <title>{`${profile?.name || 'Profile'} | Nano Profiles`}</title>
         <meta name="description" content={profile?.title || profile?.bio || 'Smart Digital Identity Solutions'} />

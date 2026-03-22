@@ -1,0 +1,55 @@
+/* Hero CTAs: stay on one row (bundled .showcase-cta-row uses flex-wrap: wrap) */
+.showcase-hero .showcase-cta-row {
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.showcase-hero .showcase-cta-row .showcase-cta-primary,
+.showcase-hero .showcase-cta-row .showcase-cta-secondary {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding: 12px 10px;
+  font-size: clamp(0.7rem, 2.6vw, 0.95rem);
+  line-height: 1.25;
+  text-align: center;
+}
+
+@media (min-width: 480px) {
+  .showcase-hero .showcase-cta-row {
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+
+  .showcase-hero .showcase-cta-row .showcase-cta-primary,
+  .showcase-hero .showcase-cta-row .showcase-cta-secondary {
+    flex: 0 1 auto;
+    padding: 14px 28px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Tighter gap between hero CTAs and feature cards (bundled hero bottom + features top were ~180px) */
+.showcase-page .showcase-hero {
+  padding-bottom: 28px;
+}
+
+.showcase-page .showcase-features {
+  padding-top: 24px;
+  padding-bottom: 72px;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+@media (min-width: 601px) {
+  .showcase-page .showcase-hero {
+    padding-bottom: 40px;
+  }
+
+  .showcase-page .showcase-features {
+    padding-top: 36px;
+  }
+}

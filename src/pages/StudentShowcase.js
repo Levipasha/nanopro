@@ -3,15 +3,12 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import HomeNavbar from '../components/home/HomeNavbar';
 import HomeFooter from '../components/home/HomeFooter';
- 
+import ShowcaseProfileIframe from '../components/ShowcaseProfileIframe';
+import './ShowcaseHero.overrides.css';
 
 export default function StudentShowcase() {
-    const nfcFrontend = process.env.REACT_APP_NFC_FRONTEND_URL ||
-        (['localhost', '127.0.0.1'].includes(window.location.hostname)
-            ? `http://${window.location.hostname}:5173`
-            : window.location.origin);
     // Mock preview (no dependency on the profiles you created).
-    const iframeSrc = `${nfcFrontend}/student?id=mock-student&mock=1`;
+    const iframeSrc = `${window.location.origin}/student?id=mock-student&mock=1`;
 
     return (
         <>
@@ -25,7 +22,6 @@ export default function StudentShowcase() {
 
                 <section className="showcase-hero">
                     <div className="showcase-hero-inner">
-                        <span className="showcase-badge">FOR STUDENTS</span>
                         <h1 className="showcase-title">Your Identity.<br />Always With You.</h1>
                         <p className="showcase-subtitle">Digital ID, portfolio, skills, and achievements — everything in one NFC-powered profile card.</p>
                         <div className="showcase-cta-row">
@@ -63,11 +59,7 @@ export default function StudentShowcase() {
                 <section id="preview" className="showcase-preview">
                     <h2 className="showcase-section-title">Example Student Profile</h2>
                     <div className="showcase-profile-card-pc">
-                        <iframe
-                            title="Student Preview"
-                            src={iframeSrc}
-                            className="showcase-profile-iframe"
-                        />
+                        <ShowcaseProfileIframe title="Student Preview" src={iframeSrc} />
                     </div>
                 </section>
 
