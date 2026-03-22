@@ -238,18 +238,6 @@ function Profile() {
   };
 
   // Store which profile type user chose for a specific email.
-  const getPrefByEmail = (email) => {
-    if (!email) return null;
-    try {
-      const raw = localStorage.getItem(PROFILE_PREF_BY_EMAIL_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return parsed?.[email] || null;
-    } catch (e) {
-      return null;
-    }
-  };
-
   const setPrefByEmail = (email, pref) => {
     if (!email || !pref) return;
     try {
@@ -640,7 +628,7 @@ function Profile() {
       try { localStorage.setItem(PROFILE_LOCK_KEY, 'artist'); } catch (e) { }
     }
     try { localStorage.setItem(PROFILE_MODE_KEY, 'artist'); } catch (e) { }
-  }, [profileLock, user]);
+  }, [profileLock]);
 
   const handleSelectGeneralMode = useCallback(() => {
     setError('');
