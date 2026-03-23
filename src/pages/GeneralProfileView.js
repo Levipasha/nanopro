@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
-import { getLinkIcon } from '../components/LinkIcons';
+import { getLinkIcon, getMenuPdfIcon } from '../components/LinkIcons';
 import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
@@ -142,6 +142,15 @@ function GeneralProfileView() {
 
   const links = (profile.links || []).filter(l => l.url).sort((a, b) => (a.order || 0) - (b.order || 0));
   const theme = getThemeById(profile.theme || 'mint');
+  const bioLines = String(profile.bio || '').split('\n').map((line) => line.trim()).filter(Boolean);
+  const extractedPhoneFromBio = bioLines.find((line) => line.startsWith('📞')) || '';
+  const extractedEmailFromBio = bioLines.find((line) => line.startsWith('✉')) || '';
+  const cleanBio = bioLines
+    .filter((line) => !line.startsWith('📞') && !line.startsWith('✉'))
+    .join('\n')
+    .trim();
+  const restaurantPhone = (extractedPhoneFromBio.replace(/^📞\s*/, '') || '').trim();
+  const restaurantEmail = (extractedEmailFromBio.replace(/^✉\s*/, '') || '').trim();
 
 
 
@@ -214,22 +223,55 @@ function GeneralProfileView() {
         <p className="gp-username">@{profile.username}</p>
 
         {/* Bio */}
-        {profile.bio && (
-          <p className="gp-bio">{profile.bio}</p>
+        {cleanBio && (
+          <p className="gp-bio">{cleanBio}</p>
         )}
 
-        {/* Link buttons */}
+        {/* Contact + link buttons (same .gp-link sizing for all rows) */}
+        {(restaurantPhone || restaurantEmail || profile.menuPdf || links.length > 0) && (
         <div className="gp-links">
           {profile.menuPdf && (
-            <button
-              type="button"
-              onClick={openMenuViewer}
-              className="gp-link gp-link-menu"
+            <a
+              role="button"
+              tabIndex={0}
+              href="#menu"
+              className="gp-link gp-link-menu gp-link-menu-cta"
+              aria-label="See my menu"
               style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
+              onClick={(e) => {
+                e.preventDefault();
+                openMenuViewer();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openMenuViewer();
+                }
+              }}
             >
-              <span className="gp-link-icon">📄</span>
+              <span className="gp-link-icon">{getMenuPdfIcon()}</span>
               <span className="gp-link-text">See my menu</span>
-            </button>
+            </a>
+          )}
+          {restaurantPhone && (
+            <a
+              href={`tel:${restaurantPhone}`}
+              className="gp-link"
+              style={{ color: theme.text, background: theme.linkBg || theme.bg, borderColor: theme.text }}
+            >
+              <span className="gp-link-icon" aria-hidden="true">📞</span>
+              <span className="gp-link-text">{restaurantPhone}</span>
+            </a>
+          )}
+          {restaurantEmail && (
+            <a
+              href={`mailto:${restaurantEmail}`}
+              className="gp-link"
+              style={{ color: theme.text, background: theme.linkBg || theme.bg, borderColor: theme.text }}
+            >
+              <span className="gp-link-icon" aria-hidden="true">✉</span>
+              <span className="gp-link-text">{restaurantEmail}</span>
+            </a>
           )}
           {links.map((link, idx) => (
             <a
@@ -245,6 +287,7 @@ function GeneralProfileView() {
             </a>
           ))}
         </div>
+        )}
 
         <div className="gp-footer">
           <span>Powered by <a href="https://nanoprofiles.com" target="_blank" rel="noopener noreferrer">NanoProfiles</a></span>

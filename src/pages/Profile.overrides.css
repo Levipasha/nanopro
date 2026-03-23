@@ -57,6 +57,46 @@
   fill: none !important;
 }
 
+/* Mobile bottom pill icons: normalize size/weight so all look similar */
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg,
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg * {
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Center platform picker cards in General + Restaurant dashboards */
+.dash-selector-modal .dash-selector-grid {
+  justify-items: center !important;
+  align-items: stretch !important;
+}
+
+.dash-selector-modal .dash-selector-item {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+}
+
+.dash-selector-modal .dash-selector-item .dash-selector-label {
+  text-align: center !important;
+  width: 100% !important;
+}
+
 .dash-mobile-bottom-btn-active {
   color: #000 !important;
 }
@@ -174,6 +214,69 @@
     height: 40px !important;
     border-radius: 13px !important;
   }
+}
+
+/* Dashboard header: gap between subtitle (e.g. “Manage your NFC…”) and copy/open pill bar; center the pill */
+.dash-main-header > div:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  min-width: 0 !important;
+}
+
+.dash-main-header .dash-main-subtitle + .dash-profile-link-iconbar {
+  margin-top: 1rem !important;
+  align-self: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .dash-main-header .dash-main-subtitle + .dash-profile-link-iconbar {
+    margin-top: 0.875rem !important;
+  }
+}
+
+/* General onboarding step 4 links: keep fields inside card on phones */
+@media (max-width: 768px) {
+  .general-onboarding-card .profile-edit-link-block {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block > div:first-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block > div:first-child > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block .onboarding-input,
+  .general-onboarding-card .profile-edit-link-block select.onboarding-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Artist dashboard events/showcase cards: avoid top-bottom crop */
+.dash-gallery-grid .dash-gallery-item > img,
+.dash-gallery-item > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #000 !important;
 }
 
 /* Buttons inside those boxes */
@@ -480,6 +583,65 @@
   transform: translateY(-1px) !important;
 }
 
+/* Profile choice — phones: scale icon column with viewport, stop text/CTA clipping at card edges */
+@media (max-width: 768px) {
+  .profile-choice-grid {
+    --profile-icon-col: clamp(34px, 10vw, 40px);
+    --profile-icon-svg: clamp(21px, 6.2vw, 26px);
+  }
+
+  .profile-choice-grid .profile-product-card {
+    overflow: visible !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .profile-choice-grid .profile-product-media {
+    top: clamp(8px, 2.5vw, 10px) !important;
+    left: clamp(8px, 2.5vw, 10px) !important;
+  }
+
+  .profile-choice-grid .profile-product-icon-circle {
+    width: var(--profile-icon-col) !important;
+    height: var(--profile-icon-col) !important;
+  }
+
+  .profile-choice-grid .profile-product-media-icon {
+    width: var(--profile-icon-svg) !important;
+    height: var(--profile-icon-svg) !important;
+  }
+
+  .profile-choice-grid .profile-product-body {
+    padding-top: calc(var(--profile-icon-col) + 16px) !important;
+    padding-left: clamp(12px, 4vw, 18px) !important;
+    padding-right: clamp(12px, 4vw, 18px) !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+  }
+
+  .profile-choice-grid .profile-product-features {
+    align-items: stretch !important;
+  }
+
+  .profile-choice-grid .profile-product-feature {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+
+  .profile-choice-grid .profile-product-footer {
+    flex-shrink: 0 !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .profile-choice-grid .profile-product-cta {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
 /* Light onboarding (artist wizard step 2): global dash rules use #000 + white icons.
    On white cards that hides the “Add Platforms” CTA and breaks the platform picker. */
 .general-onboarding-card .dash-links-section.onboarding-added-links {
@@ -490,6 +652,30 @@
   background: rgba(0, 0, 0, 0.04) !important;
   border: 1px dashed rgba(0, 0, 0, 0.12) !important;
   color: #64748b !important;
+}
+
+/* Theme chips: keep label readable per theme colors (do not force one dark color). */
+.general-onboarding-card .onboarding-theme-grid .theme-pick-btn {
+  color: var(--theme-chip-text, #0f172a) !important;
+}
+
+/* Artist onboarding — platform row remove: black ✕ (replaces red/pink circle from Profile.part23) */
+.general-onboarding-card .general-onboarding-dash-remove,
+.general-onboarding-card .dash-link-remove-btn.general-onboarding-dash-remove {
+  background: transparent !important;
+  color: #0f172a !important;
+  border: none !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.general-onboarding-card .general-onboarding-dash-remove:hover,
+.general-onboarding-card .dash-link-remove-btn.general-onboarding-dash-remove:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #000 !important;
 }
 
 .general-onboarding-card .onboarding-selector-view .dash-selector-item {
@@ -524,6 +710,66 @@
 
 .general-onboarding-card .onboarding-selector-view .dash-selector-item.is-active .dash-selector-icon {
   color: #4338ca !important;
+}
+
+/* Artist onboarding — “Select Platforms” grid + Selected button: avoid overlap on short phones
+   (base Profile.part24 uses max-height:340px; card overflow can clip so the CTA sits on the last row). */
+@media (max-width: 768px) {
+  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card)
+    .general-onboarding-card
+    .onboarding-fields {
+    overflow: visible !important;
+    min-height: 0 !important;
+  }
+
+  .general-onboarding-card .onboarding-selector-view {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-height: 0 !important;
+    gap: 0.75rem !important;
+    overflow: visible !important;
+  }
+
+  .general-onboarding-card .onboarding-selector-view .dash-selector-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: min(44vh, 300px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 0 !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .general-onboarding-card .onboarding-selector-view > .onboarding-btn-primary {
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    position: relative !important;
+    z-index: 4 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .general-onboarding-card .onboarding-selector-view .dash-selector-item {
+    max-width: min(88px, 29vw) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .general-onboarding-card .onboarding-selector-view .dash-selector-icon svg {
+    width: clamp(18px, 5.5vw, 22px) !important;
+    height: clamp(18px, 5.5vw, 22px) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .general-onboarding-card .onboarding-selector-view .dash-selector-grid {
+    max-height: min(38vh, 260px) !important;
+    gap: 0.35rem !important;
+  }
 }
 
 .general-onboarding-card .general-onboarding-dash-link .dash-link-icon-circle {
@@ -701,6 +947,125 @@
     overflow: visible !important;
     align-items: stretch !important;
     text-align: left !important;
+  }
+
+  /* Profile type choice (Artist / General / Restaurant product cards): allow scroll on small phones —
+     base styles use 100vh + overflow:hidden which clips CTAs and footers. */
+  .profile-page.profile-login-wrap:has(.profile-login-card.profile-choice-card:not(.general-onboarding-card)) {
+    height: auto !important;
+    min-height: 100dvh !important;
+    min-height: 100svh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 0.75rem 0.5rem max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .profile-login-card.profile-choice-card:not(.general-onboarding-card) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 1 auto !important;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .profile-login-card.profile-choice-card:not(.general-onboarding-card) .profile-choice-grid {
+    flex: 0 1 auto !important;
+    justify-content: flex-start !important;
+    min-height: 0 !important;
+    gap: 1rem !important;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-login-card.profile-choice-card:not(.general-onboarding-card) .profile-icon {
+    width: clamp(52px, 16vw, 120px) !important;
+    height: clamp(52px, 16vw, 120px) !important;
+  }
+}
+
+/* Extra-tight viewports: keep product cards + CTA readable without horizontal clip */
+@media (max-width: 380px) {
+  .profile-choice-grid .profile-product-body {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .profile-choice-grid .profile-product-footer {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .profile-choice-grid .profile-product-plan {
+    font-size: 18px !important;
+  }
+
+  .profile-choice-grid .profile-product-cta {
+    padding: 12px 14px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Center setup action + inline lottie loader for onboarding saves. */
+.general-onboarding-card .onboarding-actions {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.general-onboarding-card .onboarding-actions .onboarding-btn-complete {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.general-onboarding-card .onboarding-inline-loader {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.general-onboarding-card .onboarding-inline-loader > * {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.general-onboarding-card .onboarding-required-star {
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+  margin-left: 2px !important;
+}
+
+/* Contact card: show full email (no clipped tail) and adapt cleanly on phones. */
+.dash-contact-item .dash-contact-content {
+  min-width: 0 !important;
+}
+
+.dash-contact-item .dash-contact-value {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 768px) {
+  .dash-contact-item .dash-contact-value {
+    font-size: clamp(0.9rem, 3.6vw, 1rem) !important;
   }
 }
 

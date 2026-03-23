@@ -1,4 +1,5 @@
 import React from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { getLinkIcon } from '../LinkIcons';
 import PhoneINInput from '../PhoneINInput';
 import { buildWhatsAppUrlFromFullINPhone } from '../../utils/indianPhone';
@@ -43,6 +44,23 @@ export default function ProfileArtistOnboardingWizard({
   saving,
   handleLogout,
 }) {
+  const isArtistStep1Valid =
+    String(formData.name || '').trim() &&
+    String(formData.artistId || '').trim() &&
+    String(formData.specialization || '').trim() &&
+    String(formData.email || '').trim() &&
+    String(formData.phone || '').trim();
+
+  const setupLoader = (
+    <span className="onboarding-inline-loader" aria-hidden="true">
+      <DotLottieReact
+        src="https://lottie.host/de82363b-b18e-4bef-9661-ec050f25006c/2wfqQErbPL.lottie"
+        loop
+        autoplay
+      />
+    </span>
+  );
+
   return (
       <div className="profile-page profile-login-wrap onboarding-screen">
         <div className="profile-login-card profile-choice-card general-onboarding-card">
@@ -58,7 +76,7 @@ export default function ProfileArtistOnboardingWizard({
                 <p className="onboarding-subtitle">Personalize your artist identity</p>
                 <div className="onboarding-fields">
                   <div className="onboarding-field">
-                    <label>Full Name</label>
+                    <label>Full Name <span className="onboarding-required-star">*</span></label>
                     <input
                       type="text"
                       className="onboarding-input"
@@ -69,7 +87,7 @@ export default function ProfileArtistOnboardingWizard({
                     />
                   </div>
                   <div className="onboarding-field">
-                    <label>Username</label>
+                    <label>Username <span className="onboarding-required-star">*</span></label>
                     <div className="artist-id-input-wrapper">
                       <input
                         type="text"
@@ -83,7 +101,7 @@ export default function ProfileArtistOnboardingWizard({
                     <small className="onboarding-tip">Your profile URL will be: <b>nanoprofile.com/artist/{formData.artistId || 'username'}</b></small>
                   </div>
                   <div className="onboarding-field">
-                    <label>Art Form / Specialization</label>
+                    <label>Art Form / Specialization <span className="onboarding-required-star">*</span></label>
                     <input
                       type="text"
                       className="onboarding-input"
@@ -93,7 +111,7 @@ export default function ProfileArtistOnboardingWizard({
                     />
                   </div>
                   <div className="onboarding-field">
-                    <label>Email Address</label>
+                    <label>Email Address <span className="onboarding-required-star">*</span></label>
                     <input
                       type="email"
                       className="onboarding-input"
@@ -103,7 +121,7 @@ export default function ProfileArtistOnboardingWizard({
                     />
                   </div>
                   <div className="onboarding-field">
-                    <label>Mobile Number</label>
+                    <label>Mobile Number <span className="onboarding-required-star">*</span></label>
                     <PhoneINInput
                       wrapClassName="onboarding-phone-in"
                       value={formData.phone}
@@ -111,7 +129,7 @@ export default function ProfileArtistOnboardingWizard({
                     />
                   </div>
                 </div>
-                <button className="onboarding-btn-primary" onClick={handleOnboardingNext} disabled={!formData.name || !formData.artistId || !formData.specialization}>
+                <button className="onboarding-btn-primary" onClick={handleOnboardingNext} disabled={!isArtistStep1Valid}>
                   Next Step →
                 </button>
               </div>
@@ -315,11 +333,10 @@ export default function ProfileArtistOnboardingWizard({
                         })}
                       </div>
                       
-                      <button 
+                      <button
                         type="button"
-                        className="onboarding-btn-primary"
+                        className="onboarding-btn-primary onboarding-selector-done-btn"
                         onClick={() => setIsOnboardingSelectorOpen(false)}
-                        style={{ marginTop: '1.25rem' }}
                       >
                         Selected ({onboardingPlatforms.length})
                       </button>
@@ -444,7 +461,7 @@ export default function ProfileArtistOnboardingWizard({
                 {error && <p className="profile-error-msg">{error}</p>}
                 <div className="onboarding-actions">
                   <button className="onboarding-btn-complete" onClick={handleOnboardingComplete} disabled={saving}>
-                    {saving ? 'Setting up...' : 'Complete Setup ✓'}
+                    {saving ? <><span>Setting up...</span>{setupLoader}</> : 'Complete Setup ✓'}
                   </button>
                 </div>
               </div>

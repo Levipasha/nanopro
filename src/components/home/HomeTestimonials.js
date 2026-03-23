@@ -127,7 +127,8 @@ const TESTIMONIALS = [
         }
 ];
 
-const MOBILE_MAX_PX = 720;
+/* One centered card per slide below this width; matches CSS so we never show 3 cards in a viewport that wraps. */
+const MOBILE_MAX_PX = 1100;
 
 export default function HomeTestimonials() {
     const [cardsPerSlide, setCardsPerSlide] = useState(3);

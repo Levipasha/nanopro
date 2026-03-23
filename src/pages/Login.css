@@ -17,6 +17,7 @@
     padding: 60px;
     width: 100%;
     max-width: 550px;
+    box-sizing: border-box;
     background: #f0f0f0;
     display: flex;
     flex-direction: column;
@@ -278,6 +279,7 @@
     justify-content: center;
     box-shadow: 6px 6px var(--main-color);
     font-family: 'Doto', sans-serif;
+    box-sizing: border-box;
 }
 
 .login-active {
@@ -351,14 +353,28 @@
         max-width: 360px;
         padding: 56px 20px 28px;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         text-align: center;
         margin: 0 auto;
     }
 
+    /* Grid: full-width title/footer; button column centered (flex+margin:auto was shifting on some devices). */
     .form.choice-view .choice-content {
-        max-width: 280px;
-        transform: none;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: stretch;
+        width: 100%;
+        max-width: none;
+        margin-left: auto;
+        margin-right: auto;
+        align-self: center;
+        gap: 30px;
+    }
+
+    .form.choice-view .choice-content .title {
+        width: 100%;
+        max-width: none;
+        margin-top: 20px;
     }
 
     .form.choice-view .title,
@@ -371,8 +387,14 @@
     }
 
     .form.choice-view .choice-buttons {
-        width: 100%;
+        justify-self: center;
+        width: 280px;
+        max-width: min(280px, 100%);
+        margin: 0;
         align-items: stretch;
+        box-sizing: border-box;
+        /* Neo shadow is 6px to the right — shifts visual weight; nudge left to align with centered title */
+        transform: translateX(-18px);
     }
 
     .form.choice-view .choice-btn {

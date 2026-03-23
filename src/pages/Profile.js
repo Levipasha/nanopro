@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { signInWithGoogle, onAuthStateChanged, auth, logout, getGoogleRedirectResult, getIdToken } from '../firebase';
 import { landingArtistAPI, generalProfileAPI } from '../services/api';
 import PlatformIconSelect from '../components/PlatformIconSelect';
@@ -259,6 +260,7 @@ function Profile() {
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
   const [generalSaving, setGeneralSaving] = useState(false);
+  const [restaurantSaving, setRestaurantSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
@@ -470,6 +472,7 @@ function Profile() {
       username: usernameToSave
     };
     
+    setRestaurantSaving(true);
     try {
       // Keep local form immediately, but persist banner/menuPdf only after upload succeeds.
       setRestaurantProfile(payload);
@@ -482,6 +485,8 @@ function Profile() {
       console.error('Failed to save restaurant profile', e);
       restaurantEditInProgressRef.current = false;
       alert('Failed to save. Please try again.');
+    } finally {
+      setRestaurantSaving(false);
     }
   };
 
@@ -1616,6 +1621,15 @@ function Profile() {
   const displayName = user?.displayName || user?.email || 'Profile';
   const displayEmail = user?.email || '';
   const avatarLetter = user?.displayName?.charAt(0) || user?.email?.charAt(0) || '?';
+  const setupLoader = (
+    <span className="onboarding-inline-loader" aria-hidden="true">
+      <DotLottieReact
+        src="https://lottie.host/de82363b-b18e-4bef-9661-ec050f25006c/2wfqQErbPL.lottie"
+        loop
+        autoplay
+      />
+    </span>
+  );
 
   useEffect(() => {
     if (!loading && !isLoggedIn) {
@@ -1697,7 +1711,7 @@ function Profile() {
   // Restaurant profile: home (profile already created) — same layout as artist dashboard
   if (isLoggedIn && isRestaurantMode && restaurantProfile) {
     return (
-      <div className={`dash-root dash-theme-aura dash-font-outfit`}>
+      <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${restaurantActiveTab}`}>
         {/* Sidebar */}
         <aside className="dash-sidebar">
           <div className="dash-sidebar-brand">
@@ -1753,14 +1767,14 @@ function Profile() {
           <header className="dash-main-header">
             <div>
               <h1 className="dash-main-title">{restaurantActiveTab === 'design' ? 'Design' : restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}</h1>
-              <p className="dash-main-subtitle">{restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact info'}</p>
+              <p className="dash-main-subtitle">{restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact information'}</p>
             </div>
           </header>
 
           <div className="dash-content">
             {/* ── PROFILE & MENU TAB ── */}
             {restaurantActiveTab === 'info' && (
-              <div className="dash-profile-layout">
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: profile info */}
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   {/* Hero banner — with inline edit button */}
@@ -2085,8 +2099,8 @@ function Profile() {
                   </div>
                 </div>
 
-                {/* Right: live preview panel */}
-                <div className="dash-preview-panel">
+                {/* Right: live preview panel (desktop only) */}
+                {!isMobileViewport && <div className="dash-preview-panel">
                   <div className="dash-full-preview-container">
                     {(() => {
                       const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
@@ -2126,13 +2140,13 @@ function Profile() {
                       );
                     })()}
                   </div>
-                </div>
+                </div>}
               </div>
             )}
 
             {/* ── DESIGN TAB ── */}
             {restaurantActiveTab === 'design' && (
-              <div className="dash-profile-layout">
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
 
                   {/* Profile Theme — applies to public page */}
@@ -2235,8 +2249,8 @@ function Profile() {
                   </section>
                 </div>
 
-                {/* Right: live preview showing the theme + font applied to the public page */}
-                <div className="dash-preview-panel">
+                {/* Right: live preview showing the theme + font applied to the public page (desktop only) */}
+                {!isMobileViewport && <div className="dash-preview-panel">
                   <div className="dash-full-preview-container">
                     {(() => {
                       const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
@@ -2277,13 +2291,13 @@ function Profile() {
                       );
                     })()}
                   </div>
-                </div>
+                </div>}
               </div>
             )}
 
             {/* ── MENU TAB ── */}
             {restaurantActiveTab === 'menu' && (
-              <div className="dash-profile-layout">
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: PDF upload & viewer */}
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -2359,8 +2373,8 @@ function Profile() {
                   )}
                 </div>
 
-                {/* Right: preview showing "View Menu" pill */}
-                <div className="dash-preview-panel">
+                {/* Right: preview showing "View Menu" pill (desktop only) */}
+                {!isMobileViewport && <div className="dash-preview-panel">
                   <div className="dash-full-preview-container">
                     {(() => {
                       const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
@@ -2385,11 +2399,91 @@ function Profile() {
                       );
                     })()}
                   </div>
+                </div>}
+              </div>
+            )}
+
+            {/* ── PREVIEW TAB (mobile pill) ── */}
+            {restaurantActiveTab === 'preview' && (
+              <div className="dash-mobile-preview-page">
+                <div className="dash-mobile-preview-frame-wrap">
+                  <iframe
+                    key={`restaurant-preview-${restaurantProfile.username || 'restaurant'}`}
+                    title="Restaurant Profile Preview"
+                    src={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
+                    className="dash-mobile-preview-iframe"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
                 </div>
               </div>
             )}
           </div>
         </main>
+
+        {/* Mobile bottom nav — Restaurant (centered pill) */}
+        {isMobileViewport && (
+          <div className="dash-mobile-bottom-nav">
+            <div className="dash-mobile-bottom-nav-inner">
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${restaurantActiveTab === 'info' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('info')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                </div>
+                <span>Profile</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${restaurantActiveTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('design')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                </div>
+                <span>Design</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${restaurantActiveTab === 'menu' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('menu')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                </div>
+                <span>Menu</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${restaurantActiveTab === 'preview' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setRestaurantActiveTab('preview')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z" />
+                  </svg>
+                </div>
+                <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                className="dash-mobile-bottom-btn"
+                onClick={handleLogout}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 17l5-5-5-5" />
+                    <path d="M21 12H9" />
+                    <path d="M12 19a7 7 0 1 1 0-14" />
+                  </svg>
+                </div>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Restaurant Platform Selector Modal — same as artist */}
         {rLinkSelectorOpen && (
@@ -2526,6 +2620,7 @@ function Profile() {
                           style={{
                             background: t.bg,
                             color: t.text,
+                            '--theme-chip-text': t.text,
                             opacity: restaurantForm.theme === t.id ? 1 : 0.65,
                             borderWidth: restaurantForm.theme === t.id ? 2 : 1,
                             borderColor: restaurantForm.theme === t.id ? '#6366f1' : 'rgba(0,0,0,0.1)'
@@ -2598,7 +2693,9 @@ function Profile() {
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
-                <button type="button" className="onboarding-btn-complete" onClick={saveRestaurantProfile}>Save Restaurant ✓</button>
+                <button type="button" className="onboarding-btn-complete" onClick={saveRestaurantProfile} disabled={restaurantSaving}>
+                  {restaurantSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Save Restaurant ✓'}
+                </button>
               </div>
             </div>
           )}
@@ -2723,6 +2820,7 @@ function Profile() {
                           style={{
                             background: t.bg,
                             color: t.text,
+                            '--theme-chip-text': t.text,
                             opacity: generalForm.theme === t.id ? 1 : 0.65,
                             borderWidth: generalForm.theme === t.id ? 2 : 1,
                             borderColor: generalForm.theme === t.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)'
@@ -2839,7 +2937,7 @@ function Profile() {
                         <input className="onboarding-input" placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
                       </div>
                     )}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <button type="button" onClick={() => removeLink(idx)} style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Remove Link</button>
                     </div>
                   </div>
@@ -2850,7 +2948,7 @@ function Profile() {
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
                 <button type="submit" className="onboarding-btn-complete" disabled={generalSaving}>
-                  {generalSaving ? 'Creating...' : 'Create General Profile ✓'}
+                  {generalSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Create General Profile ✓'}
                 </button>
               </div>
             </form>
@@ -4261,7 +4359,17 @@ function Profile() {
               const handleArtImagePick = (e) => {
                 const files = Array.from(e.target.files || []);
                 if (!files.length) return;
-                files.forEach(file => {
+                const remainingSlots = Math.max(0, 3 - artImagePreview.length);
+                if (remainingSlots === 0) {
+                  alert('Only 3 images are allowed per showcase.');
+                  e.target.value = '';
+                  return;
+                }
+                const picked = files.slice(0, remainingSlots);
+                if (files.length > remainingSlots) {
+                  alert('Only 3 images are allowed per showcase.');
+                }
+                picked.forEach(file => {
                   const reader = new FileReader();
                   reader.onload = (ev) => setArtImagePreview(prev => [...prev, { file, url: ev.target.result }]);
                   reader.readAsDataURL(file);
@@ -4282,7 +4390,7 @@ function Profile() {
                     uploadedUrls.push(uploaded.url || uploaded.photo || '');
                   }
                   const artId = Date.now();
-                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls };
+                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls.slice(0, 3) };
                   await handleUpdateHeroField('artLinks', [...items, newItem]);
                   document.getElementById('art-title-input').value = '';
                   document.getElementById('art-desc-input').value = '';
@@ -4319,7 +4427,7 @@ function Profile() {
                       {/* Multi-image upload */}
                       <div style={{ marginBottom: '1.5rem' }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length} added)</span>}
+                          Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length}/3 added)</span>}
                         </label>
 
                         {/* Thumbnail strip if images picked */}
@@ -4338,8 +4446,8 @@ function Profile() {
                         {/* Upload zone */}
                         <label htmlFor="art-image-file" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', border: '2px dashed var(--dash-accent)', borderRadius: '14px', padding: '1.25rem', cursor: 'pointer', background: 'var(--dash-bg)', transition: 'all 0.2s' }}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ color: 'var(--dash-accent)', opacity: 0.7 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images' : 'Click to upload artwork photos'}</span>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Multiple images supported — they'll appear as a slideshow</span>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images (max 3)' : 'Click to upload artwork photos (max 3)'}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Up to 3 images per showcase — shown as slideshow</span>
                           <input id="art-image-file" type="file" accept="image/*" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
                         </label>
                       </div>
@@ -4815,7 +4923,7 @@ function Profile() {
                                     <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
                                   </div>
                                 ) : (
-                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('email')}>{artist.email || 'Add email'}</p>
+                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('email')}>{artist.email || displayEmail || 'Add email'}</p>
                                 )}
                               </div>
                             </div>
@@ -5229,7 +5337,7 @@ function Profile() {
                 <div className="art-lightbox" onClick={e => e.stopPropagation()}>
                   <button className="art-lightbox-close" onClick={() => setArtGallerySelectedItem(null)}>✕</button>
                   <div className="art-lightbox-images">
-                    {(selected.images || []).map((img, i) => (
+                    {(selected.images || []).slice(0, 3).map((img, i) => (
                       <img key={i} src={img} alt={`${selected.title} ${i + 1}`} className="art-lightbox-img" />
                     ))}
                   </div>
@@ -5338,6 +5446,20 @@ function Profile() {
                 </svg>
               </div>
               <span>Design</span>
+            </button>
+            <button
+              type="button"
+              className="dash-mobile-bottom-btn"
+              onClick={handleLogout}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 17l5-5-5-5" />
+                  <path d="M21 12H9" />
+                  <path d="M12 19a7 7 0 1 1 0-14" />
+                </svg>
+              </div>
+              <span>Sign out</span>
             </button>
           </div>
         </div>

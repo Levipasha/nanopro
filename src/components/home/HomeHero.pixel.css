@@ -1,12 +1,52 @@
+/* Landing hero feature cards: fixed icon column + gap + flex text column + fixed arrow — titles share one X. */
+.home-hero-section {
+  --hero-feature-icon-col: 48px;
+  --hero-feature-gap: 12px;
+  --hero-feature-arrow-col: 28px;
+}
+
 .home-hero-section .hero-feature-item {
   border-radius: 0;
   border: 2px solid rgba(255, 255, 255, 0.35);
   box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.16);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--hero-feature-gap);
+  min-width: 0;
 }
 
 .home-hero-section .hero-feature-item:hover {
   transform: translate(6px, -2px);
   box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* Fixed-width icon track — same for every card */
+.home-hero-section .feature-icon {
+  flex: 0 0 var(--hero-feature-icon-col);
+  width: var(--hero-feature-icon-col);
+  min-width: var(--hero-feature-icon-col);
+  max-width: var(--hero-feature-icon-col);
+  height: var(--hero-feature-icon-col);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-hero-section .feature-icon svg {
+  flex-shrink: 0;
+}
+
+/* Text column: starts exactly after icon + gap on every card */
+.home-hero-section .feature-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  text-align: left;
 }
 
 .home-hero-section .feature-name {
@@ -15,6 +55,9 @@
   letter-spacing: 0.06em;
   line-height: 1.55;
   text-transform: uppercase;
+  text-align: left;
+  width: 100%;
+  margin: 0 0 2px;
 }
 
 .home-hero-section .feature-detail {
@@ -23,18 +66,35 @@
   letter-spacing: 0.04em;
   line-height: 1.8;
   opacity: 0.92;
+  text-align: left;
+  width: 100%;
+  margin: 0;
 }
 
+/* Fixed arrow column so the text track width is stable */
 .home-hero-section .feature-arrow {
   font-family: "Press Start 2P", "Roboto Mono", monospace;
+  flex: 0 0 var(--hero-feature-arrow-col);
+  width: var(--hero-feature-arrow-col);
+  min-width: var(--hero-feature-arrow-col);
+  text-align: center;
   font-size: 0.86rem;
   opacity: 0.95;
 }
 
+@media (min-width: 769px) {
+  .home-hero-section {
+    --hero-feature-gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
-  /* Less empty space before Testimonials (About section removed) */
   .home-hero-section {
     padding-bottom: 32px;
+    /* Icon / arrow tracks shrink on narrow phones so row doesn’t clip */
+    --hero-feature-icon-col: clamp(36px, 11vw, 48px);
+    --hero-feature-arrow-col: clamp(22px, 7vw, 28px);
+    --hero-feature-gap: clamp(8px, 3vw, 12px);
   }
 
   .home-hero-section .hero-left {
@@ -42,8 +102,13 @@
   }
 
   .home-hero-section .hero-feature-item {
-    padding: 14px 12px;
-    gap: 12px;
+    padding: clamp(10px, 3vw, 14px) clamp(8px, 3vw, 12px);
+    min-width: 0;
+  }
+
+  .home-hero-section .feature-icon svg {
+    width: clamp(18px, 5.5vw, 24px);
+    height: clamp(18px, 5.5vw, 24px);
   }
 
   .home-hero-section .feature-name {
@@ -54,5 +119,14 @@
   .home-hero-section .feature-detail {
     font-size: 0.48rem;
     line-height: 1.6;
+  }
+}
+
+/* Very small devices (e.g. 320px): tighten further */
+@media (max-width: 360px) {
+  .home-hero-section {
+    --hero-feature-icon-col: 34px;
+    --hero-feature-arrow-col: 20px;
+    --hero-feature-gap: 8px;
   }
 }
