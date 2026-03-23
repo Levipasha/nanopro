@@ -621,7 +621,11 @@ function Profile() {
         gallery: galleryNormalized,
         profileType: 'restaurant'
       };
-      const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
+      let existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
+      if (!existing?.data) {
+        const existingGeneral = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
+        if (existingGeneral?.data) existing = existingGeneral;
+      }
       if (existing?.data) {
         await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
         if (!silent) alert('Profile updated! Your link is now live.');
@@ -895,11 +899,14 @@ function Profile() {
 
   useEffect(() => {
     if (!generalProfile || restaurantProfile) return;
-    if (profileLock !== 'general_restaurant') return;
+    // Allow hydration when user is in restaurant dashboard or chose general_restaurant lock (same account may use both flows).
+    if (profileLock !== 'general_restaurant' && profileMode !== 'restaurant') return;
     // If user is actively editing/onboarding their restaurant, don't auto-hydrate/override.
     if (restaurantEditInProgressRef.current) return;
     const fallbackEmail = user?.email || '';
-    const likelyRestaurant = !!(generalProfile.menuPdf && String(generalProfile.menuPdf).trim());
+    const likelyRestaurant =
+      generalProfile.profileType === 'restaurant' ||
+      !!(generalProfile.menuPdf && String(generalProfile.menuPdf).trim());
     let preferredGeneralMode = 'general';
     try { preferredGeneralMode = localStorage.getItem(GENERAL_FLOW_MODE_KEY) || 'general'; } catch (e) { }
     if (preferredGeneralMode !== 'restaurant' && !likelyRestaurant) return;
@@ -955,7 +962,7 @@ function Profile() {
     try { localStorage.setItem(RESTAURANT_ONBOARDING_KEY, '0'); } catch (e) { }
     setProfileMode('restaurant');
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
-  }, [generalProfile, restaurantProfile, profileLock, user]);
+  }, [generalProfile, restaurantProfile, profileLock, profileMode, user]);
 
   // Merge gallery from API when opening restaurant dashboard (localStorage may omit images saved on the server).
   useEffect(() => {
