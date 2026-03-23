@@ -146,6 +146,59 @@ function parseLinkFromUrl(link) {
   return out;
 }
 
+function extractPhoneFromBioString(bioString) {
+  if (!bioString) return '';
+  const m = bioString.match(/📞\s*([+\d][\d\s()-]{8,})/i) || bioString.match(/([+\d][\d\s()-]{10,})/);
+  return m?.[1]?.trim() || '';
+}
+
+function extractEmailFromBioString(bioString) {
+  if (!bioString) return '';
+  const m = bioString.match(/✉\s*([^\s]+)/i) || bioString.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+  return m?.[1]?.trim() || '';
+}
+
+function stripPhoneEmailLinesFromBioString(bioString) {
+  if (!bioString) return '';
+  const lines = bioString.split('\n').map(l => l.trim());
+  const cleaned = lines.filter(l => {
+    if (!l) return false;
+    if (l.startsWith('📞')) return false;
+    if (l.startsWith('✉')) return false;
+    return true;
+  });
+  return cleaned.join('\n').trim();
+}
+
+function mergeGeneralBioForSave(form) {
+  const cleanedBio = stripPhoneEmailLinesFromBioString(form.bio || '');
+  const parts = [cleanedBio];
+  const p = (form.phone || '').trim();
+  const em = (form.email || '').trim();
+  if (p) parts.push(`📞 ${p}`);
+  if (em) parts.push(`✉ ${em}`);
+  return parts.filter(Boolean).join('\n');
+}
+
+function buildGeneralFormFromProfileData(data) {
+  const rawBio = data.bio || '';
+  const cleanedBio = stripPhoneEmailLinesFromBioString(rawBio);
+  const phone = extractPhoneFromBioString(rawBio);
+  const email = extractEmailFromBioString(rawBio);
+  return {
+    username: data.username || '',
+    name: data.name || '',
+    title: data.title || '',
+    bio: cleanedBio,
+    phone: toINFullPhone(getINDisplayDigits(phone)) || '',
+    email: email || '',
+    photo: data.photo || '',
+    theme: data.theme || 'mint',
+    font: data.font || 'outfit',
+    links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+  };
+}
+
 function Profile() {
   const navigate = useNavigate();
   const [profileMode, setProfileMode] = useState(() => {
@@ -387,62 +440,6 @@ function Profile() {
     } else {
       alert('Please upload a valid PDF file.');
     }
-  };
-
-  // Helpers for parsing backend "bio" that may include phone/email lines.
-  function extractPhoneFromBioString(bioString) {
-    if (!bioString) return '';
-    // Matches: "📞 +9183..." or any long digit sequence starting with + / digit.
-    const m = bioString.match(/📞\s*([+\d][\d\s()-]{8,})/i) || bioString.match(/([+\d][\d\s()-]{10,})/);
-    return m?.[1]?.trim() || '';
-  }
-
-  function extractEmailFromBioString(bioString) {
-    if (!bioString) return '';
-    const m = bioString.match(/✉\s*([^\s]+)/i) || bioString.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
-    return m?.[1]?.trim() || '';
-  }
-
-  function stripPhoneEmailLinesFromBioString(bioString) {
-    if (!bioString) return '';
-    const lines = bioString.split('\n').map(l => l.trim());
-    const cleaned = lines.filter(l => {
-      if (!l) return false;
-      // backend stores phone/email as separate lines with emojis
-      if (l.startsWith('📞')) return false;
-      if (l.startsWith('✉')) return false;
-      return true;
-    });
-    return cleaned.join('\n').trim();
-  }
-
-  function mergeGeneralBioForSave(form) {
-    const cleanedBio = stripPhoneEmailLinesFromBioString(form.bio || '');
-    const parts = [cleanedBio];
-    const p = (form.phone || '').trim();
-    const em = (form.email || '').trim();
-    if (p) parts.push(`📞 ${p}`);
-    if (em) parts.push(`✉ ${em}`);
-    return parts.filter(Boolean).join('\n');
-  }
-
-  const buildGeneralFormFromProfileData = (data) => {
-    const rawBio = data.bio || '';
-    const cleanedBio = stripPhoneEmailLinesFromBioString(rawBio);
-    const phone = extractPhoneFromBioString(rawBio);
-    const email = extractEmailFromBioString(rawBio);
-    return {
-      username: data.username || '',
-      name: data.name || '',
-      title: data.title || '',
-      bio: cleanedBio,
-      phone: toINFullPhone(getINDisplayDigits(phone)) || '',
-      email: email || '',
-      photo: data.photo || '',
-      theme: data.theme || 'mint',
-      font: data.font || 'outfit',
-      links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
-    };
   };
 
   const handleRestaurantBannerUpload = (e) => {
