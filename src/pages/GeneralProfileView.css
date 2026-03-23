@@ -210,6 +210,59 @@
   opacity: 0.95;
 }
 
+/* Restaurant gallery (public link) */
+.gp-restaurant-gallery {
+  padding: 0 1.5rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.gp-restaurant-gallery-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  color: inherit;
+}
+
+.gp-restaurant-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.gp-restaurant-gallery-tile {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  aspect-ratio: 1;
+  opacity: 0.98;
+  transition: opacity 0.2s, transform 0.2s;
+  /* reset button defaults */
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gp-restaurant-gallery-tile:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.gp-restaurant-gallery-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  vertical-align: middle;
+}
+
 /* Link buttons */
 .gp-links {
   display: flex;
@@ -660,6 +713,7 @@
   letter-spacing: 0.12em;
   opacity: 0.7;
   margin: 0 0 0.5rem 0;
+  color: inherit;
 }
 
 .gp-contact-grid {
@@ -674,20 +728,30 @@
   gap: 0.75rem;
 }
 
+/* Tinted surface from theme text color so light + dark profile themes stay readable (no solid black chip). */
 .gp-contact-item {
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
-  background: #000000;
-  border: 1px solid rgba(148, 163, 184, 0.7);
   box-shadow: none;
+  color: inherit;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+@supports (background: color-mix(in srgb, white, black)) {
+  .gp-contact-item {
+    background: color-mix(in srgb, currentColor 11%, transparent);
+    border-color: color-mix(in srgb, currentColor 26%, transparent);
+  }
 }
 
 .gp-contact-label {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  opacity: 0.7;
+  opacity: 0.75;
   margin-bottom: 0.25rem;
+  color: inherit;
 }
 
 .gp-contact-value {

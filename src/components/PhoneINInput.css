@@ -27,7 +27,7 @@
 
 .phone-in-field {
   flex: 1 1 0%;
-  min-width: 0;
+  min-width: 12ch;
   width: 100%;
   border: none !important;
   outline: none;
@@ -37,9 +37,12 @@
   box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
+  position: relative;
+  z-index: 2;
   /* Explicit: global profile/onboarding input rules can set light text on white */
   color: #111827;
   caret-color: #111827;
+  touch-action: manipulation;
 }
 
 .phone-in-field::placeholder {
@@ -102,8 +105,19 @@
 }
 
 .dash-hero-phone-in.phone-in-input-wrap {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 12rem;
+  min-width: min(100%, 12rem);
+  width: 100%;
+  max-width: 100%;
+}
+
+.dash-root .dash-hero-edit-row:has(.dash-hero-phone-in) {
+  align-items: stretch;
+}
+
+.dash-root .dash-hero-edit-row .dash-hero-phone-in.phone-in-input-wrap {
+  flex: 1 1 200px;
+  min-width: min(100%, 200px);
 }
 
 .profile-edit-phone-in.phone-in-input-wrap {

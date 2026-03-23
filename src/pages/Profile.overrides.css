@@ -118,6 +118,11 @@
   pointer-events: none !important;
 }
 
+/* Contact cards used overflow:hidden; it clips the phone field caret and can block taps */
+.dash-root .dash-contact-item {
+  overflow: visible !important;
+}
+
 /* If the base dashboard uses ::before/::after overlays, don't block clicks */
 .dash-profile-hero::before,
 .dash-profile-hero::after,
@@ -1067,5 +1072,31 @@
   .dash-contact-item .dash-contact-value {
     font-size: clamp(0.9rem, 3.6vw, 1rem) !important;
   }
+}
+
+/* Get in Touch (dashboard): section title + chips stay light on black cards even when --dash-text is dark on “light” skins */
+h3.dash-section-label {
+  color: #f8fafc !important;
+  opacity: 0.92 !important;
+}
+
+.dash-contact-item {
+  color: #f8fafc !important;
+}
+
+.dash-contact-item .dash-contact-label {
+  color: rgba(226, 232, 240, 0.92) !important;
+}
+
+.dash-contact-item .dash-contact-value,
+.dash-contact-item p.dash-contact-value,
+.dash-contact-item .dash-contact-value.clickable {
+  color: #ffffff !important;
+}
+
+.dash-contact-item .dash-contact-icon,
+.dash-contact-item .dash-contact-icon svg {
+  color: #e2e8f0 !important;
+  stroke: #e2e8f0 !important;
 }
 

@@ -42,13 +42,11 @@ export default function PhoneINInput({
         name={name || "phone"}
         type="text"
         inputMode="numeric"
-        pattern="[0-9]*"
         enterKeyHint="done"
         autoComplete="tel"
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
-        maxLength={10}
         className={`phone-in-field ${inputClassName}`.trim()}
         placeholder={placeholder}
         value={digits}

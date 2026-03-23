@@ -253,6 +253,8 @@ function Profile() {
     name: '',
     title: '',
     bio: '',
+    phone: '',
+    email: '',
     photo: '',
     theme: 'mint',
     font: 'outfit',
@@ -319,6 +321,7 @@ function Profile() {
   // Using a ref avoids any "state update ordering" issues between setRestaurantProfile(null)
   // and updateRestaurantOnboardingStep(1).
   const restaurantEditInProgressRef = useRef(false);
+  const [restaurantGalleryUploading, setRestaurantGalleryUploading] = useState(false);
 
   // Strip large base64 blobs before persisting — images/PDFs stay in React state only
   const persistRestaurant = (profile) => {
@@ -412,6 +415,35 @@ function Profile() {
     });
     return cleaned.join('\n').trim();
   }
+
+  function mergeGeneralBioForSave(form) {
+    const cleanedBio = stripPhoneEmailLinesFromBioString(form.bio || '');
+    const parts = [cleanedBio];
+    const p = (form.phone || '').trim();
+    const em = (form.email || '').trim();
+    if (p) parts.push(`📞 ${p}`);
+    if (em) parts.push(`✉ ${em}`);
+    return parts.filter(Boolean).join('\n');
+  }
+
+  const buildGeneralFormFromProfileData = (data) => {
+    const rawBio = data.bio || '';
+    const cleanedBio = stripPhoneEmailLinesFromBioString(rawBio);
+    const phone = extractPhoneFromBioString(rawBio);
+    const email = extractEmailFromBioString(rawBio);
+    return {
+      username: data.username || '',
+      name: data.name || '',
+      title: data.title || '',
+      bio: cleanedBio,
+      phone: toINFullPhone(getINDisplayDigits(phone)) || '',
+      email: email || '',
+      photo: data.photo || '',
+      theme: data.theme || 'mint',
+      font: data.font || 'outfit',
+      links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+    };
+  };
 
   const handleRestaurantBannerUpload = (e) => {
     const file = e.target.files[0];
@@ -533,6 +565,35 @@ function Profile() {
           console.warn('Menu PDF upload failed:', e);
         }
       }
+
+      const galleryNormalized = [];
+      const rawGallery = Array.isArray(profileInput.gallery) ? profileInput.gallery.slice(0, 3) : [];
+      for (let gi = 0; gi < rawGallery.length; gi++) {
+        const item = rawGallery[gi];
+        let gUrl = (item && item.url) ? String(item.url) : '';
+        const gName = (item && item.name) ? String(item.name).trim() : '';
+        if (!gUrl) continue;
+        if (gUrl.startsWith('data:')) {
+          try {
+            const arr = gUrl.split(',');
+            const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+            const bstr = atob(arr[1]);
+            const u8arr = new Uint8Array(bstr.length);
+            for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+            const ext = mime.includes('png') ? 'png' : mime.includes('gif') ? 'gif' : mime.includes('webp') ? 'webp' : 'jpg';
+            const file = new File([u8arr], `gallery-${gi}.${ext}`, { type: mime });
+            const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
+            gUrl = up?.url || '';
+          } catch (e) {
+            console.warn('Gallery image upload failed:', e);
+            continue;
+          }
+        }
+        if (gUrl.startsWith('http')) {
+          galleryNormalized.push({ url: gUrl, name: gName });
+        }
+      }
+
       const linkEntries = Object.entries(profileInput.links || {}).filter(([, v]) => v && String(v).trim());
       const links = linkEntries.map(([k, v], idx) => {
         let url = String(v).trim();
@@ -560,6 +621,7 @@ function Profile() {
         font: profileInput.titleFont || profileInput.font || 'outfit',
         bioFont: profileInput.bodyFont || profileInput.font || 'outfit',
         links,
+        gallery: galleryNormalized,
         profileType: 'restaurant'
       };
       const existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
@@ -577,6 +639,7 @@ function Profile() {
         ...profileInput,
         banner: photoUrl || profileInput.banner || null,
         menuPdf: menuPdfUrl || profileInput.menuPdf || null,
+        gallery: galleryNormalized.length > 0 ? galleryNormalized : (profileInput.gallery || []),
         theme: payload.theme || profileInput.theme || 'mint',
         font: payload.font || profileInput.font || 'outfit',
         titleFont: payload.font || profileInput.titleFont || profileInput.font || 'outfit',
@@ -690,16 +753,7 @@ function Profile() {
           const data = resRestaurant.data;
           setGeneralProfile(data);
           updateGeneralStep('home');
-          setGeneralForm({
-            username: data.username || '',
-            name: data.name || '',
-            title: data.title || '',
-            bio: data.bio || '',
-            photo: data.photo || '',
-            theme: data.theme || 'mint',
-            font: data.font || 'outfit',
-            links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
-          });
+          setGeneralForm(buildGeneralFormFromProfileData(data));
           return;
         }
 
@@ -708,16 +762,7 @@ function Profile() {
         if (data) {
           setGeneralProfile(data);
           updateGeneralStep('home');
-          setGeneralForm({
-            username: data.username || '',
-            name: data.name || '',
-            title: data.title || '',
-            bio: data.bio || '',
-            photo: data.photo || '',
-            theme: data.theme || 'mint',
-            font: data.font || 'outfit',
-            links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
-          });
+          setGeneralForm(buildGeneralFormFromProfileData(data));
           return;
         }
 
@@ -731,16 +776,7 @@ function Profile() {
       if (data) {
         setGeneralProfile(data);
         updateGeneralStep('home');
-        setGeneralForm({
-          username: data.username || '',
-          name: data.name || '',
-          title: data.title || '',
-          bio: data.bio || '',
-          photo: data.photo || '',
-          theme: data.theme || 'mint',
-          font: data.font || 'outfit',
-          links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
-        });
+        setGeneralForm(buildGeneralFormFromProfileData(data));
       } else {
         updateGeneralStep('theme');
       }
@@ -890,6 +926,13 @@ function Profile() {
     const extractedPhone = extractPhoneFromBioString(generalProfile.bio || '');
     const extractedEmail = extractEmailFromBioString(generalProfile.bio || '');
 
+    const hydratedGallery = Array.isArray(generalProfile.gallery)
+      ? generalProfile.gallery
+        .map((g) => ({ url: (g && g.url) ? String(g.url) : '', name: (g && g.name) ? String(g.name) : '' }))
+        .filter((g) => g.url)
+        .slice(0, 3)
+      : [];
+
     const hydratedRestaurant = {
       name: generalProfile.name || '',
       tagline: generalProfile.title || '',
@@ -899,7 +942,7 @@ function Profile() {
       username: generalProfile.username || '',
       menuPdf: generalProfile.menuPdf || null,
       banner: generalProfile.photo || '',
-      gallery: [],
+      gallery: hydratedGallery,
       links: mappedLinks,
       theme: generalProfile.theme || 'mint',
       font: generalProfile.font || 'outfit',
@@ -916,6 +959,31 @@ function Profile() {
     setProfileMode('restaurant');
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
   }, [generalProfile, restaurantProfile, profileLock, user]);
+
+  // Merge gallery from API when opening restaurant dashboard (localStorage may omit images saved on the server).
+  useEffect(() => {
+    if (profileMode !== 'restaurant' || !generalProfile) return;
+    const serverGallery = Array.isArray(generalProfile.gallery) ? generalProfile.gallery : [];
+    const normalized = serverGallery
+      .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+      .filter((g) => g.url)
+      .slice(0, 3);
+    setRestaurantProfile((prev) => {
+      if (!prev) return prev;
+      if ((prev.gallery || []).some((g) => g.url && String(g.url).startsWith('data:'))) return prev;
+      const prevNorm = (prev.gallery || [])
+        .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+        .filter((g) => g.url);
+      if (JSON.stringify(normalized) === JSON.stringify(prevNorm)) return prev;
+      const next = { ...prev, gallery: normalized };
+      try {
+        persistRestaurant(next);
+      } catch (e) {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [profileMode, generalProfile]);
 
   useEffect(() => {
     if (!isLoggedIn || !isRestaurantMode || !restaurantProfile) return undefined;
@@ -1073,7 +1141,8 @@ function Profile() {
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      const payload = { ...generalForm, photo: photoUrl, links, profileType: 'general' };
+      const { phone: _gp, email: _ge, ...generalRest } = generalForm;
+      const payload = { ...generalRest, bio: mergeGeneralBioForSave(generalForm), photo: photoUrl, links, profileType: 'general' };
 
       // If a general profile already exists for this account, use update; otherwise create.
       let res;
@@ -1188,8 +1257,9 @@ function Profile() {
         photoUrl = up?.url || photoUrl;
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
+      const { phone: _gp2, email: _ge2, ...generalRestSave } = generalForm;
       const res = await generalProfileAPI.update(
-        { ...generalForm, photo: photoUrl, links },
+        { ...generalRestSave, bio: mergeGeneralBioForSave(generalForm), photo: photoUrl, links },
         getIdTokenFn,
         getFirebaseUserFn
       );
@@ -1949,26 +2019,32 @@ function Profile() {
                     )}
                   </div>
 
-                  {/* Contact */}
+                  {/* Contact — always editable; server sync debounces via restaurantProfile */}
                   <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {restaurantProfile.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16z"/></svg>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</div>
-                          <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600 }}>{restaurantProfile.phone}</div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '1.35rem' }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16z"/></svg>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Phone</div>
+                        <PhoneINInput
+                          wrapClassName="dash-hero-phone-in"
+                          value={restaurantProfile.phone || ''}
+                          onChange={(full) => {
+                            const updated = { ...restaurantProfile, phone: full };
+                            setRestaurantProfile(updated);
+                            persistRestaurant(updated);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '0.35rem' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Email</div>
+                        <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600, wordBreak: 'break-word' }}>
+                          {restaurantProfile.email || displayEmail || '—'}
                         </div>
                       </div>
-                    )}
-                    {(restaurantProfile.email || displayEmail) && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</div>
-                          <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600 }}>{restaurantProfile.email || displayEmail}</div>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* Gallery Images — up to 3, inline upload */}
@@ -1977,27 +2053,40 @@ function Profile() {
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
                       {(restaurantProfile.gallery || []).length < 3 && (
                         <>
-                          <input type="file" accept="image/*" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={(e) => {
+                          <input type="file" accept="image/*,image/gif" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={async (e) => {
                             const files = Array.from(e.target.files || []);
+                            e.target.value = '';
                             if (!files.length) return;
                             const existing = restaurantProfile.gallery || [];
                             const slots = 3 - existing.length;
-                            const toRead = files.slice(0, slots);
-                            let loaded = [];
-                            toRead.forEach((file, i) => {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                loaded.push({ url: ev.target.result, name: '' });
-                                if (loaded.length === toRead.length) {
-                                  const updated = { ...restaurantProfile, gallery: [...existing, ...loaded] };
-                                  setRestaurantProfile(updated);
-                                  persistRestaurant(updated);
+                            const toUpload = files.slice(0, slots);
+                            setRestaurantGalleryUploading(true);
+                            try {
+                              const newItems = [];
+                              for (let i = 0; i < toUpload.length; i++) {
+                                const file = toUpload[i];
+                                assertGalleryFileKind(file);
+                                await assertVideoMaxDuration(file);
+                                const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
+                                const url = up?.url || up?.data?.url;
+                                if (url) {
+                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + i + 1}`;
+                                  newItems.push({ url, name: base });
                                 }
-                              };
-                              reader.readAsDataURL(file);
-                            });
+                              }
+                              if (!newItems.length) return;
+                              const updated = { ...restaurantProfile, gallery: [...existing, ...newItems] };
+                              setRestaurantProfile(updated);
+                              persistRestaurant(updated);
+                              await handleRestaurantPublish(updated, { silent: true });
+                            } catch (err) {
+                              console.error('Restaurant gallery upload:', err);
+                              alert(err.message || 'Could not upload gallery image. Try a smaller file or a different format.');
+                            } finally {
+                              setRestaurantGalleryUploading(false);
+                            }
                           }} />
-                          <label htmlFor="r-gallery-upload" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem' }}>+ Add Image</label>
+                          <label htmlFor="r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add Image or GIF'}</label>
                         </>
                       )}
                     </div>
@@ -3316,6 +3405,23 @@ function Profile() {
                         )}
                       </div>
                     ))}
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1.25rem', marginTop: '1.25rem' }}>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Phone</label>
+                      <PhoneINInput
+                        wrapClassName="dash-hero-phone-in"
+                        value={generalForm.phone || ''}
+                        onChange={(v) => setGeneralForm(prev => ({ ...prev, phone: v }))}
+                      />
+                    </div>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Email</label>
+                      <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600, wordBreak: 'break-word' }}>
+                        {generalForm.email || displayEmail || '—'}
+                      </p>
+                    </div>
                   </div>
 
                   <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
@@ -4912,19 +5018,7 @@ function Profile() {
                               </div>
                               <div className="dash-contact-content">
                                 <span className="dash-contact-label">Email</span>
-                                {editingHeroField === 'email' ? (
-                                  <div className="dash-hero-edit-row">
-                                    <input
-                                      className="dash-hero-inline-input"
-                                      value={heroUpdates.email !== undefined ? heroUpdates.email : (artist.email || '')}
-                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, email: e.target.value }))}
-                                    />
-                                    <button onClick={() => handleUpdateHeroField('email', heroUpdates.email)}>Save</button>
-                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
-                                  </div>
-                                ) : (
-                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('email')}>{artist.email || displayEmail || 'Add email'}</p>
-                                )}
+                                <p className="dash-contact-value" style={{ margin: 0 }}>{artist.email || displayEmail || '—'}</p>
                               </div>
                             </div>
 
@@ -4934,19 +5028,19 @@ function Profile() {
                               </div>
                               <div className="dash-contact-content">
                                 <span className="dash-contact-label">Phone</span>
-                                {editingHeroField === 'phone' ? (
-                                  <div className="dash-hero-edit-row">
-                                    <PhoneINInput
-                                      wrapClassName="dash-hero-phone-in"
-                                      value={heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || '')}
-                                      onChange={(v) => setHeroUpdates((prev) => ({ ...prev, phone: v }))}
-                                    />
-                                    <button onClick={() => handleUpdateHeroField('phone', heroUpdates.phone)}>Save</button>
-                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
-                                  </div>
-                                ) : (
-                                  <p className="dash-contact-value clickable" onClick={() => setEditingHeroField('phone')}>{artist.phone || 'Add phone'}</p>
-                                )}
+                                <div className="dash-hero-edit-row">
+                                  <PhoneINInput
+                                    wrapClassName="dash-hero-phone-in"
+                                    value={heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || '')}
+                                    onChange={(v) => setHeroUpdates((prev) => ({ ...prev, phone: v }))}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateHeroField('phone', heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || ''))}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>

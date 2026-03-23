@@ -27,6 +27,7 @@ function GeneralProfileView() {
   const [menuTotalPages, setMenuTotalPages] = useState(0);
   const [touchStartX, setTouchStartX] = useState(null);
   const [pageTurnDir, setPageTurnDir] = useState('');
+  const [galleryModalIndex, setGalleryModalIndex] = useState(null);
 
   useShowcaseEmbedHeight(isEmbed);
 
@@ -47,7 +48,11 @@ function GeneralProfileView() {
           { title: 'WhatsApp', url: 'https://wa.me/9183746501', platform: 'whatsapp', order: 1 },
           { title: 'Website', url: 'https://example.com', platform: 'website', order: 2 }
         ],
-        social: {}
+        social: {},
+        gallery: [
+          { url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600', name: 'Interior' },
+          { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600', name: 'Dining' }
+        ]
       };
 
       setProfile(MOCK_RESTAURANT);
@@ -152,6 +157,10 @@ function GeneralProfileView() {
   const restaurantPhone = (extractedPhoneFromBio.replace(/^📞\s*/, '') || '').trim();
   const restaurantEmail = (extractedEmailFromBio.replace(/^✉\s*/, '') || '').trim();
 
+  const galleryItems = (Array.isArray(profile.gallery) ? profile.gallery : [])
+    .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+    .filter((g) => g.url);
+
 
 
   const activeHeadingFont = profile.font || 'outfit';
@@ -225,6 +234,26 @@ function GeneralProfileView() {
         {/* Bio */}
         {cleanBio && (
           <p className="gp-bio">{cleanBio}</p>
+        )}
+
+        {/* Restaurant / profile gallery (persisted via API) */}
+        {galleryItems.length > 0 && (
+          <div className="gp-restaurant-gallery">
+            <p className="gp-restaurant-gallery-heading">Gallery</p>
+            <div className="gp-restaurant-gallery-grid">
+              {galleryItems.map((g, idx) => (
+                <button
+                  key={`${g.url}-${idx}`}
+                  type="button"
+                  className="gp-restaurant-gallery-tile"
+                  onClick={() => setGalleryModalIndex(idx)}
+                  aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
+                >
+                  <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Contact + link buttons (same .gp-link sizing for all rows) */}
@@ -301,6 +330,19 @@ function GeneralProfileView() {
             <img
               src={fixImageUrl(profile.photo) || profile.photo}
               alt={profile.name}
+              className="gp-modal-img"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
+        {galleryModalIndex !== null && galleryItems[galleryModalIndex] && (
+          <div className="gp-photo-modal" onClick={() => setGalleryModalIndex(null)} role="dialog" aria-modal="true" aria-label="Gallery image">
+            <div className="gp-modal-overlay" />
+            <button type="button" className="gp-modal-close" onClick={() => setGalleryModalIndex(null)} aria-label="Close">×</button>
+            <img
+              src={fixImageUrl(galleryItems[galleryModalIndex].url) || galleryItems[galleryModalIndex].url}
+              alt={galleryItems[galleryModalIndex].name || ''}
               className="gp-modal-img"
               onClick={(e) => e.stopPropagation()}
             />
