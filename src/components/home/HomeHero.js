@@ -53,7 +53,7 @@ export default function HomeHero() {
                     </h1>
 
                     <p className="hero-description">
-                        One NFC chip. Zero friction. Your entire world — artist, student, chef — delivered to any phone the moment they tap.
+                        One NFC chip. Zero friction. Your entire world: artist, student, chef, delivered to any phone the moment they tap.
                     </p>
 
                     <div className="hero-features-list">
