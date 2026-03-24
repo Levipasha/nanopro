@@ -368,7 +368,6 @@ function Profile() {
   const [generalSaving, setGeneralSaving] = useState(false);
   const [restaurantSaving, setRestaurantSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
   const usernameCheckTimer = useRef(null);
