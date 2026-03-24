@@ -260,7 +260,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  vertical-align: middle;
 }
 
 /* Link buttons */
@@ -444,6 +443,12 @@
   color: #f9fafb;
 }
 
+.gp-menu-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
 .gp-menu-title {
   font-weight: 700;
 }
@@ -454,18 +459,24 @@
 }
 
 .gp-menu-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.5);
+  background: transparent;
+  border: none;
   color: #fff;
-  font-size: 1.25rem;
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
   z-index: 2;
+  transition: opacity 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-menu-close:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
 }
 
 .gp-menu-page-shell {
@@ -770,16 +781,17 @@
 .gp-events-slideshow {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.75rem;
   margin-top: 0.5rem;
-  max-width: 320px;
-  margin-left: auto;
-  margin-right: auto;
-  transform: translateX(-4px); /* subtle nudge to feel perfectly centered */
+  width: 100%;
 }
 
 .gp-events-stage {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   padding: 0;
   border-radius: 18px;
@@ -912,9 +924,8 @@
 
 .gp-art-button {
   width: 100%;
-  max-width: 320px;
-  margin: 0.75rem auto 0;
-  display: inline-flex;
+  margin: 0.75rem 0 0;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -1136,13 +1147,12 @@
   object-fit: contain;
 }
 
-/* Artist profile: prevent top/bottom crop in art/event image cards */
+/* Artist profile: clear visuals for art/event images (fill and crop) */
 .gp-view.gp-artist-themed .gp-events-stage-img,
 .gp-view.gp-artist-themed .gp-gallery-chip-thumb img,
 .gp-view.gp-artist-themed .gp-art-card-img {
-  object-fit: contain !important;
+  object-fit: cover !important;
   object-position: center !important;
-  background: #020617 !important;
 }
 
 /* Artist public view avatar row */

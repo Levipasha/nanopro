@@ -11,6 +11,8 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import './Profile.css';
 import './Profile.mobile.css';
+import getCroppedImg from '../utils/cropImage';
+import ImageCropperModal from '../components/profile/ImageCropperModal';
 import ProfileChoiceScreen from '../components/profile/ProfileChoiceScreen';
 import ProfileArtistOnboardingWizard from '../components/profile/ProfileArtistOnboardingWizard';
 import PhoneINInput from '../components/PhoneINInput';
@@ -211,6 +213,9 @@ function Profile() {
       if (lock === 'general_restaurant' && hasRestaurantLocal && (!stored || stored === 'general' || stored === 'choice')) {
         return 'restaurant';
       }
+      if (lock === 'artist' && (!stored || stored === 'choice')) {
+        return 'artist';
+      }
       return stored || 'choice';
     } catch (e) {
       return 'choice';
@@ -245,10 +250,56 @@ function Profile() {
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [previewKey, setPreviewKey] = useState(0); // For auto-refreshing iframe
   const [myArtists, setMyArtists] = useState([]);
+  const [linkCopiedArtist, setLinkCopiedArtist] = useState(false);
+  const [linkCopiedGeneral, setLinkCopiedGeneral] = useState(false);
+  const [linkCopiedRest, setLinkCopiedRest] = useState(false);
   const [artistsLoading, setArtistsLoading] = useState(false);
+
+  // States for Image Cropper
+  const [cropper, setCropper] = useState({
+    open: false,
+    image: null,
+    aspect: 1,
+    onComplete: null,
+    onCancel: null
+  });
   /** True after GET /my-profiles finishes for this account (avoids one dashboard frame before onboarding). */
   const [artistListReady, setArtistListReady] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
+
+  /** Helper to open cropper before actual upload/save logic */
+  const handlePickAndCrop = (e, aspect, onCroppedDone) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropper({
+        open: true,
+        image: reader.result,
+        aspect,
+        onComplete: async (pixelCrop) => {
+          try {
+            const croppedDataUrl = await getCroppedImg(reader.result, pixelCrop);
+            const res = await fetch(croppedDataUrl);
+            const blob = await res.blob();
+            const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
+            onCroppedDone(croppedFile);
+          } catch (err) {
+            console.error('Cropping failed:', err);
+          } finally {
+            setCropper(prev => ({ ...prev, open: false }));
+          }
+        },
+        onCancel: () => {
+          setCropper(prev => ({ ...prev, open: false }));
+        }
+      });
+      // reset so same files can be re-picked
+      e.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
   const [formData, setFormData] = useState(defaultForm);
   const [photoFile, setPhotoFile] = useState(null);
   const [bgFile, setBgFile] = useState(null);
@@ -442,9 +493,8 @@ function Profile() {
     }
   };
 
-  const handleRestaurantBannerUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+  const handleRestaurantBannerUpload = (file) => {
+    if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         setRestaurantForm(prev => ({ ...prev, banner: event.target.result }));
@@ -454,14 +504,8 @@ function Profile() {
   };
 
   // Restaurant dashboard "Change banner" (no onboarding form).
-  const handleRestaurantBannerChangeDashboard = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file.');
-      return;
-    }
-    if (!restaurantProfile) return;
+  const handleRestaurantBannerChangeDashboard = (file) => {
+    if (!file || !restaurantProfile) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const updated = { ...restaurantProfile, banner: event.target.result };
@@ -469,8 +513,6 @@ function Profile() {
       persistRestaurant(updated);
     };
     reader.readAsDataURL(file);
-    // Allow re-selecting the same file
-    try { e.target.value = ''; } catch { }
   };
 
   const removePdf = () => {
@@ -730,7 +772,7 @@ function Profile() {
     setArtistsLoading(true);
     try {
       const res = await landingArtistAPI.getMyProfiles(() => getIdToken(), getFirebaseUser);
-      setMyArtists(res.data || []);
+      setMyArtists(res.data || (Array.isArray(res) ? res : []));
     } catch (err) {
       console.warn('Artist profiles load:', err.message);
       setMyArtists([]);
@@ -773,7 +815,7 @@ function Profile() {
 
       const requestedType = profileMode === 'restaurant' ? 'restaurant' : 'general';
       const res = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, requestedType);
-      const data = res.data;
+      const data = res.data || res;
       if (data) {
         setGeneralProfile(data);
         updateGeneralStep('home');
@@ -1753,6 +1795,7 @@ function Profile() {
         error={error}
         saving={saving}
         handleLogout={handleLogout}
+        handlePickAndCrop={handlePickAndCrop}
       />
     );
   }
@@ -1878,7 +1921,7 @@ function Profile() {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={handleRestaurantBannerChangeDashboard}
+                      onChange={(e) => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard)}
                     />
 
                     <div className="dash-profile-hero-content">
@@ -1950,29 +1993,38 @@ function Profile() {
                         onClick={() => {
                           const url = `${window.location.origin}/link/${restaurantProfile.username || ''}`;
                           navigator.clipboard.writeText(url);
-                          alert('Profile URL copied to clipboard!');
+                          setLinkCopiedRest(true);
+                          setTimeout(() => setLinkCopiedRest(false), 2000);
                         }}
                         className="dash-icon-pill"
-                        style={{ width: '44px', height: '44px' }}
-                        aria-label="Copy profile link"
+                        aria-label={linkCopiedRest ? 'Copied' : 'Copy profile link'}
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <rect x="9" y="9" width="13" height="13" rx="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
+                        {linkCopiedRest ? (
+                          <>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <rect x="9" y="9" width="13" height="13" rx="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span>Copy Link</span>
+                          </>
+                        )}
                       </button>
                       <a
                         href={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
                         target="_blank"
                         rel="noreferrer"
                         className="dash-icon-pill"
-                        style={{ width: '44px', height: '44px', textDecoration: 'none' }}
                         aria-label="Open profile link"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M7 17L17 7" />
-                          <path d="M7 7h10v10" />
+                          <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                         </svg>
+                        <span>Go to Site</span>
                       </a>
                     </div>
                     <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
@@ -2057,38 +2109,33 @@ function Profile() {
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
                       {(restaurantProfile.gallery || []).length < 3 && (
                         <>
-                          <input type="file" accept="image/*,image/gif" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={async (e) => {
-                            const files = Array.from(e.target.files || []);
-                            e.target.value = '';
-                            if (!files.length) return;
-                            const existing = restaurantProfile.gallery || [];
-                            const slots = 3 - existing.length;
-                            const toUpload = files.slice(0, slots);
-                            setRestaurantGalleryUploading(true);
-                            try {
-                              const newItems = [];
-                              for (let i = 0; i < toUpload.length; i++) {
-                                const file = toUpload[i];
+                          <input type="file" accept="image/*,image/gif" id="r-gallery-upload" style={{ display: 'none' }} onChange={(e) => {
+                            if ((restaurantProfile.gallery || []).length >= 3) {
+                              alert('Only 3 images are allowed.');
+                              return;
+                            }
+                            handlePickAndCrop(e, 1, async (file) => {
+                              setRestaurantGalleryUploading(true);
+                              try {
                                 assertGalleryFileKind(file);
                                 await assertVideoMaxDuration(file);
                                 const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
                                 const url = up?.url || up?.data?.url;
                                 if (url) {
-                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + i + 1}`;
-                                  newItems.push({ url, name: base });
+                                  const existing = restaurantProfile.gallery || [];
+                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                  const updated = { ...restaurantProfile, gallery: [...existing, { url, name: base }] };
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                  await handleRestaurantPublish(updated, { silent: true });
                                 }
+                              } catch (err) {
+                                console.error('Restaurant gallery upload:', err);
+                                alert(err.message || 'Could not upload gallery image.');
+                              } finally {
+                                setRestaurantGalleryUploading(false);
                               }
-                              if (!newItems.length) return;
-                              const updated = { ...restaurantProfile, gallery: [...existing, ...newItems] };
-                              setRestaurantProfile(updated);
-                              persistRestaurant(updated);
-                              await handleRestaurantPublish(updated, { silent: true });
-                            } catch (err) {
-                              console.error('Restaurant gallery upload:', err);
-                              alert(err.message || 'Could not upload gallery image. Try a smaller file or a different format.');
-                            } finally {
-                              setRestaurantGalleryUploading(false);
-                            }
+                            });
                           }} />
                           <label htmlFor="r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add Image or GIF'}</label>
                         </>
@@ -2658,7 +2705,7 @@ function Profile() {
                   <div className="upload-preview-banner" onClick={() => document.getElementById('restaurant-banner-input').click()}>
                     {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
                   </div>
-                  <input id="restaurant-banner-input" type="file" hidden onChange={handleRestaurantBannerUpload} accept="image/*" />
+                  <input id="restaurant-banner-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)} accept="image/*" />
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
@@ -2967,7 +3014,7 @@ function Profile() {
                     <div className="upload-preview-circle" onClick={() => document.getElementById('gen-photo-input').click()}>
                       {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="Preview" /> : <span>+</span>}
                     </div>
-                    <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
+                    <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </div>
                 </div>
                 <div className="onboarding-field">
@@ -3177,40 +3224,24 @@ function Profile() {
                     className="dash-icon-pill"
                     onClick={() => {
                       navigator.clipboard.writeText(gProfileLink);
-                      setLinkCopied(true);
-                      setTimeout(() => setLinkCopied(false), 2000);
+                      setLinkCopiedGeneral(true);
+                      setTimeout(() => setLinkCopiedGeneral(false), 2000);
                     }}
-                    aria-label={linkCopied ? 'Copied' : 'Copy profile link'}
+                    aria-label={linkCopiedGeneral ? 'Copied' : 'Copy profile link'}
                   >
-                    {linkCopied ? (
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
+                    {linkCopiedGeneral ? (
+                      <>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        <span>Copied</span>
+                      </>
                     ) : (
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
+                      <>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>Copy Link</span>
+                      </>
                     )}
                   </button>
 
@@ -3221,20 +3252,10 @@ function Profile() {
                     rel="noreferrer"
                     aria-label="Open profile link"
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M7 17L17 7" />
-                      <path d="M7 7h10v10" />
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                     </svg>
+                    <span>Go to Site</span>
                   </a>
                 </div>
               )}
@@ -3318,12 +3339,10 @@ function Profile() {
                               type="file"
                               accept="image/*"
                               style={{ display: 'none' }}
-                              onChange={(e) => {
-                                if (e.target.files?.[0]) {
-                                  setGeneralPhotoFile(e.target.files[0]);
-                                  handleGeneralPhotoSave(e.target.files[0]);
-                                }
-                              }}
+                              onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                                setGeneralPhotoFile(file);
+                                handleGeneralPhotoSave(file);
+                              })}
                             />
                           </label>
                         </div>
@@ -3369,12 +3388,10 @@ function Profile() {
                           type="file"
                           accept="image/*"
                           style={{ display: 'none' }}
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) {
-                              setGeneralPhotoFile(e.target.files[0]);
-                              handleGeneralPhotoSave(e.target.files[0]);
-                            }
-                          }}
+                          onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                            setGeneralPhotoFile(file);
+                            handleGeneralPhotoSave(file);
+                          })}
                         />
                       </label>
                     )}
@@ -3922,7 +3939,7 @@ function Profile() {
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     <span>{generalPhotoFile ? 'Change photo' : 'Upload photo'}</span>
-                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setGeneralPhotoFile(e.target.files[0])} />
+                    <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </label>
                   {(generalForm.photo || generalPhotoFile) && (
                     <div className="profile-edit-photo-preview">
@@ -4087,28 +4104,28 @@ function Profile() {
                     <button
                       type="button"
                       className="dash-icon-pill"
-                      aria-label="Copy profile link"
                       onClick={() => {
                         navigator.clipboard.writeText(profileUrl);
-                        alert('Profile link copied!');
+                        setLinkCopiedArtist(true);
+                        setTimeout(() => setLinkCopiedArtist(false), 2000);
                       }}
+                      aria-label={linkCopiedArtist ? 'Copied' : 'Copy profile link'}
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
+                      {linkCopiedArtist ? (
+                        <>
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                          <span>Copy Link</span>
+                        </>
+                      )}
                     </button>
-
                     <a
                       className="dash-icon-pill"
                       href={profileUrl}
@@ -4116,20 +4133,10 @@ function Profile() {
                       rel="noreferrer"
                       aria-label="Open profile link"
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M7 17L17 7" />
-                        <path d="M7 7h10v10" />
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                       </svg>
+                      <span>Go to Site</span>
                     </a>
                   </div>
                 );
@@ -4467,25 +4474,16 @@ function Profile() {
               const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
 
               const handleArtImagePick = (e) => {
-                const files = Array.from(e.target.files || []);
-                if (!files.length) return;
-                const remainingSlots = Math.max(0, 3 - artImagePreview.length);
-                if (remainingSlots === 0) {
+                if (artImagePreview.length >= 3) {
                   alert('Only 3 images are allowed per showcase.');
                   e.target.value = '';
                   return;
                 }
-                const picked = files.slice(0, remainingSlots);
-                if (files.length > remainingSlots) {
-                  alert('Only 3 images are allowed per showcase.');
-                }
-                picked.forEach(file => {
+                handlePickAndCrop(e, 3 / 4, (croppedFile) => {
                   const reader = new FileReader();
-                  reader.onload = (ev) => setArtImagePreview(prev => [...prev, { file, url: ev.target.result }]);
-                  reader.readAsDataURL(file);
+                  reader.onload = (ev) => setArtImagePreview(prev => [...prev, { file: croppedFile, url: ev.target.result }]);
+                  reader.readAsDataURL(croppedFile);
                 });
-                // reset input so same files can be re-added if needed
-                e.target.value = '';
               };
 
               const handleAddArt = async () => {
@@ -4755,7 +4753,7 @@ function Profile() {
                             <input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => e.target.files?.[0] && handleUploadField('backgroundPhoto', e.target.files[0])}
+                              onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => handleUploadField('backgroundPhoto', file))}
                               style={{ display: 'none' }}
                             />
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
@@ -4771,7 +4769,7 @@ function Profile() {
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  onChange={(e) => e.target.files?.[0] && handleUploadField('photo', e.target.files[0])}
+                                  onChange={(e) => handlePickAndCrop(e, 1, (file) => handleUploadField('photo', file))}
                                   style={{ display: 'none' }}
                                 />
                                 {artist.photo
@@ -5079,7 +5077,7 @@ function Profile() {
                                 type="file"
                                 accept="image/*"
                                 style={{ display: 'none' }}
-                                onChange={(e) => e.target.files?.[0] && handleAddGalleryItem(e.target.files[0])}
+                                onChange={(e) => handlePickAndCrop(e, 2, handleAddGalleryItem)}
                               />
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
                                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -5238,7 +5236,7 @@ function Profile() {
                         </div>
                       )}
                       <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setPhotoFile(e.target.files[0])} />
+                        <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))} />
                         {photoFile ? 'New image chosen' : 'Choose photo'}
                       </label>
                     </div>
@@ -5253,7 +5251,7 @@ function Profile() {
                         </div>
                       )}
                       <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && setBgFile(e.target.files[0])} />
+                        <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))} />
                         {bgFile ? 'New image chosen' : 'Choose photo'}
                       </label>
                     </div>
@@ -5374,7 +5372,7 @@ function Profile() {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && setNewGalleryFile(e.target.files[0])}
+                        onChange={(e) => handlePickAndCrop(e, 2, (file) => setNewGalleryFile(file))}
                       />
                       <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
                         {galleryUploading ? 'Uploading…' : 'Add to slideshow'}
@@ -5561,6 +5559,15 @@ function Profile() {
             </button>
           </div>
         </div>
+      )}
+
+      {cropper.open && (
+        <ImageCropperModal
+          image={cropper.image}
+          aspect={cropper.aspect}
+          onSave={cropper.onComplete}
+          onCancel={cropper.onCancel}
+        />
       )}
     </div >
   );

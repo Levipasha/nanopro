@@ -38,7 +38,7 @@ export default function ProfileChoiceScreen({
         </div>
 
         <div className="profile-choice-grid">
-          {!profileLock && !choiceSource && !generalProfile && !restaurantProfile && (
+          {profileLock !== 'general_restaurant' && !choiceSource && (
             <button
               className="profile-product-card profile-product-card--artist"
               onClick={handleSelectArtistMode}

@@ -29,6 +29,32 @@ function ArtistPublicView() {
   const [activeEventPreview, setActiveEventPreview] = useState(null);
 
   useShowcaseEmbedHeight(isEmbed);
+  const [success, setSuccess] = useState('');
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareTitle = `${artist?.name || 'Artist Profile'} | Nano Profiles`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: `Check out ${artist?.name || 'this'} artist on Nano Profiles!`,
+          url
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') copyToClipboard(url);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setSuccess('Link copied!');
+      setTimeout(() => setSuccess(''), 2000);
+    });
+  };
 
   // Lock background scroll when modal open (allow modal scroll only)
   useEffect(() => {
@@ -314,6 +340,32 @@ function ArtistPublicView() {
           fontFamily
         }}
       >
+        {/* Share button - top right */}
+        <button type="button" onClick={handleShare} className="gp-share-btn" aria-label="Share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
+          </svg>
+        </button>
+
+        {success && (
+          <div className="gp-copy-toast" style={{
+            position: 'absolute',
+            top: '4.5rem',
+            right: '1rem',
+            background: 'rgba(0,0,0,0.8)',
+            color: '#fff',
+            padding: '0.4rem 0.8rem',
+            borderRadius: '8px',
+            fontSize: '0.8rem',
+            zIndex: 100,
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            {success}
+          </div>
+        )}
+
         {/* Cover banner */}
         <div className="gp-photo-header">
           {artist.backgroundPhoto && (

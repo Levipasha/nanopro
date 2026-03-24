@@ -43,6 +43,7 @@ export default function ProfileArtistOnboardingWizard({
   error,
   saving,
   handleLogout,
+  handlePickAndCrop,
 }) {
   const isArtistStep1Valid =
     String(formData.name || '').trim() &&
@@ -361,14 +362,14 @@ export default function ProfileArtistOnboardingWizard({
                     <div className="upload-preview-circle" onClick={() => document.getElementById('photo-input').click()}>
                       {photoFile ? <img src={URL.createObjectURL(photoFile)} alt="Preview" /> : <span>+</span>}
                     </div>
-                    <input id="photo-input" type="file" hidden onChange={e => setPhotoFile(e.target.files[0])} accept="image/*" />
+                    <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/*" />
                   </div>
                   <div className="image-upload-box">
                     <label>Banner Image</label>
                     <div className="upload-preview-banner" onClick={() => document.getElementById('bg-input').click()}>
                       {bgFile ? <img src={URL.createObjectURL(bgFile)} alt="Preview" /> : <span>+ Click to upload banner</span>}
                     </div>
-                    <input id="bg-input" type="file" hidden onChange={e => setBgFile(e.target.files[0])} accept="image/*" />
+                    <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/*" />
                   </div>
                 </div>
 
@@ -436,12 +437,11 @@ export default function ProfileArtistOnboardingWizard({
                     multiple 
                     hidden 
                     onChange={(e) => {
-                      const add = Array.from(e.target.files || []);
-                      e.target.value = '';
-                      if (!add.length) return;
-                      setOnboardingGalleryFiles((prev) => [...prev, ...add].slice(0, 3));
+                      handlePickAndCrop(e, 2, (file) => {
+                        setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
+                      });
                     }} 
-                    accept="image/*,image/gif,video/*" 
+                    accept="image/*" 
                   />
                 </div>
 

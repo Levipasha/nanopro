@@ -354,13 +354,14 @@ function GeneralProfileView() {
           <div className="gp-menu-modal" onClick={closeMenuViewer}>
             <div className="gp-modal-overlay" />
             <div className="gp-menu-book" onClick={(e) => e.stopPropagation()}>
-              <button className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">×</button>
-
               <div className="gp-menu-topbar">
                 <span className="gp-menu-title">Menu Preview</span>
-                <span className="gp-menu-page-indicator">
-                  Page {menuPage}{menuTotalPages ? ` / ${menuTotalPages}` : ''}
-                </span>
+                <div className="gp-menu-topbar-right">
+                  <span className="gp-menu-page-indicator">
+                    Page {menuPage}{menuTotalPages ? ` / ${menuTotalPages}` : ''}
+                  </span>
+                  <button className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">×</button>
+                </div>
               </div>
 
               <div
