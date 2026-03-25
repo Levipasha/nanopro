@@ -811,7 +811,7 @@ function Profile() {
 
         const resGeneral = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
         const data = resGeneral?.data;
-        if (data) {
+        if (data && data.username) {
           setGeneralProfile(data);
           updateGeneralStep('home');
           setGeneralForm(buildGeneralFormFromProfileData(data));
@@ -825,7 +825,7 @@ function Profile() {
       const requestedType = profileMode === 'restaurant' ? 'restaurant' : 'general';
       const res = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, requestedType);
       const data = res.data || res;
-      if (data) {
+      if (data && data.username) {
         setGeneralProfile(data);
         updateGeneralStep('home');
         setGeneralForm(buildGeneralFormFromProfileData(data));
@@ -1612,7 +1612,7 @@ function Profile() {
       const token = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(file, token);
       if (up && up.url) {
-        const newItem = { url: up.url, name: name || 'New Event' };
+        const newItem = { url: up.url, name: name || 'Gallery image' };
         const newGallery = [...(artist.gallery || []), newItem];
         const payload = { gallery: newGallery };
         await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
@@ -1621,6 +1621,43 @@ function Profile() {
       }
     } catch (err) {
       console.error('Failed to add gallery item:', err);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  /**
+   * Upload multiple gallery images/GIFs at once (no crop — preserves animations).
+   * Each file is uploaded sequentially; gallery state is refreshed after all uploads.
+   */
+  const handleAddMultipleGalleryItems = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    const artist = myArtists[0];
+    if (!artist) return;
+    setGalleryUploading(true);
+    try {
+      const token = await getIdToken();
+      let currentGallery = [...(artist.gallery || [])];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const up = await landingArtistAPI.uploadPhoto(file, token);
+          if (up && up.url) {
+            const label = `Gallery image ${currentGallery.length + 1}`;
+            currentGallery = [...currentGallery, { url: up.url, name: label }];
+          }
+        } catch (err) {
+          console.error('Failed to upload gallery image:', file.name, err);
+        }
+      }
+      const payload = { gallery: currentGallery };
+      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: currentGallery } : a));
+      setPreviewKey(prev => prev + 1);
+    } catch (err) {
+      console.error('Failed to update gallery:', err);
     } finally {
       setGalleryUploading(false);
     }
@@ -2899,7 +2936,7 @@ function Profile() {
   }
 
   // General Profile: 4-step onboarding (no profile yet)
-  if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading) {
+  if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading && generalStep !== 'theme') {
     const genStep = generalOnboardingStep;
     return (
       <div className="profile-page profile-login-wrap onboarding-screen">
@@ -5110,21 +5147,22 @@ function Profile() {
                           </button>
                         </div>
 
-                        {/* Events / Gallery Section */}
+                        {/* Gallery Section */}
                         <div className="dash-profile-bio-section">
                           <div className="dash-section-header">
-                            <h3 className="dash-section-label">Events</h3>
+                            <h3 className="dash-section-label">Gallery</h3>
                             <label className="dash-add-platform-btn">
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,image/gif"
+                                multiple
                                 style={{ display: 'none' }}
-                                onChange={(e) => handlePickAndCrop(e, 2, handleAddGalleryItem)}
+                                onChange={handleAddMultipleGalleryItems}
                               />
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
                                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                               </svg>
-                              {galleryUploading ? 'Uploading...' : 'Add Event Image'}
+                              {galleryUploading ? 'Uploading...' : 'Add Images'}
                             </label>
                           </div>
 
@@ -5136,7 +5174,7 @@ function Profile() {
                                   <input
                                     className="dash-gallery-item-name-input"
                                     value={item.name}
-                                    placeholder="Event title"
+                                    placeholder="Gallery title"
                                     onChange={(e) => {
                                       const newGal = [...artist.gallery];
                                       newGal[idx].name = e.target.value;
@@ -5158,7 +5196,7 @@ function Profile() {
                             ))}
                             {(!artist.gallery || artist.gallery.length === 0) && (
                               <div className="dash-gallery-empty">
-                                <p>No events added yet. Start by adding images from your recent exhibitions or workshops.</p>
+                                <p>No images added yet. Start by adding images from your gallery.</p>
                               </div>
                             )}
                           </div>

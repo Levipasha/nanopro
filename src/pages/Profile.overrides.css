@@ -1098,9 +1098,26 @@ h3.dash-section-label {
   color: #ffffff !important;
 }
 
+
 .dash-contact-item .dash-contact-icon,
 .dash-contact-item .dash-contact-icon svg {
   color: #e2e8f0 !important;
   stroke: #e2e8f0 !important;
 }
+
+/* Prevent long unbroken bio text from overflowing the card on all dashboard profile types */
+.dash-profile-bio {
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.dash-profile-bio-section {
+  overflow: hidden !important;
+}
+
+/* Stack Email and Phone above/below each other instead of side by side */
+.dash-contact-grid {
+  grid-template-columns: 1fr !important;
+}
+
 

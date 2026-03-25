@@ -426,7 +426,7 @@ function ArtistPublicView() {
         {/* 1. Events slideshow */}
         {eventSlides.length > 0 && (
           <div className="gp-section">
-            <h2 className="gp-section-title">Events</h2>
+            <h2 className="gp-section-title">Gallery</h2>
 
             <div className="gp-events-slideshow">
               <button

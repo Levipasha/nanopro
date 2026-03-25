@@ -10,7 +10,7 @@ function isBot(userAgent) {
 }
 
 export const config = {
-  matcher: ['/link/:path*'],
+  matcher: ['/link/:path*', '/artist'],
 };
 
 export default async function middleware(request) {
@@ -20,14 +20,31 @@ export default async function middleware(request) {
   }
 
   const url = new URL(request.url);
-  const pathMatch = url.pathname.match(/^\/link\/([^/]+)/);
-  const username = pathMatch && pathMatch[1] ? pathMatch[1] : null;
-  if (!username) {
-    return fetch(request);
+  const origin = url.origin;
+
+  // 1. General Profiles: /link/:username
+  if (url.pathname.startsWith('/link/')) {
+    const pathMatch = url.pathname.match(/^\/link\/([^/]+)/);
+    const username = pathMatch && pathMatch[1] ? pathMatch[1] : null;
+    if (!username) return fetch(request);
+
+    const ogUrl = `${origin}/api/og-link?username=${encodeURIComponent(username)}`;
+    return serveOgHtml(ogUrl, request);
   }
 
-  const origin = url.origin;
-  const ogUrl = `${origin}/api/og-link?username=${encodeURIComponent(username)}`;
+  // 2. Artist Profiles: /artist?id=<artistId>
+  if (url.pathname === '/artist') {
+    const artistId = url.searchParams.get('id');
+    if (!artistId) return fetch(request);
+
+    const ogUrl = `${origin}/api/og-artist?id=${encodeURIComponent(artistId)}`;
+    return serveOgHtml(ogUrl, request);
+  }
+
+  return fetch(request);
+}
+
+async function serveOgHtml(ogUrl, request) {
   try {
     const res = await fetch(ogUrl, {
       headers: { Accept: 'text/html' },
@@ -44,3 +61,4 @@ export default async function middleware(request) {
     return fetch(request);
   }
 }
+

@@ -114,6 +114,12 @@
   z-index: 0;
 }
 
+/* Artist card: banner height is set by .gp-cover-img, no square ratio */
+.gp-artist-themed-card .gp-photo-header {
+  aspect-ratio: unset;
+  height: auto;
+}
+
 .gp-avatar-img {
   width: 100%;
   height: 100%;
@@ -204,6 +210,8 @@
   margin: 0.5rem 1.5rem 1.5rem;
   text-align: left;
   opacity: 0.95;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* Restaurant gallery (public link) */
@@ -700,6 +708,59 @@
   height: 220px;
   object-fit: cover;
   display: block;
+}
+
+/* Avatar row — pulls the circular profile image up to overlap the banner */
+.gp-avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -60px;   /* overlap the banner */
+  padding: 0 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.gp-avatar-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--artist-bg, #0f172a);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.gp-avatar-circle .gp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.gp-avatar-circle-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.2);
+  color: inherit;
+}
+
+.gp-avatar-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 0.75rem;
+  gap: 0.25rem;
 }
 
 .gp-photo-header-inner {
