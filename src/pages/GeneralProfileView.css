@@ -107,11 +107,9 @@
 .gp-photo-header {
   position: relative;
   width: 100%;
-  /* Fixed banner box so image can fill it cleanly */
-  aspect-ratio: 16 / 9;
-  max-height: 260px;
+  /* Square aspect ratio to fit profile photo optimally */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  /* Let the photo itself fully define the box; no extra frame */
   background: transparent;
   z-index: 0;
 }
@@ -120,16 +118,14 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center center; /* keep artwork centered in the banner */
+  object-position: center center;
   display: block;
   cursor: zoom-in;
-  /* Gentle zoom so artwork fills box but stays readable */
-  transform: scale(1.1);
-  transform-origin: center center;
+  transition: transform 0.3s ease;
 }
 
 .gp-avatar-img:hover {
-  transform: scale(1.1);
+  transform: scale(1.02);
 }
 
 .gp-avatar-placeholder-header {

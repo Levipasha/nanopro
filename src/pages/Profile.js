@@ -197,7 +197,8 @@ function buildGeneralFormFromProfileData(data) {
     photo: data.photo || '',
     theme: data.theme || 'mint',
     font: data.font || 'outfit',
-    links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }]
+    links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [{ title: '', url: '', platform: 'website', order: 0 }],
+    gallery: data.gallery || []
   };
 }
 
@@ -272,6 +273,13 @@ function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check for GIF and silently bypass cropper to preserve the animation
+    if (file.type === 'image/gif') {
+      onCroppedDone(file);
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       setCropper({
@@ -295,10 +303,11 @@ function Profile() {
           setCropper(prev => ({ ...prev, open: false }));
         }
       });
-      // reset so same files can be re-picked
-      e.target.value = '';
     };
     reader.readAsDataURL(file);
+    
+    // Reset value so same file can be picked again
+    e.target.value = '';
   };
   const [formData, setFormData] = useState(defaultForm);
   const [photoFile, setPhotoFile] = useState(null);
@@ -690,6 +699,7 @@ function Profile() {
       try { persistRestaurant(updatedRestaurantProfile); } catch (e) { }
       setRestaurantProfile(updatedRestaurantProfile);
       try { lastRestaurantSyncSigRef.current = JSON.stringify(updatedRestaurantProfile); } catch (e) { }
+      setPreviewKey(prev => prev + 1);
       return true;
     } catch (err) {
       if (!silent) alert(err.message || 'Failed to publish. Please try again.');
@@ -836,11 +846,30 @@ function Profile() {
     if (uidChanged) {
       lastGeneralUidRef.current = uid;
       setGeneralProfile(null);
+      setRestaurantProfile(null);
       setArtistListReady(false);
+      
+      // Clear all stateful onboarding steps
+      setGeneralStep('choice');
+      setGeneralOnboardingStep(1);
+      setRestaurantOnboardingStep(1);
+      
       if (!uid) {
         setGeneralProfileLoading(false);
         return;
       }
+      
+      // Clear potentially stale localStorage from previous sessions
+      try {
+        localStorage.removeItem('general_step');
+        localStorage.removeItem('general_onboarding_step');
+        localStorage.removeItem(RESTAURANT_STORAGE_KEY);
+        localStorage.removeItem(RESTAURANT_ONBOARDING_KEY);
+        localStorage.removeItem(GENERAL_FLOW_MODE_KEY);
+        localStorage.removeItem(PROFILE_MODE_KEY);
+        localStorage.removeItem(PROFILE_LOCK_KEY);
+      } catch (e) { }
+
       setGeneralProfileLoading(true);
       return;
     }
@@ -997,10 +1026,14 @@ function Profile() {
     setRestaurantProfile(hydratedRestaurant);
     persistRestaurant(hydratedRestaurant);
     try { lastRestaurantSyncSigRef.current = JSON.stringify(hydratedRestaurant); } catch (e) { }
-    // Mark onboarding as complete so we don't show "Step 1" again after relogin,
-    // and so auto-sync can publish updates.
-    setRestaurantOnboardingStep(0);
-    try { localStorage.setItem(RESTAURANT_ONBOARDING_KEY, '0'); } catch (e) { }
+    
+    // Only mark onboarding as complete if the server data actually confirms it's a restaurant.
+    // If it was just 'preferredGeneralMode', let them go through onboarding to create the record properly.
+    if (likelyRestaurant) {
+      setRestaurantOnboardingStep(0);
+      try { localStorage.setItem(RESTAURANT_ONBOARDING_KEY, '0'); } catch (e) { }
+    }
+    
     setProfileMode('restaurant');
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
   }, [generalProfile, restaurantProfile, profileLock, profileMode, user]);
@@ -1282,6 +1315,7 @@ function Profile() {
       setGeneralPhotoFile(null);
       setGeneralSuccess('Photo updated!');
       setTimeout(() => setGeneralSuccess(''), 2000);
+      setPreviewKey(prev => prev + 1);
     } catch (err) {
       setError(err.message || 'Failed to upload photo.');
     } finally {
@@ -1312,6 +1346,7 @@ function Profile() {
       setGeneralPhotoFile(null);
       setGeneralSuccess('Profile saved!');
       setTimeout(() => setGeneralSuccess(''), 2500);
+      setPreviewKey(prev => prev + 1);
     } catch (err) {
       setError(err.message || 'Failed to save.');
     } finally {
@@ -1825,7 +1860,7 @@ function Profile() {
     );
   }
   // Restaurant profile: home (profile already created) — same layout as artist dashboard
-  if (isLoggedIn && isRestaurantMode && restaurantProfile) {
+  if (isLoggedIn && isRestaurantMode && restaurantProfile && restaurantOnboardingStep === 0) {
     return (
       <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${restaurantActiveTab}`}>
         {/* Sidebar */}
@@ -2547,7 +2582,7 @@ function Profile() {
               <div className="dash-mobile-preview-page">
                 <div className="dash-mobile-preview-frame-wrap">
                   <iframe
-                    key={`restaurant-preview-${restaurantProfile.username || 'restaurant'}`}
+                    key={`restaurant-preview-${restaurantProfile.username || 'restaurant'}-${previewKey}`}
                     title="Restaurant Profile Preview"
                     src={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
                     className="dash-mobile-preview-iframe"
@@ -2670,7 +2705,7 @@ function Profile() {
       </div>
     );
   }
-  if (isLoggedIn && isRestaurantMode && !restaurantProfile) {
+  if (isLoggedIn && isRestaurantMode && (!restaurantProfile || restaurantOnboardingStep > 0)) {
     const rStep = restaurantOnboardingStep;
     return (
       <div className="profile-page profile-login-wrap onboarding-screen">
@@ -2841,6 +2876,16 @@ function Profile() {
 
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
+        {cropper.open && (
+          <div style={{ position: 'relative', zIndex: 100000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -3010,8 +3055,14 @@ function Profile() {
                 <div className="onboarding-field">
                   <label>Profile photo (optional)</label>
                   <div className="image-upload-box">
-                    <div className="upload-preview-circle" onClick={() => document.getElementById('gen-photo-input').click()}>
+                    <div className="upload-preview-circle dash-avatar-trigger" onClick={() => document.getElementById('gen-photo-input').click()} style={{ position: 'relative', overflow: 'hidden' }}>
                       {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="Preview" /> : <span>+</span>}
+                      <div className="dash-avatar-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                      </div>
                     </div>
                     <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </div>
@@ -3095,6 +3146,16 @@ function Profile() {
 
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
+        {cropper.open && (
+          <div style={{ position: 'relative', zIndex: 100000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -3181,6 +3242,7 @@ function Profile() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 Links
               </button>
+
               <button className={`dash-nav-item ${generalActiveTab === 'preview' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('preview')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" /></svg>
                 Preview
@@ -3216,6 +3278,16 @@ function Profile() {
                       ? 'Add and manage your links, social media, and more'
                       : 'See a live preview of your public profile page'}
               </p>
+              {error && (
+                <div style={{ padding: '0.8rem 1.2rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '12px', marginTop: '1rem', fontSize: '0.9rem' }}>
+                  {error}
+                </div>
+              )}
+              {generalSuccess && (
+                <div style={{ padding: '0.8rem 1.2rem', background: '#f0fdf4', color: '#166534', border: '1px solid #4ade80', borderRadius: '12px', marginTop: '1rem', fontSize: '0.9rem' }}>
+                  {generalSuccess}
+                </div>
+              )}
               {generalActiveTab === 'profile' && (
                 <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
                   <button
@@ -3268,67 +3340,64 @@ function Profile() {
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: isMobileViewport ? 'flex-start' : 'center',
-                      gap: '1.5rem',
-                      marginBottom: '2.5rem',
-                      padding: '1.5rem',
-                      background: 'var(--dash-bg-card)',
-                      borderRadius: '16px',
-                      border: '1px solid var(--dash-border)'
-                    }}
-                  >
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'var(--dash-bg)', border: '3px solid var(--dash-border)' }}>
-                      {(generalForm.photo || generalPhotoFile) ? (
-                        <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800, color: 'var(--dash-subtext)' }}>
-                          {(generalProfile.name || '?')[0].toUpperCase()}
+                  {/* Re-designed General Profile Hero (matches Artist style) */}
+                    <div className="dash-profile-hero" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', minHeight: 'auto', padding: '2rem' }}>
+                      <div className="dash-profile-hero-content" style={{ alignItems: 'center' }}>
+                        <div className="dash-profile-hero-avatar" style={{ width: '100px', height: '100px', border: '3px solid rgba(255,255,255,0.15)' }}>
+                          <label className="dash-avatar-trigger">
+                            <input
+                              id="gen-dash-photo-input-hero"
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                                setGeneralPhotoFile(file);
+                                handleGeneralPhotoSave(file);
+                              })}
+                            />
+                            {(generalForm.photo || generalPhotoFile) ? (
+                              <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>
+                                {(generalProfile.name || '?')[0].toUpperCase()}
+                              </div>
+                            )}
+                            <div className="dash-avatar-overlay">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                              </svg>
+                            </div>
+                            {generalSaving && <div className="dash-avatar-uploading-spinner" style={{ position: 'absolute', inset: 0, border: '3px solid rgba(99, 102, 241, 0.4)', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'rotate 1s linear infinite' }} />}
+                          </label>
                         </div>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.3rem', fontWeight: 700, color: 'var(--dash-text)' }}>{generalProfile.name || 'Unnamed'}</h2>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--dash-accent)' }}>@{generalProfile.username}</p>
-                      {/* Mobile: hide tagline in the top header box (keeps UI clean). */}
-                      {generalProfile.title && !isMobileViewport && (
-                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--dash-subtext)' }}>
-                          {generalProfile.title}
-                        </p>
-                      )}
-
-                      {/* Mobile: move "Change Photo" under username for better alignment */}
-                      {isMobileViewport && (
-                        <div style={{ marginTop: '0.75rem' }}>
+                        <div className="dash-profile-hero-info">
+                          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                            {generalProfile.name || 'Unnamed'}
+                          </h2>
+                          <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                            @{generalProfile.username}
+                          </p>
+                          
                           <label
                             style={{
                               cursor: 'pointer',
-                              padding: '8px 16px',
-                              borderRadius: '10px',
-                              border: '1.5px solid var(--dash-border)',
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--dash-text)',
-                              background: 'var(--dash-bg)',
-                              transition: 'all 0.2s',
+                              padding: '10px 20px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
+                              color: '#fff',
+                              background: '#000',
+                              transition: 'all 0.2s ease',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              whiteSpace: 'nowrap',
-                              lineHeight: 1
+                              gap: '10px',
+                              lineHeight: 1,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                             }}
                           >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              width="16"
-                              height="16"
-                              style={{ display: 'block' }}
-                            >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
                               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                               <polyline points="17 8 12 3 7 8" />
                               <line x1="12" y1="3" x2="12" y2="15" />
@@ -3345,56 +3414,8 @@ function Profile() {
                             />
                           </label>
                         </div>
-                      )}
+                      </div>
                     </div>
-                    {/* Desktop: keep Change Photo on the right */}
-                    {!isMobileViewport && (
-                      <label
-                        style={{
-                          cursor: 'pointer',
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          border: '1.5px solid var(--dash-border)',
-                          fontSize: '0.82rem',
-                          fontWeight: 600,
-                          color: 'var(--dash-text)',
-                          background: 'var(--dash-bg)',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          alignSelf: 'center',
-                          marginLeft: 'auto',
-                          whiteSpace: 'nowrap',
-                          lineHeight: 1
-                        }}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          width="16"
-                          height="16"
-                          style={{ display: 'block' }}
-                        >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        Change Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handlePickAndCrop(e, 1, (file) => {
-                            setGeneralPhotoFile(file);
-                            handleGeneralPhotoSave(file);
-                          })}
-                        />
-                      </label>
-                    )}
-                  </div>
 
                   <div style={{ display: 'grid', gap: '1.25rem' }}>
                     {[
@@ -3472,7 +3493,7 @@ function Profile() {
                   <div className="dash-preview-panel">
                     <div className="dash-full-preview-container">
                       <iframe
-                        key={`gp-${generalProfile.username}-${generalProfile.theme}`}
+                        key={`gp-${generalProfile.username}-${generalProfile.theme}-${previewKey}`}
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
@@ -3483,6 +3504,8 @@ function Profile() {
                 )}
               </div>
             )}
+
+
 
             {/* Design Tab */}
             {generalActiveTab === 'design' && (
@@ -3563,7 +3586,7 @@ function Profile() {
                   <div className="dash-preview-panel">
                     <div className="dash-full-preview-container">
                       <iframe
-                        key={`gp-design-${generalProfile.theme}-${generalProfile.font}`}
+                        key={`gp-design-${generalProfile.theme}-${generalProfile.font}-${previewKey}`}
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
@@ -3701,7 +3724,7 @@ function Profile() {
                   <div className="dash-preview-panel">
                     <div className="dash-full-preview-container">
                       <iframe
-                        key={`gp-links-${generalProfile.username}`}
+                        key={`gp-links-${generalProfile.username}-${previewKey}`}
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
@@ -3718,7 +3741,7 @@ function Profile() {
               <div className="dash-mobile-preview-page">
                 <div className="dash-mobile-preview-frame-wrap">
                   <iframe
-                    key={`gp-preview-${generalProfile.username}-${generalProfile.theme}`}
+                    key={`gp-preview-${generalProfile.username}-${generalProfile.theme}-${previewKey}`}
                     title="General Profile Preview"
                     src={gProfileLink}
                     className="dash-mobile-preview-iframe"
@@ -3801,6 +3824,16 @@ function Profile() {
                 <span>Sign out</span>
               </button>
             </div>
+          </div>
+        )}
+        {cropper.open && (
+          <div style={{ position: 'relative', zIndex: 100000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
           </div>
         )}
       </div>
@@ -4019,6 +4052,16 @@ function Profile() {
             </div>
           </form>
         </div>
+        {cropper.open && (
+          <div style={{ position: 'relative', zIndex: 100000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -5561,12 +5604,14 @@ function Profile() {
       )}
 
       {cropper.open && (
-        <ImageCropperModal
-          image={cropper.image}
-          aspect={cropper.aspect}
-          onSave={cropper.onComplete}
-          onCancel={cropper.onCancel}
-        />
+        <div style={{ position: 'relative', zIndex: 100000 }}>
+          <ImageCropperModal
+            image={cropper.image}
+            aspect={cropper.aspect}
+            onSave={cropper.onComplete}
+            onCancel={cropper.onCancel}
+          />
+        </div>
       )}
     </div >
   );

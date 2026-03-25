@@ -6,6 +6,8 @@ import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
 import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
+import { Helmet } from 'react-helmet-async';
+import { fixImageUrl } from '../utils/imageHelper';
 
 /**
  * Public artist profile route used for NFC / share links.
@@ -332,6 +334,17 @@ function ArtistPublicView() {
         background: themeBg
       }}
     >
+      <Helmet>
+        <title>{`${artist?.name || 'Artist Profile'} | Nano Profiles`}</title>
+        <meta name="description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
+        
+        {/* Open Graph / Facebook / WhatsApp */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:title" content={`${artist?.name || 'Artist Profile'} | Nano Profiles`} />
+        <meta property="og:description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
+        <meta property="og:image" content={fixImageUrl(artist?.photo) || artist?.photo} />
+      </Helmet>
       <div
         className={`gp-card gp-artist-themed-card ${theme?.isAnimated ? theme.className : ''}`}
         style={{
