@@ -1604,6 +1604,7 @@ function Profile() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleAddGalleryItem = async (file, name = '') => {
     const artist = myArtists[0];
     if (!artist || !file) return;
