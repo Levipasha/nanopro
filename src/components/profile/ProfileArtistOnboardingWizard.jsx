@@ -373,16 +373,20 @@ export default function ProfileArtistOnboardingWizard({
                 <div className="onboarding-images">
                   <div className="image-upload-box">
                     <label>Profile Image</label>
-                    <div className="upload-preview-circle" onClick={() => document.getElementById('photo-input').click()}>
-                      {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Preview" /> : <span>+</span>}
-                    </div>
+                    <label htmlFor="photo-input" style={{ display: 'block', cursor: 'pointer' }}>
+                      <div className="upload-preview-circle">
+                        {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Preview" /> : <span>+</span>}
+                      </div>
+                    </label>
                     <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/*" />
                   </div>
                   <div className="image-upload-box">
                     <label>Banner Image</label>
-                    <div className="upload-preview-banner" onClick={() => document.getElementById('bg-input').click()}>
-                      {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Click to upload banner</span>}
-                    </div>
+                    <label htmlFor="bg-input" style={{ display: 'block', cursor: 'pointer' }}>
+                      <div className="upload-preview-banner">
+                        {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                      </div>
+                    </label>
                     <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/*" />
                   </div>
                 </div>
@@ -390,14 +394,22 @@ export default function ProfileArtistOnboardingWizard({
                 <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
                   <label>Gallery — images, GIFs, or videos up to 30s (max 3)</label>
                   <p className="onboarding-gallery-hint">Add one or many at a time (up to 3 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
-                  <div
-                    className="upload-preview-banner onboarding-gallery-grid"
-                    onClick={() => {
-                      if (onboardingGalleryFiles.length >= 3) return;
-                      document.getElementById('gallery-input').click();
+                  <input
+                    id="gallery-input"
+                    type="file"
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      handlePickAndCrop(e, 2, (file) => {
+                        setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
+                      });
                     }}
-                    role={onboardingGalleryFiles.length >= 3 ? undefined : 'button'}
-                    style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer' }}
+                    accept="image/*"
+                  />
+                  <label
+                    htmlFor={onboardingGalleryFiles.length < 3 ? 'gallery-input' : undefined}
+                    className="upload-preview-banner onboarding-gallery-grid"
+                    style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer', display: 'grid' }}
                   >
                     {onboardingGalleryFiles.length > 0 ? (
                       onboardingGalleryFiles.map((f, i) => {
@@ -406,7 +418,7 @@ export default function ProfileArtistOnboardingWizard({
                         <div
                           key={`${f.name}-${f.lastModified}-${i}`}
                           className="onboarding-gallery-tile"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => e.preventDefault()}
                         >
                           <div className="onboarding-gallery-tile-crop">
                             <OnboardingGalleryTilePreview file={f} />
@@ -416,7 +428,7 @@ export default function ProfileArtistOnboardingWizard({
                             className="onboarding-gallery-remove"
                             aria-label={`Remove ${isVideo ? 'video' : 'image'} ${i + 1}`}
                             onClick={(e) => {
-                              e.stopPropagation();
+                              e.preventDefault();
                               setOnboardingGalleryFiles((prev) => prev.filter((_, j) => j !== i));
                             }}
                           >
@@ -444,19 +456,7 @@ export default function ProfileArtistOnboardingWizard({
                           : '+ Click to add images (up to 3)'}
                       </span>
                     )}
-                  </div>
-                  <input 
-                    id="gallery-input" 
-                    type="file" 
-                    multiple 
-                    hidden 
-                    onChange={(e) => {
-                      handlePickAndCrop(e, 2, (file) => {
-                        setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
-                      });
-                    }} 
-                    accept="image/*" 
-                  />
+                  </label>
                 </div>
 
                 <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>

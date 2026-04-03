@@ -2184,28 +2184,23 @@ function Profile() {
                     }
                     <div className="dash-profile-hero-overlay" />
 
-                    <button
-                      type="button"
+                    <label
+                      htmlFor="dash-restaurant-banner-input"
                       className="dash-hero-bg-trigger"
-                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1 }}
-                      disabled={restaurantBannerUploading}
-                      onClick={() => {
-                        if (restaurantBannerUploading) return;
-                        restaurantBannerInputRef.current?.click();
-                      }}
+                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1, pointerEvents: restaurantBannerUploading ? 'none' : 'auto' }}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                       <span>{restaurantBannerUploading ? 'Uploading…' : 'Edit Banner'}</span>
-                    </button>
+                    </label>
                     <input
-                      ref={restaurantBannerInputRef}
+                      id="dash-restaurant-banner-input"
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={(e) => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard)}
+                      onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
 
                     <div className="dash-profile-hero-content">
@@ -2905,9 +2900,11 @@ function Profile() {
                 </div>
                 <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
                   <label>Banner Image</label>
-                  <div className="upload-preview-banner" onClick={() => document.getElementById('restaurant-banner-input').click()}>
-                    {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
-                  </div>
+                  <label htmlFor="restaurant-banner-input" style={{ display: 'block', cursor: 'pointer' }}>
+                    <div className="upload-preview-banner">
+                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                    </div>
+                  </label>
                   <input id="restaurant-banner-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)} accept="image/*" />
                 </div>
               </div>
@@ -3543,15 +3540,17 @@ function Profile() {
                 <div className="onboarding-field">
                   <label>Profile photo (optional)</label>
                   <div className="image-upload-box">
-                    <div className="upload-preview-circle dash-avatar-trigger" onClick={() => document.getElementById('gen-photo-input').click()} style={{ position: 'relative', overflow: 'hidden' }}>
-                      {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoPreviewUrl || generalForm.photo} alt="Preview" /> : <span>+</span>}
-                      <div className="dash-avatar-overlay">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
-                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                          <circle cx="12" cy="13" r="4" />
-                        </svg>
+                    <label htmlFor="gen-photo-input" style={{ display: 'block', cursor: 'pointer' }}>
+                      <div className="upload-preview-circle dash-avatar-trigger" style={{ position: 'relative', overflow: 'hidden' }}>
+                        {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoPreviewUrl || generalForm.photo} alt="Preview" /> : <span>+</span>}
+                        <div className="dash-avatar-overlay">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
+                    </label>
                     <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </div>
                 </div>
