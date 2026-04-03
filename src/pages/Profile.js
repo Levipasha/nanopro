@@ -446,6 +446,13 @@ function Profile() {
     links: [{ title: '', url: '', platform: 'website', order: 0 }]
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
+  const [generalPhotoPreviewUrl, setGeneralPhotoPreviewUrl] = useState(null);
+  useEffect(() => {
+    if (!generalPhotoFile) { setGeneralPhotoPreviewUrl(null); return; }
+    const u = URL.createObjectURL(generalPhotoFile);
+    setGeneralPhotoPreviewUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [generalPhotoFile]);
   const [generalSaving, setGeneralSaving] = useState(false);
   const [restaurantSaving, setRestaurantSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState('');
@@ -3537,7 +3544,7 @@ function Profile() {
                   <label>Profile photo (optional)</label>
                   <div className="image-upload-box">
                     <div className="upload-preview-circle dash-avatar-trigger" onClick={() => document.getElementById('gen-photo-input').click()} style={{ position: 'relative', overflow: 'hidden' }}>
-                      {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="Preview" /> : <span>+</span>}
+                      {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoPreviewUrl || generalForm.photo} alt="Preview" /> : <span>+</span>}
                       <div className="dash-avatar-overlay">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
                           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -3837,7 +3844,7 @@ function Profile() {
                               })}
                             />
                             {(generalForm.photo || generalPhotoFile) ? (
-                              <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>
                                 {(generalProfile.name || '?')[0].toUpperCase()}
@@ -4456,7 +4463,7 @@ function Profile() {
                   </label>
                   {(generalForm.photo || generalPhotoFile) && (
                     <div className="profile-edit-photo-preview">
-                      <img src={generalPhotoFile ? URL.createObjectURL(generalPhotoFile) : generalForm.photo} alt="" />
+                      <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" />
                     </div>
                   )}
                 </div>

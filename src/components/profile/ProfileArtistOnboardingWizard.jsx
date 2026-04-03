@@ -22,6 +22,17 @@ function OnboardingGalleryTilePreview({ file }) {
   );
 }
 
+function useBlobUrl(file) {
+  const [url, setUrl] = React.useState(null);
+  React.useLayoutEffect(() => {
+    if (!file) { setUrl(null); return; }
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  return url;
+}
+
 export default function ProfileArtistOnboardingWizard({
   onboardingStep,
   handleOnboardingBack,
@@ -45,6 +56,9 @@ export default function ProfileArtistOnboardingWizard({
   handleLogout,
   handlePickAndCrop,
 }) {
+  const photoPreviewUrl = useBlobUrl(photoFile);
+  const bgPreviewUrl = useBlobUrl(bgFile);
+
   const isArtistStep1Valid =
     String(formData.name || '').trim() &&
     String(formData.artistId || '').trim() &&
@@ -360,14 +374,14 @@ export default function ProfileArtistOnboardingWizard({
                   <div className="image-upload-box">
                     <label>Profile Image</label>
                     <div className="upload-preview-circle" onClick={() => document.getElementById('photo-input').click()}>
-                      {photoFile ? <img src={URL.createObjectURL(photoFile)} alt="Preview" /> : <span>+</span>}
+                      {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Preview" /> : <span>+</span>}
                     </div>
                     <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/*" />
                   </div>
                   <div className="image-upload-box">
                     <label>Banner Image</label>
                     <div className="upload-preview-banner" onClick={() => document.getElementById('bg-input').click()}>
-                      {bgFile ? <img src={URL.createObjectURL(bgFile)} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                      {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Click to upload banner</span>}
                     </div>
                     <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/*" />
                   </div>
