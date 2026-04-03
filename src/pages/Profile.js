@@ -345,10 +345,10 @@ function Profile() {
         open: true,
         image: blobUrl,
         aspect,
-        onComplete: async (pixelCrop) => {
-          try {
-            const croppedDataUrl = await getCroppedImg(blobUrl, pixelCrop);
-            URL.revokeObjectURL(blobUrl);
+        onComplete: async (pixelCrop, rotation) => {
+            try {
+              const croppedDataUrl = await getCroppedImg(blobUrl, pixelCrop, rotation);
+              URL.revokeObjectURL(blobUrl);
             const res = await fetch(croppedDataUrl);
             const blob = await res.blob();
             const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
