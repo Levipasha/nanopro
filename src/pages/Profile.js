@@ -338,35 +338,35 @@ function Profile() {
       return Promise.resolve(file);
     }
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const imageData = reader.result;
-        setCropper({
-          open: true,
-          image: imageData,
-          aspect,
-          onComplete: async (pixelCrop) => {
-            try {
-              const croppedDataUrl = await getCroppedImg(imageData, pixelCrop);
-              const res = await fetch(croppedDataUrl);
-              const blob = await res.blob();
-              const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
-              resolve(croppedFile);
-            } catch (err) {
-              console.error('Cropping failed:', err);
-              reject(err);
-            } finally {
-              setCropper((prev) => ({ ...prev, open: false }));
-            }
-          },
-          onCancel: () => {
+      // Use blob URL instead of FileReader data URL — much faster on mobile
+      // and avoids the "black cropper" issue caused by huge base64 strings.
+      const blobUrl = URL.createObjectURL(file);
+      setCropper({
+        open: true,
+        image: blobUrl,
+        aspect,
+        onComplete: async (pixelCrop) => {
+          try {
+            const croppedDataUrl = await getCroppedImg(blobUrl, pixelCrop);
+            URL.revokeObjectURL(blobUrl);
+            const res = await fetch(croppedDataUrl);
+            const blob = await res.blob();
+            const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
+            resolve(croppedFile);
+          } catch (err) {
+            URL.revokeObjectURL(blobUrl);
+            console.error('Cropping failed:', err);
+            reject(err);
+          } finally {
             setCropper((prev) => ({ ...prev, open: false }));
-            reject(new Error('CROP_CANCEL'));
           }
-        });
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
+        },
+        onCancel: () => {
+          URL.revokeObjectURL(blobUrl);
+          setCropper((prev) => ({ ...prev, open: false }));
+          reject(new Error('CROP_CANCEL'));
+        }
+      });
     });
   }, []);
 

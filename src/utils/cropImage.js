@@ -8,7 +8,12 @@ export const createImage = (url) =>
     const image = new Image();
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (error) => reject(error));
-    image.setAttribute('crossOrigin', 'anonymous');
+    // Only set crossOrigin for remote http(s) URLs.
+    // For blob: URLs (local files), setting crossOrigin causes a CORS
+    // error on mobile browsers that makes the canvas draw a black frame.
+    if (url && url.startsWith('http')) {
+      image.setAttribute('crossOrigin', 'anonymous');
+    }
     image.src = url;
   });
 
@@ -21,11 +26,11 @@ export default async function getCroppedImg(imageSrc, pixelCrop) {
     return null;
   }
 
-  // set canvas size to match the crop
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  // Cap output size to avoid memory issues on mobile (max 1200px on either side)
+  const scale = Math.min(1, 1200 / Math.max(pixelCrop.width, pixelCrop.height));
+  canvas.width  = Math.round(pixelCrop.width  * scale);
+  canvas.height = Math.round(pixelCrop.height * scale);
 
-  // paste cropped area from original image
   ctx.drawImage(
     image,
     pixelCrop.x,
@@ -34,10 +39,9 @@ export default async function getCroppedImg(imageSrc, pixelCrop) {
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    canvas.width,
+    canvas.height
   );
 
-  // Return as Base64 string for easy storage in Firebase / Firestore
   return canvas.toDataURL('image/jpeg', 0.85);
 }
