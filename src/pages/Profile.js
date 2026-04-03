@@ -1224,6 +1224,7 @@ function Profile() {
       }
       return next;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileMode, generalProfile?.photo]);
 
   useEffect(() => {
