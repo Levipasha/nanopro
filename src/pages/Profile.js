@@ -462,7 +462,6 @@ function Profile() {
   const usernameCheckTimer = useRef(null);
   const restaurantSyncTimerRef = useRef(null);
   const lastRestaurantSyncSigRef = useRef('');
-  const restaurantBannerInputRef = useRef(null);
   const loadGeneralProfileRef = useRef(() => Promise.resolve());
 
   // Restaurant profile state (localStorage until backend exists)
