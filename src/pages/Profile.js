@@ -400,9 +400,10 @@ function Profile() {
   const lastGeneralUidRef = useRef(undefined);
   const [generalStep, setGeneralStep] = useState(() => {
     try {
-      return localStorage.getItem('general_step') || 'theme';
+      const stored = localStorage.getItem('general_step');
+      return stored === 'theme' ? 'create' : (stored || 'create');
     } catch (e) {
-      return 'theme';
+      return 'create';
     }
   });
 
@@ -962,7 +963,7 @@ function Profile() {
           return;
         }
 
-        updateGeneralStep('theme');
+        updateGeneralStep('create');
         return;
       }
 
@@ -974,11 +975,11 @@ function Profile() {
         updateGeneralStep('home');
         setGeneralForm(buildGeneralFormFromProfileData(data));
       } else {
-        updateGeneralStep('theme');
+        updateGeneralStep('create');
       }
     } catch (err) {
       console.warn('General profile load:', err.message);
-      updateGeneralStep('theme');
+      updateGeneralStep('create');
     } finally {
       setGeneralProfileLoading(false);
     }
@@ -3384,7 +3385,7 @@ function Profile() {
   }
 
   // General Profile: 4-step onboarding (no profile yet)
-  if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading && generalStep !== 'theme') {
+  if (isLoggedIn && isGeneralMode && !generalProfile && !generalProfileLoading && generalStep !== 'home') {
     const genStep = generalOnboardingStep;
     return (
       <div className="profile-page profile-login-wrap onboarding-screen">
@@ -4333,9 +4334,6 @@ function Profile() {
       <div className="profile-page profile-view-wrap">
         <div className="profile-view-card profile-view-card-wide profile-general-card">
           <div className="profile-view-header profile-edit-view-header">
-            <div className="profile-edit-header-row">
-              <button type="button" onClick={() => updateGeneralStep('theme')} className="profile-back-btn">← Back</button>
-            </div>
             <h1 className="profile-edit-main-title">Create your profile</h1>
           </div>
           {generalSuccess && (
