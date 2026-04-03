@@ -5,7 +5,7 @@
  */
 export const API_URL = process.env.REACT_APP_API_URL || '';
 
-async function request(method, path, { body, getIdToken, getFirebaseUser, headers: customHeaders = {} } = {}) {
+async function request(method, path, { body, getIdToken, getFirebaseUser, headers: customHeaders = {}, cache } = {}) {
   const headers = { 'Content-Type': 'application/json', ...customHeaders };
   if (getIdToken) {
     const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
@@ -17,11 +17,13 @@ async function request(method, path, { body, getIdToken, getFirebaseUser, header
     if (user?.email) headers['X-Firebase-Email'] = user.email;
   }
   const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
-  const res = await fetch(`${base}${path}`, {
+  const fetchOpts = {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined
-  });
+  };
+  if (cache !== undefined) fetchOpts.cache = cache;
+  const res = await fetch(`${base}${path}`, fetchOpts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const errText = [data.message, data.error].filter(Boolean).join(' — ') || `Request failed: ${res.status}`;
@@ -52,7 +54,7 @@ async function uploadPhoto(file, getIdToken) {
 
 export const landingArtistAPI = {
   getMyProfiles: (getIdToken, getFirebaseUser) =>
-    request('GET', '/api/artist/my-profiles', { getIdToken, getFirebaseUser }),
+    request('GET', '/api/artist/my-profiles', { getIdToken, getFirebaseUser, cache: 'no-store' }),
   createMyProfile: (body, getIdToken, getFirebaseUser) =>
     request('POST', '/api/artist/my-profiles', { body, getIdToken, getFirebaseUser }),
   updateMyProfile: (artistId, body, getIdToken, getFirebaseUser) =>
@@ -62,19 +64,23 @@ export const landingArtistAPI = {
     request('POST', '/api/artist/check-account', { body: { email } }),
   // Public, read-only artist profile used by /artist?id=<id>
   getPublicProfile: (artistId) =>
-    request('GET', `/api/artist/public/${encodeURIComponent(artistId)}`)
+    request('GET', `/api/artist/public/${encodeURIComponent(artistId)}`, { cache: 'no-store' })
 };
 
 // General Profile (Linktree-like) API
 export const generalProfileAPI = {
   getMine: (getIdToken, getFirebaseUser, profileType = 'general') =>
-    request('GET', `/api/general-profile/me?type=${encodeURIComponent(profileType)}`, { getIdToken, getFirebaseUser }),
+    request('GET', `/api/general-profile/me?type=${encodeURIComponent(profileType)}`, {
+      getIdToken,
+      getFirebaseUser,
+      cache: 'no-store'
+    }),
   create: (body, getIdToken, getFirebaseUser) =>
     request('POST', '/api/general-profile', { body, getIdToken, getFirebaseUser }),
   update: (body, getIdToken, getFirebaseUser) =>
     request('PUT', '/api/general-profile/me', { body, getIdToken, getFirebaseUser }),
   getByUsername: (username) =>
-    request('GET', `/api/general-profile/u/${encodeURIComponent(username)}`),
+    request('GET', `/api/general-profile/u/${encodeURIComponent(username)}`, { cache: 'no-store' }),
   uploadPhoto: async (file, getIdToken) => {
     const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
     return uploadPhoto(file, token);

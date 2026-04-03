@@ -77,7 +77,7 @@ function StudentPublicView() {
   return (
     <>
       <Helmet>
-        <title>{`${student.name} | Nano Profiles`}</title>
+        <title>{`${(student.name || '').trim() || 'Student'} - Nano Profiles`}</title>
         <meta name="description" content="Example student profile showcase" />
       </Helmet>
 

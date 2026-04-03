@@ -33,24 +33,6 @@ function ArtistPublicView() {
   useShowcaseEmbedHeight(isEmbed);
   const [success, setSuccess] = useState('');
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareTitle = `${artist?.name || 'Artist Profile'} | Nano Profiles`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          text: `Check out ${artist?.name || 'this'} artist on Nano Profiles!`,
-          url
-        });
-      } catch (err) {
-        if (err.name !== 'AbortError') copyToClipboard(url);
-      }
-    } else {
-      copyToClipboard(url);
-    }
-  };
-
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       setSuccess('Link copied!');
@@ -322,6 +304,26 @@ function ArtistPublicView() {
   const fontId = artist.profileFont || 'outfit';
   const fontFamily = resolveFontFamily(fontId);
 
+  const sharePrimaryName = (artist.name || '').trim() || 'Artist';
+  const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: nanoProfilesPageTitle,
+          text: `Check out ${sharePrimaryName} on Nano Profiles!`,
+          url
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') copyToClipboard(url);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
+
   return (
     <div
       className={`gp-view gp-layout gp-artist-themed${isEmbed ? ' gp-embed-showcase' : ''}`}
@@ -335,13 +337,13 @@ function ArtistPublicView() {
       }}
     >
       <Helmet>
-        <title>{`${artist?.name || 'Artist Profile'} | Nano Profiles`}</title>
+        <title>{nanoProfilesPageTitle}</title>
         <meta name="description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
         
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={`${artist?.name || 'Artist Profile'} | Nano Profiles`} />
+        <meta property="og:title" content={nanoProfilesPageTitle} />
         <meta property="og:description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
         <meta property="og:image" content={fixImageUrl(artist?.photo) || artist?.photo} />
       </Helmet>

@@ -12,6 +12,14 @@ import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+/** Fix legacy titles saved as Google_maps from older publish logic. */
+function displayGeneralLinkLabel(link) {
+  const t = (link?.title || '').trim();
+  if (!t) return link?.url || '';
+  if (/^google_maps$/i.test(t) || t === 'Google_maps') return 'Google Maps';
+  return t;
+}
+
 function GeneralProfileView() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
@@ -77,24 +85,6 @@ function GeneralProfileView() {
     };
     if (username) fetchProfile();
   }, [username, isMock]);
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareTitle = `${profile?.name || 'Profile'} | Nano Profiles`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          text: `Check out ${profile?.name || 'this'} profile on Nano Profiles!`,
-          url
-        });
-      } catch (err) {
-        if (err.name !== 'AbortError') copyToClipboard(url);
-      }
-    } else {
-      copyToClipboard(url);
-    }
-  };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => alert('Link copied!'));
@@ -166,23 +156,43 @@ function GeneralProfileView() {
   const activeHeadingFont = profile.font || 'outfit';
   const activeBodyFont = profile.bioFont || activeHeadingFont;
 
+  const sharePrimaryName = (profile.name || '').trim() || 'Profile';
+  const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: nanoProfilesPageTitle,
+          text: `Check out ${sharePrimaryName} on Nano Profiles!`,
+          url
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') copyToClipboard(url);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
+
   return (
     <div className={`gp-view gp-layout${isEmbed ? ' gp-embed-showcase' : ''}`}>
       <Helmet>
-        <title>{`${profile?.name || 'Profile'} | Nano Profiles`}</title>
+        <title>{nanoProfilesPageTitle}</title>
         <meta name="description" content={profile?.title || profile?.bio || 'Smart Digital Identity Solutions'} />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={`${profile?.name || 'Profile'} | Nano Profiles`} />
+        <meta property="og:title" content={nanoProfilesPageTitle} />
         <meta property="og:description" content={profile?.title || 'Smart Digital Identity Solutions'} />
         <meta property="og:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={window.location.href} />
-        <meta name="twitter:title" content={`${profile?.name || 'Profile'} | Nano Profiles`} />
+        <meta name="twitter:title" content={nanoProfilesPageTitle} />
         <meta name="twitter:description" content={profile?.title || 'Smart Digital Identity Solutions'} />
         <meta name="twitter:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
       </Helmet>
@@ -296,6 +306,7 @@ function GeneralProfileView() {
             <a
               href={`mailto:${restaurantEmail}`}
               className="gp-link"
+              title={restaurantEmail}
               style={{ color: theme.text, background: theme.linkBg || theme.bg, borderColor: theme.text }}
             >
               <span className="gp-link-icon" aria-hidden="true">✉</span>
@@ -312,7 +323,7 @@ function GeneralProfileView() {
               style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
             >
               <span className="gp-link-icon">{getLinkIcon(link)}</span>
-              <span className="gp-link-text">{link.title || link.url}</span>
+              <span className="gp-link-text">{displayGeneralLinkLabel(link)}</span>
             </a>
           ))}
         </div>
@@ -355,12 +366,14 @@ function GeneralProfileView() {
             <div className="gp-modal-overlay" />
             <div className="gp-menu-book" onClick={(e) => e.stopPropagation()}>
               <div className="gp-menu-topbar">
-                <span className="gp-menu-title">Menu Preview</span>
+                <span className="gp-menu-title">Menu PDF</span>
                 <div className="gp-menu-topbar-right">
                   <span className="gp-menu-page-indicator">
                     Page {menuPage}{menuTotalPages ? ` / ${menuTotalPages}` : ''}
                   </span>
-                  <button className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">×</button>
+                  <button type="button" className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">
+                    <span aria-hidden="true">×</span>
+                  </button>
                 </div>
               </div>
 

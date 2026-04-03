@@ -118,6 +118,29 @@
   pointer-events: none !important;
 }
 
+/* Restaurant hero: 16:9 banner (matches public page + cropper); Edit Banner visible without hover (touch) */
+.dash-profile-hero--restaurant {
+  aspect-ratio: 16 / 9 !important;
+  min-height: 0 !important;
+  max-height: min(360px, 42vh) !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+}
+
+.dash-profile-hero--restaurant .dash-profile-hero-content {
+  padding: 1.25rem 1.5rem 1.5rem !important;
+}
+
+.dash-profile-hero--restaurant .dash-hero-bg-trigger {
+  opacity: 1 !important;
+  z-index: 30 !important;
+  pointer-events: auto !important;
+}
+
+.dash-hero-bg-trigger--busy {
+  pointer-events: none !important;
+}
+
 /* Contact cards used overflow:hidden; it clips the phone field caret and can block taps */
 .dash-root .dash-contact-item {
   overflow: visible !important;
@@ -1120,4 +1143,141 @@ h3.dash-section-label {
   grid-template-columns: 1fr !important;
 }
 
+/* Compact single-line link rows: icon | label + pill input | actions */
+.dash-link-card.dash-link-card--inline {
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.dash-link-card.dash-link-card--inline:hover {
+  transform: translateY(-2px);
+}
+
+.dash-link-card.dash-link-card--inline .dash-link-card-main {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .dash-link-card.dash-link-card--inline .dash-link-card-main {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .dash-link-card.dash-link-card--inline .dash-link-controls {
+    margin-top: 0 !important;
+    align-self: center !important;
+  }
+}
+
+.dash-link-content.dash-link-content--inline {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-link-content--inline .dash-link-title {
+  flex-shrink: 0;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0 !important;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.dash-link-content--inline .dash-link-url {
+  flex: 1 !important;
+  min-width: 0;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.35rem;
+}
+
+.dash-link-card--inline .dash-link-inline-input {
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 999px !important;
+  min-height: 0 !important;
+  width: 100%;
+}
+
+.dash-link-card--inline .dash-link-icon-circle {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 10px !important;
+}
+
+.dash-link-card--inline .dash-link-icon-circle svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.dash-link-card--inline .dash-link-controls {
+  gap: 0.35rem !important;
+  flex-shrink: 0;
+  margin-top: 0 !important;
+}
+
+.dash-link-card--inline .dash-link-remove-icon-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  margin-right: 0 !important;
+}
+
+/* Banner / cover upload: dim preview + hero until live page catches up */
+.dash-mobile-preview-frame-wrap--relative,
+.dash-design-mobile-preview-wrap--relative {
+  position: relative;
+}
+
+.dash-preview-sync-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: inherit;
+  pointer-events: auto;
+}
+
+.dash-profile-hero > .dash-preview-sync-overlay {
+  border-radius: 24px;
+}
+
+.dash-preview-sync-overlay__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  max-width: 14rem;
+  pointer-events: none;
+}
+
+.dash-preview-sync-overlay__text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+}
+
+.dash-preview-sync-overlay__hint {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(248, 250, 252, 0.72);
+  line-height: 1.4;
+}
 

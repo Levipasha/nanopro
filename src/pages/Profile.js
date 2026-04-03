@@ -64,7 +64,7 @@ const GENERAL_FLOW_MODE_KEY = 'general_flow_mode';
 const PROFILE_PREF_BY_EMAIL_KEY = 'profile_pref_by_email_v1';
 
 const ALL_PLATFORMS = [
-  { id: 'google_maps', label: 'Rate us on Google' },
+  { id: 'google_maps', label: 'Google Maps' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'website', label: 'Website' },
@@ -86,6 +86,18 @@ const ALL_PLATFORMS = [
   { id: 'quora', label: 'Quora' },
   { id: 'github', label: 'GitHub' }
 ];
+
+/** Link title sent to API / shown on public page — avoids e.g. Google_maps from raw keys. */
+function titleForRestaurantLinkPlatform(platformKey) {
+  const k = String(platformKey || '');
+  const meta = ALL_PLATFORMS.find((p) => p.id === k);
+  if (meta) return meta.label;
+  return k
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
 
 const MAX_PLATFORM_LINKS = 6;
 
@@ -202,6 +214,58 @@ function buildGeneralFormFromProfileData(data) {
   };
 }
 
+/** Normalize photo upload JSON (artist/general share the same upload route). */
+function extractUploadUrl(up) {
+  if (!up || typeof up !== 'object') return '';
+  return (
+    up.url ||
+    up.secure_url ||
+    (up.data && (up.data.url || up.data.secure_url)) ||
+    ''
+  );
+}
+
+/** Shown on phone preview and hero while banner/cover is uploading and live iframe has not refreshed yet. */
+function LivePreviewSyncOverlay({ show, message = 'Uploading banner…' }) {
+  if (!show) return null;
+  return (
+    <div className="dash-preview-sync-overlay" role="status" aria-live="polite" aria-busy="true">
+      <div className="dash-preview-sync-overlay__inner">
+        <div className="dash-loading-spinner" />
+        <span className="dash-preview-sync-overlay__text">{message}</span>
+        <span className="dash-preview-sync-overlay__hint">Preview updates when upload finishes</span>
+      </div>
+    </div>
+  );
+}
+
+/** Live iframe of `/link/:username` so dashboard preview matches the public restaurant profile. */
+function RestaurantPublicPreviewIframe({ username, previewKey, bannerSyncing }) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const u = (username || '').trim();
+  if (!u) {
+    return (
+      <div className="dash-full-preview-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', textAlign: 'center' }}>
+        <p style={{ color: 'var(--dash-subtext)', fontSize: '0.88rem', margin: 0, lineHeight: 1.5 }}>
+          Save and publish your profile with a username to see the live preview here.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="dash-full-preview-container">
+      <iframe
+        key={`restaurant-dash-preview-${u}-${previewKey}`}
+        title="Live restaurant profile preview"
+        src={`${origin}/link/${encodeURIComponent(u)}?v=${previewKey}`}
+        className="dash-preview-iframe"
+        sandbox="allow-scripts allow-same-origin"
+      />
+      <LivePreviewSyncOverlay show={!!bannerSyncing} message="Uploading banner…" />
+    </div>
+  );
+}
+
 function Profile() {
   const navigate = useNavigate();
   const [profileMode, setProfileMode] = useState(() => {
@@ -268,46 +332,54 @@ function Profile() {
   const [artistListReady, setArtistListReady] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
 
-  /** Helper to open cropper before actual upload/save logic */
+  /** GIFs skip crop; other images open cropper. Resolves with the file to upload. */
+  const getFileAfterCropOrPassThrough = useCallback((file, aspect) => {
+    if (file.type === 'image/gif') {
+      return Promise.resolve(file);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const imageData = reader.result;
+        setCropper({
+          open: true,
+          image: imageData,
+          aspect,
+          onComplete: async (pixelCrop) => {
+            try {
+              const croppedDataUrl = await getCroppedImg(imageData, pixelCrop);
+              const res = await fetch(croppedDataUrl);
+              const blob = await res.blob();
+              const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
+              resolve(croppedFile);
+            } catch (err) {
+              console.error('Cropping failed:', err);
+              reject(err);
+            } finally {
+              setCropper((prev) => ({ ...prev, open: false }));
+            }
+          },
+          onCancel: () => {
+            setCropper((prev) => ({ ...prev, open: false }));
+            reject(new Error('CROP_CANCEL'));
+          }
+        });
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  /** Helper to open cropper before actual upload/save logic (single file) */
   const handlePickAndCrop = (e, aspect, onCroppedDone) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Check for GIF and silently bypass cropper to preserve the animation
-    if (file.type === 'image/gif') {
-      onCroppedDone(file);
-      e.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropper({
-        open: true,
-        image: reader.result,
-        aspect,
-        onComplete: async (pixelCrop) => {
-          try {
-            const croppedDataUrl = await getCroppedImg(reader.result, pixelCrop);
-            const res = await fetch(croppedDataUrl);
-            const blob = await res.blob();
-            const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
-            onCroppedDone(croppedFile);
-          } catch (err) {
-            console.error('Cropping failed:', err);
-          } finally {
-            setCropper(prev => ({ ...prev, open: false }));
-          }
-        },
-        onCancel: () => {
-          setCropper(prev => ({ ...prev, open: false }));
-        }
-      });
-    };
-    reader.readAsDataURL(file);
-    
-    // Reset value so same file can be picked again
     e.target.value = '';
+    getFileAfterCropOrPassThrough(file, aspect)
+      .then(onCroppedDone)
+      .catch((err) => {
+        if (err?.message !== 'CROP_CANCEL') console.error(err);
+      });
   };
   const [formData, setFormData] = useState(defaultForm);
   const [photoFile, setPhotoFile] = useState(null);
@@ -383,6 +455,7 @@ function Profile() {
   const restaurantSyncTimerRef = useRef(null);
   const lastRestaurantSyncSigRef = useRef('');
   const restaurantBannerInputRef = useRef(null);
+  const loadGeneralProfileRef = useRef(() => Promise.resolve());
 
   // Restaurant profile state (localStorage until backend exists)
   const [restaurantForm, setRestaurantForm] = useState({
@@ -434,16 +507,34 @@ function Profile() {
   // and updateRestaurantOnboardingStep(1).
   const restaurantEditInProgressRef = useRef(false);
   const [restaurantGalleryUploading, setRestaurantGalleryUploading] = useState(false);
+  const [restaurantBannerUploading, setRestaurantBannerUploading] = useState(false);
 
-  // Strip large base64 blobs before persisting — images/PDFs stay in React state only
+  // Strip large base64 blobs before persisting — keep last known https banner so refresh does not lose it
   const persistRestaurant = (profile) => {
     try {
-      // Prevent localStorage blow-ups: keep only small base64 images.
-      const MAX_DATA_URL_LENGTH = 500000; // ~0.5MB string; adjust if needed
+      const MAX_DATA_URL_LENGTH = 1200000; // ~1.2MB string; cropped 16:9 JPEGs often exceed 500k
       const keepDataImage = (v) => typeof v === 'string' && v.startsWith('data:image/') && v.length <= MAX_DATA_URL_LENGTH;
+      let previousHttpBanner = '';
+      try {
+        const rawPrev = localStorage.getItem(RESTAURANT_STORAGE_KEY);
+        if (rawPrev) {
+          const p = JSON.parse(rawPrev);
+          if (p?.banner && String(p.banner).startsWith('http')) previousHttpBanner = String(p.banner).trim();
+        }
+      } catch (e) { /* ignore */ }
+
+      let bannerOut;
+      if (profile.banner && String(profile.banner).startsWith('http')) {
+        bannerOut = String(profile.banner).trim();
+      } else if (keepDataImage(profile.banner)) {
+        bannerOut = profile.banner;
+      } else {
+        bannerOut = previousHttpBanner || undefined;
+      }
+
       const safe = {
         ...profile,
-        banner: (profile.banner && profile.banner.startsWith('http')) ? profile.banner : (keepDataImage(profile.banner) ? profile.banner : undefined),
+        banner: bannerOut,
         // menuPdf base64 can be very large; only persist when it's already uploaded (http url).
         menuPdf: profile.menuPdf && profile.menuPdf.startsWith('http') ? profile.menuPdf : undefined,
         gallery: (profile.gallery || []).map(g => ({
@@ -453,7 +544,6 @@ function Profile() {
       };
       localStorage.setItem(RESTAURANT_STORAGE_KEY, JSON.stringify(safe));
     } catch (e) {
-      // If still too large, save only non-binary fields
       try {
         const minimal = { ...profile, banner: undefined, menuPdf: undefined, gallery: [] };
         localStorage.setItem(RESTAURANT_STORAGE_KEY, JSON.stringify(minimal));
@@ -514,11 +604,37 @@ function Profile() {
   // Restaurant dashboard "Change banner" (no onboarding form).
   const handleRestaurantBannerChangeDashboard = (file) => {
     if (!file || !restaurantProfile) return;
+    setRestaurantBannerUploading(true);
     const reader = new FileReader();
     reader.onload = (event) => {
-      const updated = { ...restaurantProfile, banner: event.target.result };
-      setRestaurantProfile(updated);
-      persistRestaurant(updated);
+      const dataUrl = event.target.result;
+      setRestaurantProfile((prev) => {
+        if (!prev) {
+          queueMicrotask(() => setRestaurantBannerUploading(false));
+          return prev;
+        }
+        const updated = { ...prev, banner: dataUrl };
+        // Do not persist data URLs here — large crops get stripped and wipe the saved https banner.
+        // persistRestaurant runs inside handleRestaurantPublish after upload + save.
+        Promise.resolve().then(async () => {
+          try {
+            const ok = await handleRestaurantPublish(updated, { silent: true });
+            if (!ok) {
+              alert('Banner could not be saved to your public profile. Check your connection and try again.');
+            }
+          } catch (e) {
+            console.warn('Restaurant banner publish failed:', e);
+            alert('Banner could not be saved. Please try again.');
+          } finally {
+            setRestaurantBannerUploading(false);
+          }
+        });
+        return updated;
+      });
+    };
+    reader.onerror = () => {
+      setRestaurantBannerUploading(false);
+      alert('Could not read the image file. Please try another file.');
     };
     reader.readAsDataURL(file);
   };
@@ -582,8 +698,18 @@ function Profile() {
     const getIdTokenFn = () => getIdToken();
     const getFirebaseUserFn = () => ({ uid: user.uid || null, email: user.email || null, name: user.displayName || null });
     try {
-      let photoUrl = profileInput.banner && profileInput.banner.startsWith('http') ? profileInput.banner : '';
-      if (profileInput.banner && profileInput.banner.startsWith('data:')) {
+      let existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
+      if (!existing?.data) {
+        const existingGeneral = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
+        if (existingGeneral?.data) existing = existingGeneral;
+      }
+      const previousPhoto = (existing?.data?.photo && String(existing.data.photo).trim()) || '';
+
+      let photoUrl =
+        profileInput.banner && String(profileInput.banner).startsWith('http')
+          ? String(profileInput.banner).trim()
+          : '';
+      if (profileInput.banner && String(profileInput.banner).startsWith('data:')) {
         try {
           const arr = profileInput.banner.split(',');
           const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/png';
@@ -592,11 +718,17 @@ function Profile() {
           for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
           const file = new File([u8arr], 'banner.png', { type: mime });
           const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
-          photoUrl = up?.url || '';
+          photoUrl = extractUploadUrl(up);
         } catch (e) {
           console.warn('Banner upload failed:', e);
         }
+        if (!photoUrl) {
+          const msg = 'Banner could not be uploaded. Try a smaller image or check your connection.';
+          if (!silent) alert(msg);
+          return false;
+        }
       }
+
       let menuPdfUrl = profileInput.menuPdf && profileInput.menuPdf.startsWith('http') ? profileInput.menuPdf : '';
       if (profileInput.menuPdf && profileInput.menuPdf.startsWith('data:')) {
         try {
@@ -607,7 +739,7 @@ function Profile() {
           for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
           const file = new File([u8arr], 'menu.pdf', { type: mime });
           const up = await generalProfileAPI.uploadMenuPdf(file, getIdTokenFn, getFirebaseUserFn);
-          menuPdfUrl = up?.url || '';
+          menuPdfUrl = extractUploadUrl(up) || (up && up.url) || '';
         } catch (e) {
           console.warn('Menu PDF upload failed:', e);
         }
@@ -630,7 +762,7 @@ function Profile() {
             const ext = mime.includes('png') ? 'png' : mime.includes('gif') ? 'gif' : mime.includes('webp') ? 'webp' : 'jpg';
             const file = new File([u8arr], `gallery-${gi}.${ext}`, { type: mime });
             const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
-            gUrl = up?.url || '';
+            gUrl = extractUploadUrl(up);
           } catch (e) {
             console.warn('Gallery image upload failed:', e);
             continue;
@@ -651,7 +783,7 @@ function Profile() {
         } else if (isFullUrl && !url.startsWith('http')) {
           url = 'https://' + url;
         }
-        return { platform: k, title: k.charAt(0).toUpperCase() + k.slice(1), url, order: idx };
+        return { platform: k, title: titleForRestaurantLinkPlatform(k), url, order: idx };
       }).filter(l => l.url);
       const bioParts = [profileInput.bio || ''];
       if (profileInput.phone) bioParts.push(`📞 ${profileInput.phone}`);
@@ -671,24 +803,24 @@ function Profile() {
         gallery: galleryNormalized,
         profileType: 'restaurant'
       };
-      let existing = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'restaurant');
-      if (!existing?.data) {
-        const existingGeneral = await generalProfileAPI.getMine(getIdTokenFn, getFirebaseUserFn, 'general');
-        if (existingGeneral?.data) existing = existingGeneral;
-      }
+
+      let saveResult;
       if (existing?.data) {
-        await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
+        saveResult = await generalProfileAPI.update(payload, getIdTokenFn, getFirebaseUserFn);
         if (!silent) alert('Profile updated! Your link is now live.');
       } else {
-        await generalProfileAPI.create(payload, getIdTokenFn, getFirebaseUserFn);
+        saveResult = await generalProfileAPI.create(payload, getIdTokenFn, getFirebaseUserFn);
         if (!silent) alert('Profile published! Your link is now live.');
       }
+
+      const serverPhoto =
+        (saveResult?.data?.photo && String(saveResult.data.photo).trim()) || photoUrl || previousPhoto || '';
 
       // Update local state with uploaded URLs, then persist.
       // This prevents banner/menuPdf from disappearing after refresh (localStorage strips base64).
       const updatedRestaurantProfile = {
         ...profileInput,
-        banner: photoUrl || profileInput.banner || null,
+        banner: serverPhoto || profileInput.banner || null,
         menuPdf: menuPdfUrl || profileInput.menuPdf || null,
         gallery: galleryNormalized.length > 0 ? galleryNormalized : (profileInput.gallery || []),
         theme: payload.theme || profileInput.theme || 'mint',
@@ -699,7 +831,12 @@ function Profile() {
       try { persistRestaurant(updatedRestaurantProfile); } catch (e) { }
       setRestaurantProfile(updatedRestaurantProfile);
       try { lastRestaurantSyncSigRef.current = JSON.stringify(updatedRestaurantProfile); } catch (e) { }
-      setPreviewKey(prev => prev + 1);
+      setPreviewKey((prev) => prev + 1);
+      try {
+        await loadGeneralProfileRef.current();
+      } catch (e) {
+        /* ignore */
+      }
       return true;
     } catch (err) {
       if (!silent) alert(err.message || 'Failed to publish. Please try again.');
@@ -839,6 +976,7 @@ function Profile() {
       setGeneralProfileLoading(false);
     }
   }, [user, getFirebaseUser, profileMode]);
+  loadGeneralProfileRef.current = loadGeneralProfile;
 
   useLayoutEffect(() => {
     const uid = user?.uid || null;
@@ -1063,6 +1201,31 @@ function Profile() {
     });
   }, [profileMode, generalProfile]);
 
+  // After refresh, localStorage may have no banner (large data URLs were never stored); pull photo from API.
+  useEffect(() => {
+    if (profileMode !== 'restaurant' || !generalProfile) return;
+    const photo = generalProfile.photo && String(generalProfile.photo).trim();
+    if (!photo || !photo.startsWith('http')) return;
+    setRestaurantProfile((prev) => {
+      if (!prev) return prev;
+      const b = prev.banner != null ? String(prev.banner) : '';
+      if (b.startsWith('data:')) return prev;
+      if (b.startsWith('http') && b === photo) return prev;
+      const next = { ...prev, banner: photo };
+      try {
+        persistRestaurant(next);
+      } catch (e) {
+        /* ignore */
+      }
+      try {
+        lastRestaurantSyncSigRef.current = JSON.stringify(next);
+      } catch (e) {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [profileMode, generalProfile?.photo]);
+
   useEffect(() => {
     if (!isLoggedIn || !isRestaurantMode || !restaurantProfile) return undefined;
     if (restaurantOnboardingStep !== 0 || !restaurantProfile.username) return undefined;
@@ -1216,7 +1379,10 @@ function Profile() {
       let photoUrl = generalForm.photo;
       if (generalPhotoFile) {
         const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, getIdTokenFn);
-        photoUrl = up?.url || photoUrl;
+        photoUrl = extractUploadUrl(up) || photoUrl;
+        if (!photoUrl || !String(photoUrl).startsWith('http')) {
+          throw new Error('Profile photo upload did not return a URL. Try a smaller image or check your connection.');
+        }
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const { phone: _gp, email: _ge, ...generalRest } = generalForm;
@@ -1241,6 +1407,7 @@ function Profile() {
       }
 
       setGeneralProfile(res.data);
+      if (res.data) setGeneralForm(buildGeneralFormFromProfileData(res.data));
       updateGeneralStep('home');
       setGeneralOnboardingStep(1);
       localStorage.removeItem('general_onboarding_step');
@@ -1308,10 +1475,13 @@ function Profile() {
     setError('');
     try {
       const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
-      const photoUrl = up?.url || '';
+      const photoUrl = extractUploadUrl(up);
+      if (!photoUrl) {
+        throw new Error('Upload did not return an image URL. Try again.');
+      }
       const res = await generalProfileAPI.update({ photo: photoUrl }, getIdTokenFn, getFirebaseUserFn);
       setGeneralProfile(res.data);
-      setGeneralForm(prev => ({ ...prev, photo: photoUrl }));
+      setGeneralForm((prev) => ({ ...prev, photo: res.data?.photo || photoUrl }));
       setGeneralPhotoFile(null);
       setGeneralSuccess('Photo updated!');
       setTimeout(() => setGeneralSuccess(''), 2000);
@@ -1333,7 +1503,10 @@ function Profile() {
       let photoUrl = generalForm.photo;
       if (generalPhotoFile) {
         const up = await generalProfileAPI.uploadPhoto(generalPhotoFile, getIdTokenFn);
-        photoUrl = up?.url || photoUrl;
+        photoUrl = extractUploadUrl(up) || photoUrl;
+        if (!photoUrl || !String(photoUrl).startsWith('http')) {
+          throw new Error('Profile photo upload did not return a URL. Try a smaller image or check your connection.');
+        }
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
       const { phone: _gp2, email: _ge2, ...generalRestSave } = generalForm;
@@ -1343,6 +1516,7 @@ function Profile() {
         getFirebaseUserFn
       );
       setGeneralProfile(res.data);
+      if (res.data) setGeneralForm(buildGeneralFormFromProfileData(res.data));
       setGeneralPhotoFile(null);
       setGeneralSuccess('Profile saved!');
       setTimeout(() => setGeneralSuccess(''), 2500);
@@ -1444,7 +1618,7 @@ function Profile() {
     try {
       const tokenForUpload = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(newGalleryFile, tokenForUpload);
-      const url = up && up.url ? up.url : null;
+      const url = extractUploadUrl(up) || null;
       if (url) {
         setFormData((prev) => ({
           ...prev,
@@ -1452,6 +1626,8 @@ function Profile() {
         }));
         setNewGalleryFile(null);
         setNewGalleryName('');
+      } else {
+        setError('Upload did not return an image URL. Try again.');
       }
     } catch (err) {
       setError(err.message || 'Upload failed');
@@ -1483,11 +1659,17 @@ function Profile() {
       let bgUrl = formData.backgroundPhoto;
       if (photoFile) {
         const up = await landingArtistAPI.uploadPhoto(photoFile, tokenForUpload);
-        photoUrl = (up && up.url) ? up.url : photoUrl;
+        photoUrl = extractUploadUrl(up) || photoUrl;
+        if (!photoUrl || !String(photoUrl).startsWith('http')) {
+          throw new Error('Profile photo upload did not return a URL. Try a smaller image or check your connection.');
+        }
       }
       if (bgFile) {
         const up = await landingArtistAPI.uploadPhoto(bgFile, tokenForUpload);
-        bgUrl = (up && up.url) ? up.url : bgUrl;
+        bgUrl = extractUploadUrl(up) || bgUrl;
+        if (!bgUrl || !String(bgUrl).startsWith('http')) {
+          throw new Error('Banner upload did not return a URL. Try a smaller image or check your connection.');
+        }
       }
       const payload = {
         ...formData,
@@ -1503,6 +1685,8 @@ function Profile() {
       );
       await loadMyProfiles();
       closeEdit();
+    } catch (err) {
+      setError(err.message || 'Failed to save profile.');
     } finally {
       setSaving(false);
     }
@@ -1590,15 +1774,19 @@ function Profile() {
     try {
       const token = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(file, token);
-      if (up && up.url) {
-        const payload = { [field]: up.url };
+      const uploadedUrl = extractUploadUrl(up);
+      if (uploadedUrl) {
+        const payload = { [field]: uploadedUrl };
         await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-        setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [field]: up.url } : a));
+        setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [field]: uploadedUrl } : a));
         // Auto-refresh preview
         setPreviewKey(prev => prev + 1);
+      } else {
+        setError('Upload did not return an image URL. Try again.');
       }
     } catch (err) {
       console.error(`Failed to upload ${field}:`, err);
+      setError(err.message || `Failed to upload ${field}.`);
     } finally {
       setIsUploading(null);
     }
@@ -1612,16 +1800,20 @@ function Profile() {
     try {
       const token = await getIdToken();
       const up = await landingArtistAPI.uploadPhoto(file, token);
-      if (up && up.url) {
-        const newItem = { url: up.url, name: name || 'Gallery image' };
+      const uploadedUrl = extractUploadUrl(up);
+      if (uploadedUrl) {
+        const newItem = { url: uploadedUrl, name: name || 'Gallery image' };
         const newGallery = [...(artist.gallery || []), newItem];
         const payload = { gallery: newGallery };
         await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
         setPreviewKey(prev => prev + 1);
+      } else {
+        setError('Upload did not return an image URL. Try again.');
       }
     } catch (err) {
       console.error('Failed to add gallery item:', err);
+      setError(err.message || 'Failed to add gallery item.');
     } finally {
       setGalleryUploading(false);
     }
@@ -1645,9 +1837,10 @@ function Profile() {
         const file = files[i];
         try {
           const up = await landingArtistAPI.uploadPhoto(file, token);
-          if (up && up.url) {
+          const uploadedUrl = extractUploadUrl(up);
+          if (uploadedUrl) {
             const label = `Gallery image ${currentGallery.length + 1}`;
-            currentGallery = [...currentGallery, { url: up.url, name: label }];
+            currentGallery = [...currentGallery, { url: uploadedUrl, name: label }];
           }
         } catch (err) {
           console.error('Failed to upload gallery image:', file.name, err);
@@ -1770,11 +1963,19 @@ function Profile() {
       // Upload images if selected
       if (photoFile) {
         const up = await landingArtistAPI.uploadPhoto(photoFile, () => getIdToken());
-        payload.photo = up?.url || payload.photo;
+        const u = extractUploadUrl(up);
+        if (!u || !String(u).startsWith('http')) {
+          throw new Error('Profile photo upload did not return a URL. Try a smaller image or check your connection.');
+        }
+        payload.photo = u;
       }
       if (bgFile) {
         const up = await landingArtistAPI.uploadPhoto(bgFile, () => getIdToken());
-        payload.backgroundPhoto = up?.url || payload.backgroundPhoto;
+        const u = extractUploadUrl(up);
+        if (!u || !String(u).startsWith('http')) {
+          throw new Error('Banner upload did not return a URL. Try a smaller image or check your connection.');
+        }
+        payload.backgroundPhoto = u;
       }
 
       // Upload gallery files (images / GIFs / videos ≤30s, validated client-side)
@@ -1785,9 +1986,10 @@ function Profile() {
           assertGalleryFileKind(file);
           await assertVideoMaxDuration(file);
           const up = await landingArtistAPI.uploadPhoto(file, () => getIdToken());
-          if (up?.url) {
+          const galleryUrl = extractUploadUrl(up);
+          if (galleryUrl) {
             const isVid = file.type.startsWith('video/');
-            galleryUrls.push({ url: up.url, name: isVid ? `Gallery video ${i + 1}` : `Gallery image ${i + 1}` });
+            galleryUrls.push({ url: galleryUrl, name: isVid ? `Gallery video ${i + 1}` : `Gallery image ${i + 1}` });
           }
         }
         payload.gallery = [...(payload.gallery || []), ...galleryUrls];
@@ -1967,7 +2169,7 @@ function Profile() {
                 {/* Left: profile info */}
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   {/* Hero banner — with inline edit button */}
-                  <div className="dash-profile-hero">
+                  <div className="dash-profile-hero dash-profile-hero--restaurant">
                     {restaurantProfile.banner
                       ? <img src={restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
                       : <div className="dash-profile-hero-bg" style={{ background: 'linear-gradient(135deg,#fceabb,#f8b500)' }} />
@@ -1977,8 +2179,10 @@ function Profile() {
                     <button
                       type="button"
                       className="dash-hero-bg-trigger"
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1 }}
+                      disabled={restaurantBannerUploading}
                       onClick={() => {
+                        if (restaurantBannerUploading) return;
                         restaurantBannerInputRef.current?.click();
                       }}
                     >
@@ -1986,7 +2190,7 @@ function Profile() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      <span>Edit Banner</span>
+                      <span>{restaurantBannerUploading ? 'Uploading…' : 'Edit Banner'}</span>
                     </button>
                     <input
                       ref={restaurantBannerInputRef}
@@ -2053,6 +2257,7 @@ function Profile() {
                         )}
                       </div>
                     </div>
+                    <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
                   </div>
 
                   {/* Copy Profile Link */}
@@ -2181,35 +2386,48 @@ function Profile() {
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
                       {(restaurantProfile.gallery || []).length < 3 && (
                         <>
-                          <input type="file" accept="image/*,image/gif" id="r-gallery-upload" style={{ display: 'none' }} onChange={(e) => {
-                            if ((restaurantProfile.gallery || []).length >= 3) {
+                          <input type="file" accept="image/*,image/gif" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={async (e) => {
+                            const picked = Array.from(e.target.files || []);
+                            e.target.value = '';
+                            if (picked.length === 0) return;
+                            let latest = restaurantProfile;
+                            const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
+                            const slice = picked.slice(0, maxAdd);
+                            if (slice.length === 0) {
                               alert('Only 3 images are allowed.');
                               return;
                             }
-                            handlePickAndCrop(e, 1, async (file) => {
-                              setRestaurantGalleryUploading(true);
-                              try {
-                                assertGalleryFileKind(file);
-                                await assertVideoMaxDuration(file);
-                                const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
-                                const url = up?.url || up?.data?.url;
-                                if (url) {
-                                  const existing = restaurantProfile.gallery || [];
-                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
-                                  const updated = { ...restaurantProfile, gallery: [...existing, { url, name: base }] };
-                                  setRestaurantProfile(updated);
-                                  persistRestaurant(updated);
-                                  await handleRestaurantPublish(updated, { silent: true });
+                            setRestaurantGalleryUploading(true);
+                            try {
+                              for (const file of slice) {
+                                if ((latest.gallery || []).length >= 3) break;
+                                let finalFile;
+                                try {
+                                  finalFile = await getFileAfterCropOrPassThrough(file, 1);
+                                } catch (err) {
+                                  if (err?.message === 'CROP_CANCEL') break;
+                                  throw err;
                                 }
-                              } catch (err) {
-                                console.error('Restaurant gallery upload:', err);
-                                alert(err.message || 'Could not upload gallery image.');
-                              } finally {
-                                setRestaurantGalleryUploading(false);
+                                assertGalleryFileKind(finalFile);
+                                await assertVideoMaxDuration(finalFile);
+                                const up = await generalProfileAPI.uploadPhoto(finalFile, () => getIdToken());
+                                const url = extractUploadUrl(up);
+                                if (!url) continue;
+                                const existing = latest.gallery || [];
+                                const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                latest = { ...latest, gallery: [...existing, { url, name: base }] };
+                                setRestaurantProfile(latest);
+                                persistRestaurant(latest);
+                                await handleRestaurantPublish(latest, { silent: true });
                               }
-                            });
+                            } catch (err) {
+                              console.error('Restaurant gallery upload:', err);
+                              alert(err.message || 'Could not upload gallery image.');
+                            } finally {
+                              setRestaurantGalleryUploading(false);
+                            }
                           }} />
-                          <label htmlFor="r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add Image or GIF'}</label>
+                          <label htmlFor="r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</label>
                         </>
                       )}
                     </div>
@@ -2269,15 +2487,13 @@ function Profile() {
                     </div>
                     <div className="dash-links-section">
                       {ALL_PLATFORMS.filter(p => p.id in (restaurantProfile.links || {})).map(p => (
-                        <div className="dash-link-card" key={p.id}>
+                        <div className="dash-link-card dash-link-card--inline" key={p.id}>
                           <div className="dash-link-card-main">
                             <div className="dash-link-icon-circle">
                               {getLinkIcon({ platform: p.id })}
                             </div>
-                            <div className="dash-link-content">
-                              <div className="dash-link-title-row">
-                                <span className="dash-link-title">{p.label}</span>
-                              </div>
+                            <div className="dash-link-content dash-link-content--inline">
+                              <span className="dash-link-title" title={p.label}>{p.label}</span>
                               <div className="dash-link-url">
                                 <input
                                   className="dash-link-inline-input"
@@ -2311,48 +2527,12 @@ function Profile() {
                   </div>
                 </div>
 
-                {/* Right: live preview panel (desktop only) */}
-                {!isMobileViewport && <div className="dash-preview-panel">
-                  <div className="dash-full-preview-container">
-                    {(() => {
-                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
-                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
-                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
-                      return (
-                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: t.bg, fontFamily: bodyFontFamily }}>
-                          {restaurantProfile.banner && (
-                            <img src={restaurantProfile.banner} alt="Banner" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
-                          )}
-                          <div style={{ padding: '20px', textAlign: 'center', color: t.text }}>
-                            <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 6px', color: t.text, fontFamily: titleFontFamily }}>{restaurantProfile.name}</h2>
-                            <p style={{ margin: '0 0 10px', fontSize: '17px', color: t.text, opacity: 0.75, fontFamily: titleFontFamily }}>{restaurantProfile.tagline}</p>
-                            {restaurantProfile.bio && <p style={{ margin: '0 0 18px', fontSize: '15px', lineHeight: 1.6, color: t.text, opacity: 0.7, fontFamily: bodyFontFamily }}>{restaurantProfile.bio}</p>}
-                            {restaurantProfile.phone && (
-                              <div style={{ display: 'inline-block', padding: '8px 20px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', color: t.text, fontSize: '16px', marginBottom: '10px' }}>📞 {restaurantProfile.phone}</div>
-                            )}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
-                              {restaurantProfile.menuPdf && (
-                                <span style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px' }}>📄 View Menu</span>
-                              )}
-                              {Object.entries(restaurantProfile.links || {}).filter(([, v]) => v).map(([k, v]) => (
-                                <a key={k} href={v} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px', textDecoration: 'none' }}>{k}</a>
-                              ))}
-                            </div>
-                          </div>
-                          {(restaurantProfile.gallery || []).length > 0 && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '0 12px 16px' }}>
-                              {(restaurantProfile.gallery || []).map((item, i) => (
-                                <div key={i} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
-                                  <img src={item.url} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                {/* Right: live preview = same public page as /link/:username (desktop only) */}
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
                   </div>
-                </div>}
+                )}
               </div>
             )}
 
@@ -2461,49 +2641,12 @@ function Profile() {
                   </section>
                 </div>
 
-                {/* Right: live preview showing the theme + font applied to the public page (desktop only) */}
-                {!isMobileViewport && <div className="dash-preview-panel">
-                  <div className="dash-full-preview-container">
-                    {(() => {
-                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
-                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
-                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
-                      const isGradient = t.bg && t.bg.includes('gradient');
-                      return (
-                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: isGradient ? t.bg : t.bg, fontFamily: bodyFontFamily }}>
-                          {restaurantProfile.banner && (
-                            <img src={restaurantProfile.banner} alt="Banner" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
-                          )}
-                          <div style={{ padding: '20px', textAlign: 'center', color: t.text }}>
-                            <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 6px', fontFamily: titleFontFamily, color: t.text }}>{restaurantProfile.name}</h2>
-                            <p style={{ margin: '0 0 10px', fontSize: '17px', color: t.text, opacity: 0.75, fontFamily: titleFontFamily }}>{restaurantProfile.tagline}</p>
-                            {restaurantProfile.bio && <p style={{ margin: '0 0 18px', fontSize: '15px', lineHeight: 1.6, color: t.text, opacity: 0.7, fontFamily: bodyFontFamily }}>{restaurantProfile.bio}</p>}
-                            {restaurantProfile.phone && (
-                              <div style={{ display: 'inline-block', padding: '8px 20px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', color: t.text, fontSize: '16px', marginBottom: '10px' }}>📞 {restaurantProfile.phone}</div>
-                            )}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
-                              {restaurantProfile.menuPdf && (
-                                <span style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px' }}>📄 View Menu</span>
-                              )}
-                              {Object.entries(restaurantProfile.links || {}).filter(([, v]) => v).map(([k, v]) => (
-                                <a key={k} href={v} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '16px', color: t.text, fontSize: '14px', textDecoration: 'none' }}>{k}</a>
-                              ))}
-                            </div>
-                          </div>
-                          {(restaurantProfile.gallery || []).length > 0 && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '0 12px 16px' }}>
-                              {(restaurantProfile.gallery || []).map((item, i) => (
-                                <div key={i} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
-                                  <img src={item.url} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                {/* Right: live preview = same public page (desktop only) */}
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
                   </div>
-                </div>}
+                )}
               </div>
             )}
 
@@ -2585,47 +2728,27 @@ function Profile() {
                   )}
                 </div>
 
-                {/* Right: preview showing "View Menu" pill (desktop only) */}
-                {!isMobileViewport && <div className="dash-preview-panel">
-                  <div className="dash-full-preview-container">
-                    {(() => {
-                      const t = GENERAL_THEMES.find(th => th.id === restaurantProfile.theme) || GENERAL_THEMES[0];
-                      const titleFontFamily = resolveFontFamily(restaurantProfile.titleFont || restaurantProfile.font || 'outfit');
-                      const bodyFontFamily = resolveFontFamily(restaurantProfile.bodyFont || restaurantProfile.font || 'outfit');
-                      return (
-                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: t.bg, fontFamily: bodyFontFamily, padding: '2rem' }}>
-                          {restaurantProfile.menuPdf ? (
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ width: 64, height: 64, borderRadius: '18px', background: t.linkBg || 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '28px' }}>📄</div>
-                              <p style={{ color: t.text, fontWeight: 600, margin: '0 0 0.5rem', fontFamily: titleFontFamily }}>Menu available</p>
-                              <p style={{ color: t.text, opacity: 0.6, fontSize: '0.8rem', margin: 0, fontFamily: bodyFontFamily }}>Customers can tap to view your menu</p>
-                              <div style={{ marginTop: '1.5rem', padding: '10px 24px', background: t.linkBg || 'rgba(255,255,255,0.15)', borderRadius: '20px', display: 'inline-block', color: t.text, fontSize: '14px', fontFamily: bodyFontFamily }}>📄 View Menu</div>
-                            </div>
-                          ) : (
-                            <div style={{ textAlign: 'center', opacity: 0.5 }}>
-                              <div style={{ fontSize: '48px', marginBottom: '0.75rem' }}>📋</div>
-                              <p style={{ color: t.text, fontSize: '0.85rem', margin: 0 }}>Upload a menu PDF to show it here</p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                {/* Right: full live public page preview (desktop only) */}
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
                   </div>
-                </div>}
+                )}
               </div>
             )}
 
             {/* ── PREVIEW TAB (mobile pill) ── */}
             {restaurantActiveTab === 'preview' && (
               <div className="dash-mobile-preview-page">
-                <div className="dash-mobile-preview-frame-wrap">
+                <div className="dash-mobile-preview-frame-wrap dash-mobile-preview-frame-wrap--relative">
                   <iframe
                     key={`restaurant-preview-${restaurantProfile.username || 'restaurant'}-${previewKey}`}
                     title="Restaurant Profile Preview"
-                    src={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
+                    src={`${window.location.origin}/link/${encodeURIComponent((restaurantProfile.username || '').trim())}?v=${previewKey}`}
                     className="dash-mobile-preview-iframe"
                     sandbox="allow-scripts allow-same-origin"
                   />
+                  <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
                 </div>
               </div>
             )}
@@ -2752,7 +2875,7 @@ function Profile() {
             <button type="button" className="profile-back-btn" onClick={() => updateRestaurantOnboardingStep(rStep - 1)}>← Back</button>
           )}
           <div className="general-onboarding-progress">
-            <div className="general-onboarding-progress-bar" style={{ width: `${(rStep / 4) * 100}%` }} />
+            <div className="general-onboarding-progress-bar" style={{ width: `${(rStep / 6) * 100}%` }} />
           </div>
 
           {rStep === 1 && (
@@ -2874,12 +2997,33 @@ function Profile() {
                     </div>
                   ) : (
                     <div style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: '16px', overflow: 'hidden', position: 'relative' }}>
-                      <button 
-                        type="button" 
-                        onClick={removePdf} 
-                        style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', color: '#ef4444' }}
+                      <button
+                        type="button"
+                        onClick={removePdf}
+                        aria-label="Remove PDF"
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          zIndex: 10,
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: 0,
+                          boxShadow: 'none',
+                          padding: '4px 6px',
+                          margin: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          color: '#111827',
+                          fontSize: '1.25rem',
+                          lineHeight: 1,
+                          fontWeight: 400,
+                          fontFamily: 'system-ui, -apple-system, sans-serif'
+                        }}
                       >
-                        ✕
+                        ×
                       </button>
                       <div style={{ maxHeight: 400, overflowY: 'auto', background: '#f1f5f9', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                         <Document
@@ -2905,9 +3049,307 @@ function Profile() {
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateRestaurantOnboardingStep(5)}>
+                  Next Step →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {rStep === 5 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 5 – Gallery</h2>
+              <p className="onboarding-subtitle">Add up to 3 photos or GIFs (optional). You can select several files at once in the picker.</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <label style={{ color: '#1a1b2e', margin: 0 }}>Gallery images</label>
+                    {(restaurantForm.gallery || []).length < 3 && (
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*,image/gif"
+                          multiple
+                          id="onboarding-r-gallery-upload"
+                          style={{ display: 'none' }}
+                          onChange={async (e) => {
+                            const picked = Array.from(e.target.files || []);
+                            e.target.value = '';
+                            if (picked.length === 0) return;
+                            let latest = restaurantForm;
+                            const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
+                            const slice = picked.slice(0, maxAdd);
+                            if (slice.length === 0) {
+                              alert('Only 3 images are allowed.');
+                              return;
+                            }
+                            setRestaurantGalleryUploading(true);
+                            try {
+                              for (const file of slice) {
+                                if ((latest.gallery || []).length >= 3) break;
+                                let finalFile;
+                                try {
+                                  finalFile = await getFileAfterCropOrPassThrough(file, 1);
+                                } catch (err) {
+                                  if (err?.message === 'CROP_CANCEL') break;
+                                  throw err;
+                                }
+                                assertGalleryFileKind(finalFile);
+                                await assertVideoMaxDuration(finalFile);
+                                const up = await generalProfileAPI.uploadPhoto(finalFile, () => getIdToken());
+                                const url = extractUploadUrl(up);
+                                if (!url) continue;
+                                const existing = latest.gallery || [];
+                                const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                latest = { ...latest, gallery: [...existing, { url, name: base }] };
+                                setRestaurantForm(latest);
+                              }
+                            } catch (err) {
+                              console.error('Onboarding gallery upload:', err);
+                              alert(err.message || 'Could not upload image. Try a smaller file.');
+                            } finally {
+                              setRestaurantGalleryUploading(false);
+                            }
+                          }}
+                        />
+                        <label htmlFor="onboarding-r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>
+                          {restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}
+                        </label>
+                      </>
+                    )}
+                  </div>
+                  {(restaurantForm.gallery || []).length === 0 ? (
+                    <div style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.15)', borderRadius: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.9rem', background: 'rgba(0,0,0,0.02)' }}>
+                      No gallery images yet. Add up to 3.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
+                      {(restaurantForm.gallery || []).map((item, idx) => (
+                        <div key={`${item.url}-${idx}`} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)' }}>
+                          <img src={item.url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                          <div style={{ padding: '0.35rem', background: 'rgba(0,0,0,0.65)' }}>
+                            <input
+                              type="text"
+                              value={item.name || ''}
+                              placeholder="Caption"
+                              onChange={(e) => {
+                                const g = [...(restaurantForm.gallery || [])];
+                                g[idx] = { ...g[idx], name: e.target.value };
+                                setRestaurantForm((prev) => ({ ...prev, gallery: g }));
+                              }}
+                              style={{ width: '100%', fontSize: '0.75rem', padding: '0.25rem 0.35rem', borderRadius: '6px', border: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            aria-label="Remove image"
+                            onClick={() => {
+                              setRestaurantForm((prev) => ({
+                                ...prev,
+                                gallery: (prev.gallery || []).filter((_, i) => i !== idx)
+                              }));
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              background: 'none',
+                              border: 'none',
+                              color: '#111827',
+                              cursor: 'pointer',
+                              fontSize: '1.1rem',
+                              lineHeight: 1,
+                              padding: '2px 4px'
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
+                <button type="button" className="onboarding-btn-primary" onClick={() => updateRestaurantOnboardingStep(6)}>
+                  Next Step →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {rStep === 6 && (
+            <div className="onboarding-step fade-in">
+              <h2>Step 6 – Links</h2>
+              <p className="onboarding-subtitle">Add social links and platforms customers can tap (optional)</p>
+              <div className="onboarding-fields">
+                <div className="onboarding-field">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <label style={{ color: '#1a1b2e', margin: 0 }}>Links</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRTempPlatforms(Object.keys(restaurantForm.links || {}));
+                        setRLinkSelectorOpen(true);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        padding: '0.45rem 0.9rem',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(0,0,0,0.2)',
+                        background: '#fff',
+                        color: '#1a1b2e',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span> Add Platforms
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {ALL_PLATFORMS.filter((p) => p.id in (restaurantForm.links || {})).map((p) => (
+                      <div
+                        key={p.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          border: '1px solid rgba(0,0,0,0.1)',
+                          borderRadius: '10px',
+                          padding: '0.35rem 0.5rem 0.35rem 0.65rem',
+                          background: 'rgba(0,0,0,0.02)',
+                          minHeight: '40px'
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color: '#1a1b2e',
+                            fontSize: '0.8rem',
+                            flexShrink: 0,
+                            maxWidth: '92px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title={p.label}
+                        >
+                          {p.label}
+                        </span>
+                        <input
+                          className="onboarding-input"
+                          placeholder="URL / handle"
+                          value={(restaurantForm.links || {})[p.id] || ''}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setRestaurantForm((prev) => ({
+                              ...prev,
+                              links: { ...(prev.links || {}), [p.id]: v }
+                            }));
+                          }}
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            margin: 0,
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.85rem',
+                            borderRadius: '999px'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRestaurantForm((prev) => {
+                              const next = { ...(prev.links || {}) };
+                              delete next[p.id];
+                              return { ...prev, links: next };
+                            });
+                          }}
+                          style={{
+                            flexShrink: 0,
+                            background: 'none',
+                            border: 'none',
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            fontSize: '1.05rem',
+                            lineHeight: 1,
+                            padding: '0.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          aria-label={`Remove ${p.label}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {Object.keys(restaurantForm.links || {}).length === 0 && (
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.5rem 0 0' }}>Tap “Add Platforms” to choose Instagram, WhatsApp, website, and more.</p>
+                  )}
+                </div>
+              </div>
+              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
                 <button type="button" className="onboarding-btn-complete" onClick={saveRestaurantProfile} disabled={restaurantSaving}>
                   {restaurantSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Save Restaurant ✓'}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {rLinkSelectorOpen && (
+            <div className="dash-selector-overlay" style={{ zIndex: 100001 }}>
+              <div className="dash-selector-modal">
+                <div className="dash-selector-header">
+                  <h3>Add Platforms</h3>
+                  <p>Select platforms to add to your restaurant profile</p>
+                </div>
+                <div className="dash-selector-grid">
+                  {ALL_PLATFORMS.map((p) => {
+                    const isActive = rTempPlatforms.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                        onClick={() => setRTempPlatforms((prev) => (isActive ? prev.filter((x) => x !== p.id) : [...prev, p.id]))}
+                      >
+                        <div className="dash-selector-icon">
+                          {getLinkIcon({ platform: p.id })}
+                        </div>
+                        <span className="dash-selector-label">{p.label}</span>
+                        {isActive && <div className="dash-selector-check">✓</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="dash-selector-actions">
+                  <button type="button" className="dash-selector-btn-cancel" onClick={() => setRLinkSelectorOpen(false)}>Cancel</button>
+                  <button
+                    type="button"
+                    className="dash-selector-btn-done"
+                    onClick={() => {
+                      setRestaurantForm((prev) => {
+                        const currentLinks = prev.links || {};
+                        const newLinks = { ...currentLinks };
+                        rTempPlatforms.forEach((id) => {
+                          if (!(id in newLinks)) newLinks[id] = '';
+                        });
+                        Object.keys(newLinks).forEach((id) => {
+                          if (!rTempPlatforms.includes(id)) delete newLinks[id];
+                        });
+                        return { ...prev, links: newLinks };
+                      });
+                      setRLinkSelectorOpen(false);
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -4229,7 +4671,7 @@ function Profile() {
           {/* Preview-only page (used mainly for mobile bottom nav "Preview") */}
           {activeTab === 'preview' && myArtists[0] && (
             <div className="dash-mobile-preview-page">
-              <div className="dash-mobile-preview-frame-wrap">
+              <div className="dash-mobile-preview-frame-wrap dash-mobile-preview-frame-wrap--relative">
                 <iframe
                   key={previewKey}
                   title="Artist Preview"
@@ -4237,6 +4679,7 @@ function Profile() {
                   className="dash-mobile-preview-iframe"
                   sandbox="allow-scripts allow-same-origin"
                 />
+                <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
               </div>
             </div>
           )}
@@ -4257,7 +4700,7 @@ function Profile() {
                   </button>
                   <span className="dash-design-mobile-title">Design</span>
                 </div>
-                <div className="dash-design-mobile-preview-wrap">
+                <div className="dash-design-mobile-preview-wrap dash-design-mobile-preview-wrap--relative">
                   {designSubTab && (
                     <button
                       type="button"
@@ -4273,6 +4716,7 @@ function Profile() {
                     className="dash-design-mobile-preview-iframe"
                     sandbox="allow-scripts allow-same-origin"
                   />
+                  <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
                 </div>
 
                 <div className="dash-design-mobile-sheet">
@@ -4575,7 +5019,11 @@ function Profile() {
                   const uploadedUrls = [];
                   for (const img of artImagePreview) {
                     const uploaded = await landingArtistAPI.uploadPhoto(img.file, () => getIdToken());
-                    uploadedUrls.push(uploaded.url || uploaded.photo || '');
+                    const u = extractUploadUrl(uploaded);
+                    if (u) uploadedUrls.push(u);
+                  }
+                  if (artImagePreview.length > 0 && uploadedUrls.length === 0) {
+                    throw new Error('Image upload did not return URLs. Try again.');
                   }
                   const artId = Date.now();
                   const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls.slice(0, 3) };
@@ -4586,6 +5034,8 @@ function Profile() {
                   setNewArtTheme('painting');
                   // Automatically focus preview on the newly added artwork
                   setArtPreviewId(artId);
+                } catch (err) {
+                  alert(err.message || 'Could not save artwork.');
                 } finally {
                   setArtSaving(false);
                 }
@@ -4829,10 +5279,11 @@ function Profile() {
                           <div className="dash-profile-hero-overlay" />
 
                           {/* Background Change Trigger */}
-                          <label className="dash-hero-bg-trigger">
+                          <label className={`dash-hero-bg-trigger${isUploading === 'backgroundPhoto' ? ' dash-hero-bg-trigger--busy' : ''}`} style={{ cursor: isUploading === 'backgroundPhoto' ? 'wait' : undefined, opacity: isUploading === 'backgroundPhoto' ? 0.9 : undefined }}>
                             <input
                               type="file"
                               accept="image/*"
+                              disabled={isUploading === 'backgroundPhoto'}
                               onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => handleUploadField('backgroundPhoto', file))}
                               style={{ display: 'none' }}
                             />
@@ -4840,7 +5291,7 @@ function Profile() {
                               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                               <circle cx="12" cy="13" r="4" />
                             </svg>
-                            <span>{isUploading === 'backgroundPhoto' ? 'Uploading...' : 'Change Cover'}</span>
+                            <span>{isUploading === 'backgroundPhoto' ? 'Uploading…' : 'Change Cover'}</span>
                           </label>
 
                           <div className="dash-profile-hero-content">
@@ -4912,6 +5363,7 @@ function Profile() {
                               <span className="dash-profile-hero-id">ID: {artist.artistId}</span>
                             </div>
                           </div>
+                          <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
                         </div>
 
                         {isMobileViewport && mobileHeroEditField && (
@@ -5036,15 +5488,13 @@ function Profile() {
                             const isModified = localValue !== undefined && localValue !== serverValue;
 
                             return (
-                              <div className="dash-link-card" key={platform.id}>
+                              <div className="dash-link-card dash-link-card--inline" key={platform.id}>
                                 <div className="dash-link-card-main">
                                   <div className="dash-link-icon-circle">
                                     {getLinkIcon({ platform: platform.id })}
                                   </div>
-                                  <div className="dash-link-content">
-                                    <div className="dash-link-title-row">
-                                      <span className="dash-link-title">{platform.label}</span>
-                                    </div>
+                                  <div className="dash-link-content dash-link-content--inline">
+                                    <span className="dash-link-title" title={platform.label}>{platform.label}</span>
                                     <div className="dash-link-url">
                                       <input
                                         className="dash-link-inline-input"
@@ -5222,6 +5672,7 @@ function Profile() {
                               className="dash-preview-iframe"
                               sandbox="allow-scripts allow-same-origin"
                             />
+                            <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
                           </div>
                         </div>
                       )}
