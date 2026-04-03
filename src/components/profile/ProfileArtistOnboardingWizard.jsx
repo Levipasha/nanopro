@@ -378,7 +378,7 @@ export default function ProfileArtistOnboardingWizard({
                         {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Preview" /> : <span>+</span>}
                       </div>
                     </label>
-                    <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/*" />
+                    <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
                   </div>
                   <div className="image-upload-box">
                     <label>Banner Image</label>
@@ -387,7 +387,7 @@ export default function ProfileArtistOnboardingWizard({
                         {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Click to upload banner</span>}
                       </div>
                     </label>
-                    <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/*" />
+                    <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
                   </div>
                 </div>
 
@@ -404,7 +404,7 @@ export default function ProfileArtistOnboardingWizard({
                         setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
                       });
                     }}
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                   />
                   <label
                     htmlFor={onboardingGalleryFiles.length < 3 ? 'gallery-input' : undefined}

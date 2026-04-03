@@ -370,11 +370,36 @@ function Profile() {
     });
   }, []);
 
+  // MIME types that browsers can actually render as images
+  const RENDERABLE_IMAGE_TYPES = new Set([
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+    'image/gif', 'image/svg+xml', 'image/bmp', 'image/tiff',
+    'image/avif', 'image/heic', 'image/heif',
+  ]);
+
+  // RAW camera formats that look like images but browsers cannot render
+  const RAW_EXTENSIONS = /\.(arw|cr2|cr3|nef|nrw|orf|raf|rw2|dng|pef|srw|x3f|3fr|fff|iiq|rwl|mef|mrw|erf)$/i;
+
   /** Helper to open cropper before actual upload/save logic (single file) */
   const handlePickAndCrop = (e, aspect, onCroppedDone) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+
+    // Check for RAW camera formats — browsers cannot render them
+    if (RAW_EXTENSIONS.test(file.name)) {
+      setError(
+        `Camera RAW files (like .ARW, .CR2, .NEF) cannot be used directly — your browser cannot render them.\n\nPlease export or convert the photo to JPEG or PNG first (use Google Photos, Windows Photos, or any photo editor), then upload it.`
+      );
+      return;
+    }
+
+    // Check MIME type — only allow renderable image types (not PDF, video, etc.)
+    if (file.type && !RENDERABLE_IMAGE_TYPES.has(file.type.toLowerCase())) {
+      setError(`"${file.name}" is not a supported image format. Please use JPEG, PNG, WebP, or GIF.`);
+      return;
+    }
+
     getFileAfterCropOrPassThrough(file, aspect)
       .then(onCroppedDone)
       .catch((err) => {
@@ -2198,7 +2223,7 @@ function Profile() {
                     <input
                       id="dash-restaurant-banner-input"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                       style={{ display: 'none' }}
                       onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
@@ -2905,7 +2930,7 @@ function Profile() {
                       {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
                     </div>
                   </label>
-                  <input id="restaurant-banner-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)} accept="image/*" />
+                  <input id="restaurant-banner-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
@@ -3551,7 +3576,7 @@ function Profile() {
                         </div>
                       </div>
                     </label>
-                    <input id="gen-photo-input" type="file" hidden accept="image/*" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
+                    <input id="gen-photo-input" type="file" hidden accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </div>
                 </div>
                 <div className="onboarding-field">
@@ -3835,7 +3860,7 @@ function Profile() {
                             <input
                               id="gen-dash-photo-input-hero"
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               style={{ display: 'none' }}
                               onChange={(e) => handlePickAndCrop(e, 1, (file) => {
                                 setGeneralPhotoFile(file);
@@ -3892,7 +3917,7 @@ function Profile() {
                             Change Photo
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               style={{ display: 'none' }}
                               onChange={(e) => handlePickAndCrop(e, 1, (file) => {
                                 setGeneralPhotoFile(file);
@@ -4455,7 +4480,7 @@ function Profile() {
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     <span>{generalPhotoFile ? 'Change photo' : 'Upload photo'}</span>
-                    <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
                   </label>
                   {(generalForm.photo || generalPhotoFile) && (
                     <div className="profile-edit-photo-preview">
@@ -5090,7 +5115,7 @@ function Profile() {
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ color: 'var(--dash-accent)', opacity: 0.7 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                           <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images (max 3)' : 'Click to upload artwork photos (max 3)'}</span>
                           <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Up to 3 images per showcase — shown as slideshow</span>
-                          <input id="art-image-file" type="file" accept="image/*" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
+                          <input id="art-image-file" type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
                         </label>
                       </div>
 
@@ -5286,7 +5311,7 @@ function Profile() {
                           <label className={`dash-hero-bg-trigger${isUploading === 'backgroundPhoto' ? ' dash-hero-bg-trigger--busy' : ''}`} style={{ cursor: isUploading === 'backgroundPhoto' ? 'wait' : undefined, opacity: isUploading === 'backgroundPhoto' ? 0.9 : undefined }}>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               disabled={isUploading === 'backgroundPhoto'}
                               onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => handleUploadField('backgroundPhoto', file))}
                               style={{ display: 'none' }}
@@ -5303,7 +5328,7 @@ function Profile() {
                               <label className="dash-avatar-trigger">
                                 <input
                                   type="file"
-                                  accept="image/*"
+                                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                                   onChange={(e) => handlePickAndCrop(e, 1, (file) => handleUploadField('photo', file))}
                                   style={{ display: 'none' }}
                                 />
@@ -5772,7 +5797,7 @@ function Profile() {
                         </div>
                       )}
                       <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))} />
+                        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))} />
                         {photoFile ? 'New image chosen' : 'Choose photo'}
                       </label>
                     </div>
@@ -5787,7 +5812,7 @@ function Profile() {
                         </div>
                       )}
                       <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/*" onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))} />
+                        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))} />
                         {bgFile ? 'New image chosen' : 'Choose photo'}
                       </label>
                     </div>
@@ -5907,7 +5932,7 @@ function Profile() {
                       />
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                         onChange={(e) => handlePickAndCrop(e, 2, (file) => setNewGalleryFile(file))}
                       />
                       <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
