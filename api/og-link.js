@@ -17,7 +17,7 @@ function absoluteImageUrl(url, apiBase) {
   return `https://${t}`;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const username = req.query?.username;
   if (!username) {
     res.status(400).send('Missing username');

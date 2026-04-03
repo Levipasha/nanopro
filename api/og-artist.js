@@ -17,7 +17,7 @@ function absoluteImageUrl(url, apiBase) {
   return `https://${t}`;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const id = req.query?.id;
   if (!id) {
     res.status(400).send('Missing artist id');
