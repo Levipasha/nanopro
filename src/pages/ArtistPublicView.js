@@ -309,11 +309,14 @@ function ArtistPublicView() {
 
   const handleShare = async () => {
     const url = window.location.href;
+    const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
+    const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: nanoProfilesPageTitle,
-          text: `Check out ${sharePrimaryName} on Nano Profiles!`,
+          title: shareTitle,
+          text: shareText,
           url
         });
       } catch (err) {
@@ -338,14 +341,21 @@ function ArtistPublicView() {
     >
       <Helmet>
         <title>{nanoProfilesPageTitle}</title>
-        <meta name="description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
+        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. Smart Digital Identity Solutions.`} />
         
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={nanoProfilesPageTitle} />
-        <meta property="og:description" content={artist?.specialization || artist?.bio || 'Smart Digital Identity Solutions'} />
+        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
         <meta property="og:image" content={fixImageUrl(artist?.photo) || artist?.photo} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={window.location.href} />
+        <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta name="twitter:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions.`} />
+        <meta name="twitter:image" content={fixImageUrl(artist?.photo) || artist?.photo} />
       </Helmet>
       <div
         className={`gp-card gp-artist-themed-card ${theme?.isAnimated ? theme.className : ''}`}

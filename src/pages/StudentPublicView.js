@@ -56,6 +56,32 @@ function StudentPublicView() {
   }, [isMock, studentId]);
 
   const theme = getThemeById(student?.theme || 'ocean');
+  const sharePrimaryName = (student.name || '').trim() || 'Student';
+  const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => alert('Link copied!'));
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
+    const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') copyToClipboard(url);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
 
   if (loading) {
     return (
@@ -77,8 +103,22 @@ function StudentPublicView() {
   return (
     <>
       <Helmet>
-        <title>{`${(student.name || '').trim() || 'Student'} - Nano Profiles`}</title>
-        <meta name="description" content="Example student profile showcase" />
+        <title>{nanoProfilesPageTitle}</title>
+        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. Smart Digital Identity Solutions.`} />
+
+        {/* Open Graph / Facebook / WhatsApp */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
+        <meta property="og:image" content={student.photo} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={window.location.href} />
+        <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta name="twitter:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions.`} />
+        <meta name="twitter:image" content={student.photo} />
       </Helmet>
 
       <div className={`gp-view gp-layout${isEmbed ? ' gp-embed-showcase' : ''}`}>
@@ -90,6 +130,14 @@ function StudentPublicView() {
             '--font-heading': student.font ? student.font : 'outfit'
           }}
         >
+          {/* Share button - top right */}
+          <button type="button" onClick={handleShare} className="gp-share-btn" aria-label="Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          </button>
           <div className="gp-photo-header">
             {student.photo ? (
               <img src={student.photo} alt={student.name} className="gp-avatar-img" />
