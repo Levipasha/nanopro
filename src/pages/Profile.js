@@ -2125,15 +2125,15 @@ function Profile() {
           handlePickAndCrop={handlePickAndCrop}
         />
         {cropper.open && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 100000 }}>
-            <ImageCropperModal
-              image={cropper.image}
-              aspect={cropper.aspect}
-              onSave={cropper.onComplete}
-              onCancel={cropper.onCancel}
-            />
-          </div>
-        )}
+         <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+             <ImageCropperModal
+               image={cropper.image}
+               aspect={cropper.aspect}
+               onSave={cropper.onComplete}
+               onCancel={cropper.onCancel}
+             />
+           </div>
+         )}
       </>
     );
   }
@@ -2918,7 +2918,7 @@ function Profile() {
         )}
 
         {/* Restaurant Platform Selector Modal — same as artist */}
-        {rLinkSelectorOpen && (
+      {rLinkSelectorOpen && (
           <div className="dash-selector-overlay">
             <div className="dash-selector-modal">
               <div className="dash-selector-header">
@@ -2958,6 +2958,16 @@ function Profile() {
                 }}>Done</button>
               </div>
             </div>
+          </div>
+        )}
+        {cropper.open && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
           </div>
         )}
       </div>
@@ -3483,15 +3493,15 @@ function Profile() {
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
         {cropper.open && (
-          <div style={{ position: 'relative', zIndex: 100000 }}>
-            <ImageCropperModal
-              image={cropper.image}
-              aspect={cropper.aspect}
-              onSave={cropper.onComplete}
-              onCancel={cropper.onCancel}
-            />
-          </div>
-        )}
+           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+             <ImageCropperModal
+               image={cropper.image}
+               aspect={cropper.aspect}
+               onSave={cropper.onComplete}
+               onCancel={cropper.onCancel}
+             />
+           </div>
+         )}
       </div>
     );
   }
@@ -4689,15 +4699,15 @@ function Profile() {
           </form>
         </div>
         {cropper.open && (
-          <div style={{ position: 'relative', zIndex: 100000 }}>
-            <ImageCropperModal
-              image={cropper.image}
-              aspect={cropper.aspect}
-              onSave={cropper.onComplete}
-              onCancel={cropper.onCancel}
-            />
-          </div>
-        )}
+           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+             <ImageCropperModal
+               image={cropper.image}
+               aspect={cropper.aspect}
+               onSave={cropper.onComplete}
+               onCancel={cropper.onCancel}
+             />
+           </div>
+         )}
       </div>
     );
   }
@@ -6288,15 +6298,15 @@ function Profile() {
       )}
 
       {cropper.open && (
-        <div style={{ position: 'relative', zIndex: 100000 }}>
-          <ImageCropperModal
-            image={cropper.image}
-            aspect={cropper.aspect}
-            onSave={cropper.onComplete}
-            onCancel={cropper.onCancel}
-          />
-        </div>
-      )}
+         <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+           <ImageCropperModal
+             image={cropper.image}
+             aspect={cropper.aspect}
+             onSave={cropper.onComplete}
+             onCancel={cropper.onCancel}
+           />
+         </div>
+       )}
     </div >
   );
 }
