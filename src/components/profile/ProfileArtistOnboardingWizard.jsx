@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { getLinkIcon } from '../LinkIcons';
 import PhoneINInput from '../PhoneINInput';
@@ -58,6 +58,12 @@ export default function ProfileArtistOnboardingWizard({
 }) {
   const photoPreviewUrl = useBlobUrl(photoFile);
   const bgPreviewUrl = useBlobUrl(bgFile);
+
+  // Refs for file inputs — iOS Safari requires direct .click() on the input element;
+  // using <label htmlFor> on hidden inputs is unreliable on mobile.
+  const photoInputRef = useRef(null);
+  const bgInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   const isArtistStep1Valid =
     String(formData.name || '').trim() &&
@@ -373,21 +379,44 @@ export default function ProfileArtistOnboardingWizard({
                 <div className="onboarding-images">
                   <div className="image-upload-box">
                     <label>Profile Image</label>
-                    <label htmlFor="photo-input" style={{ display: 'block', cursor: 'pointer' }}>
+                    {/* Button+ref pattern: reliable on iOS Safari (htmlFor on hidden input is not) */}
+                    <button
+                      type="button"
+                      className="upload-trigger-btn"
+                      onClick={() => { if (photoInputRef.current) { photoInputRef.current.value = ''; photoInputRef.current.click(); } }}
+                      aria-label="Upload profile image"
+                    >
                       <div className="upload-preview-circle">
                         {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Preview" /> : <span>+</span>}
                       </div>
-                    </label>
-                    <input id="photo-input" type="file" hidden onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
+                    </button>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={e => handlePickAndCrop(e, 1, file => setPhotoFile(file))}
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                    />
                   </div>
                   <div className="image-upload-box">
                     <label>Banner Image</label>
-                    <label htmlFor="bg-input" style={{ display: 'block', cursor: 'pointer' }}>
+                    <button
+                      type="button"
+                      className="upload-trigger-btn"
+                      onClick={() => { if (bgInputRef.current) { bgInputRef.current.value = ''; bgInputRef.current.click(); } }}
+                      aria-label="Upload banner image"
+                    >
                       <div className="upload-preview-banner">
-                        {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                        {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Tap to upload banner</span>}
                       </div>
-                    </label>
-                    <input id="bg-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
+                    </button>
+                    <input
+                      ref={bgInputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))}
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                    />
                   </div>
                 </div>
 
@@ -395,21 +424,40 @@ export default function ProfileArtistOnboardingWizard({
                   <label>Gallery — images, GIFs, or videos up to 30s (max 3)</label>
                   <p className="onboarding-gallery-hint">Add one or many at a time (up to 3 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
                   <input
-                    id="gallery-input"
+                    ref={galleryInputRef}
                     type="file"
                     multiple
-                    hidden
+                    style={{ display: 'none' }}
                     onChange={(e) => {
-                      handlePickAndCrop(e, 2, (file) => {
-                        setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
+                      const files = Array.from(e.target.files || []);
+                      if (galleryInputRef.current) galleryInputRef.current.value = '';
+                      files.forEach((file) => {
+                        if (file.type.startsWith('video/')) {
+                          setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
+                        } else {
+                          handlePickAndCrop(
+                            { target: { files: [file], value: '' } },
+                            2,
+                            (croppedFile) => {
+                              setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 3));
+                            }
+                          );
+                        }
                       });
                     }}
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml,video/*"
                   />
-                  <label
-                    htmlFor={onboardingGalleryFiles.length < 3 ? 'gallery-input' : undefined}
-                    className="upload-preview-banner onboarding-gallery-grid"
+                  <button
+                    type="button"
+                    className="upload-preview-banner onboarding-gallery-grid upload-trigger-btn"
                     style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer', display: 'grid' }}
+                    onClick={() => {
+                      if (onboardingGalleryFiles.length < 3 && galleryInputRef.current) {
+                        galleryInputRef.current.value = '';
+                        galleryInputRef.current.click();
+                      }
+                    }}
+                    aria-label="Add gallery images or videos"
                   >
                     {onboardingGalleryFiles.length > 0 ? (
                       onboardingGalleryFiles.map((f, i) => {
@@ -456,7 +504,7 @@ export default function ProfileArtistOnboardingWizard({
                           : '+ Click to add images (up to 3)'}
                       </span>
                     )}
-                  </label>
+                  </button>
                 </div>
 
                 <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>

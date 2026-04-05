@@ -867,6 +867,23 @@
   color: #64748b !important;
 }
 
+/* upload-trigger-btn: buttons used to open the file picker on mobile via .click().
+   Reset all default button styles so they look identical to the old <label> wrappers. */
+.general-onboarding-card .upload-trigger-btn {
+  all: unset !important;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
+/* Gallery grid button: needs display:grid (overrides block from above) */
+.general-onboarding-card .upload-trigger-btn.onboarding-gallery-grid {
+  display: grid !important;
+}
+
 /* Onboarding step 3: gallery strip — global .upload-preview-banner img is position:absolute to the
    full banner; tiles need position:relative so up to 3 previews show as equal mini slots. */
 .general-onboarding-card .upload-preview-banner.onboarding-gallery-grid {

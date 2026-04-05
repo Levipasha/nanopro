@@ -485,6 +485,25 @@ function Profile() {
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
   const usernameCheckTimer = useRef(null);
+
+  // Refs for General profile onboarding inputs
+  const genPhotoInputRef = useRef(null);
+
+  // Refs for Restaurant profile onboarding inputs
+  const restaurantBannerInputRef = useRef(null);
+  const restaurantGalleryInputRef = useRef(null);
+  const restaurantMenuInputRef = useRef(null);
+
+  // Refs for Artist dashboard inputs
+  const artistGalleryInputRef = useRef(null);
+  const artistProfilePhotoInputRef = useRef(null);
+  const artistBannerPhotoInputRef = useRef(null);
+  const artistGalleryAddInputRef = useRef(null);
+
+  // Refs for General profile dashboards
+  const genDashPhotoInputRef = useRef(null);
+  const genDashChangePhotoInputRef = useRef(null);
+
   const restaurantSyncTimerRef = useRef(null);
   const lastRestaurantSyncSigRef = useRef('');
   const loadGeneralProfileRef = useRef(() => Promise.resolve());
@@ -2081,29 +2100,41 @@ function Profile() {
   // Onboarding Wizard
   if (isLoggedIn && isArtistMode && onboardingStep > 0) {
     return (
-      <ProfileArtistOnboardingWizard
-        onboardingStep={onboardingStep}
-        handleOnboardingBack={handleOnboardingBack}
-        handleOnboardingNext={handleOnboardingNext}
-        handleOnboardingComplete={handleOnboardingComplete}
-        formData={formData}
-        setFormData={setFormData}
-        isOnboardingSelectorOpen={isOnboardingSelectorOpen}
-        setIsOnboardingSelectorOpen={setIsOnboardingSelectorOpen}
-        onboardingPlatforms={onboardingPlatforms}
-        setOnboardingPlatforms={setOnboardingPlatforms}
-        ALL_PLATFORMS={ALL_PLATFORMS}
-        photoFile={photoFile}
-        setPhotoFile={setPhotoFile}
-        bgFile={bgFile}
-        setBgFile={setBgFile}
-        onboardingGalleryFiles={onboardingGalleryFiles}
-        setOnboardingGalleryFiles={setOnboardingGalleryFiles}
-        error={error}
-        saving={saving}
-        handleLogout={handleLogout}
-        handlePickAndCrop={handlePickAndCrop}
-      />
+      <>
+        <ProfileArtistOnboardingWizard
+          onboardingStep={onboardingStep}
+          handleOnboardingBack={handleOnboardingBack}
+          handleOnboardingNext={handleOnboardingNext}
+          handleOnboardingComplete={handleOnboardingComplete}
+          formData={formData}
+          setFormData={setFormData}
+          isOnboardingSelectorOpen={isOnboardingSelectorOpen}
+          setIsOnboardingSelectorOpen={setIsOnboardingSelectorOpen}
+          onboardingPlatforms={onboardingPlatforms}
+          setOnboardingPlatforms={setOnboardingPlatforms}
+          ALL_PLATFORMS={ALL_PLATFORMS}
+          photoFile={photoFile}
+          setPhotoFile={setPhotoFile}
+          bgFile={bgFile}
+          setBgFile={setBgFile}
+          onboardingGalleryFiles={onboardingGalleryFiles}
+          setOnboardingGalleryFiles={setOnboardingGalleryFiles}
+          error={error}
+          saving={saving}
+          handleLogout={handleLogout}
+          handlePickAndCrop={handlePickAndCrop}
+        />
+        {cropper.open && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
+      </>
     );
   }
 
@@ -2209,19 +2240,20 @@ function Profile() {
                     }
                     <div className="dash-profile-hero-overlay" />
 
-                    <label
-                      htmlFor="dash-restaurant-banner-input"
-                      className="dash-hero-bg-trigger"
-                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1, pointerEvents: restaurantBannerUploading ? 'none' : 'auto' }}
+                    <button
+                      type="button"
+                      className="dash-hero-bg-trigger upload-trigger-btn"
+                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1, pointerEvents: restaurantBannerUploading ? 'none' : 'auto', background: 'rgba(0,0,0,0.4)', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}
+                      onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                       <span>{restaurantBannerUploading ? 'Uploading…' : 'Edit Banner'}</span>
-                    </label>
+                    </button>
                     <input
-                      id="dash-restaurant-banner-input"
+                      ref={restaurantBannerInputRef}
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                       style={{ display: 'none' }}
@@ -2414,48 +2446,63 @@ function Profile() {
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
                       {(restaurantProfile.gallery || []).length < 3 && (
                         <>
-                          <input type="file" accept="image/*,image/gif" multiple id="r-gallery-upload" style={{ display: 'none' }} onChange={async (e) => {
-                            const picked = Array.from(e.target.files || []);
-                            e.target.value = '';
-                            if (picked.length === 0) return;
-                            let latest = restaurantProfile;
-                            const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
-                            const slice = picked.slice(0, maxAdd);
-                            if (slice.length === 0) {
-                              alert('Only 3 images are allowed.');
-                              return;
-                            }
-                            setRestaurantGalleryUploading(true);
-                            try {
-                              for (const file of slice) {
-                                if ((latest.gallery || []).length >= 3) break;
-                                let finalFile;
-                                try {
-                                  finalFile = await getFileAfterCropOrPassThrough(file, 1);
-                                } catch (err) {
-                                  if (err?.message === 'CROP_CANCEL') break;
-                                  throw err;
-                                }
-                                assertGalleryFileKind(finalFile);
-                                await assertVideoMaxDuration(finalFile);
-                                const up = await generalProfileAPI.uploadPhoto(finalFile, () => getIdToken());
-                                const url = extractUploadUrl(up);
-                                if (!url) continue;
-                                const existing = latest.gallery || [];
-                                const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
-                                latest = { ...latest, gallery: [...existing, { url, name: base }] };
-                                setRestaurantProfile(latest);
-                                persistRestaurant(latest);
-                                await handleRestaurantPublish(latest, { silent: true });
+                        <button
+                          type="button"
+                          className="upload-trigger-btn"
+                          style={{ width: 'auto', background: 'none', border: 'none', padding: 0 }}
+                          onClick={() => { if (restaurantGalleryInputRef.current) { restaurantGalleryInputRef.current.value = ''; restaurantGalleryInputRef.current.click(); } }}
+                          disabled={restaurantGalleryUploading}
+                        >
+                          <input
+                            ref={restaurantGalleryInputRef}
+                            type="file"
+                            accept="image/*,image/gif"
+                            multiple
+                            style={{ display: 'none' }}
+                            onChange={async (e) => {
+                              const picked = Array.from(e.target.files || []);
+                              if (restaurantGalleryInputRef.current) restaurantGalleryInputRef.current.value = '';
+                              if (picked.length === 0) return;
+                              let latest = restaurantProfile;
+                              const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
+                              const slice = picked.slice(0, maxAdd);
+                              if (slice.length === 0) {
+                                alert('Only 3 images are allowed.');
+                                return;
                               }
-                            } catch (err) {
-                              console.error('Restaurant gallery upload:', err);
-                              alert(err.message || 'Could not upload gallery image.');
-                            } finally {
-                              setRestaurantGalleryUploading(false);
-                            }
-                          }} />
-                          <label htmlFor="r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</label>
+                              setRestaurantGalleryUploading(true);
+                              try {
+                                for (const file of slice) {
+                                  if ((latest.gallery || []).length >= 3) break;
+                                  let finalFile;
+                                  try {
+                                    finalFile = await getFileAfterCropOrPassThrough(file, 1);
+                                  } catch (err) {
+                                    if (err?.message === 'CROP_CANCEL') break;
+                                    throw err;
+                                  }
+                                  assertGalleryFileKind(finalFile);
+                                  await assertVideoMaxDuration(finalFile);
+                                  const up = await generalProfileAPI.uploadPhoto(finalFile, () => getIdToken());
+                                  const url = extractUploadUrl(up);
+                                  if (!url) continue;
+                                  const existing = latest.gallery || [];
+                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                  latest = { ...latest, gallery: [...existing, { url, name: base }] };
+                                  setRestaurantProfile(latest);
+                                  persistRestaurant(latest);
+                                  await handleRestaurantPublish(latest, { silent: true });
+                                }
+                              } catch (err) {
+                                console.error('Restaurant gallery upload:', err);
+                                alert(err.message || 'Could not upload gallery image.');
+                              } finally {
+                                setRestaurantGalleryUploading(false);
+                              }
+                            }}
+                          />
+                          <span style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</span>
+                        </button>
                         </>
                       )}
                     </div>
@@ -2689,21 +2736,32 @@ function Profile() {
                       <p style={{ fontSize: '0.85rem', color: 'var(--dash-subtext)', margin: '4px 0 0' }}>Customers can view this on your public profile</p>
                     </div>
                     {restaurantProfile.menuPdf && (
-                      <>
-                        <input type="file" accept="application/pdf" id="dash-menu-replace" style={{ display: 'none' }} onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            const updated = { ...restaurantProfile, menuPdf: ev.target.result };
-                            setRestaurantProfile(updated);
-                            persistRestaurant(updated);
-                            setPdfNumPages(null);
-                          };
-                          reader.readAsDataURL(file);
-                        }} />
-                        <label htmlFor="dash-menu-replace" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', padding: '0.5rem 1rem', border: '1px solid #6366f1', borderRadius: '10px' }}>Replace PDF</label>
-                      </>
+                      <button
+                        type="button"
+                        className="upload-trigger-btn"
+                        style={{ width: 'auto', background: 'none', border: '1px solid #6366f1', borderRadius: '10px', padding: '0.5rem 1rem' }}
+                        onClick={() => { if (restaurantMenuInputRef.current) { restaurantMenuInputRef.current.value = ''; restaurantMenuInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={restaurantMenuInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const updated = { ...restaurantProfile, menuPdf: ev.target.result };
+                              setRestaurantProfile(updated);
+                              persistRestaurant(updated);
+                              setPdfNumPages(null);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        <span style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem' }}>Replace PDF</span>
+                      </button>
                     )}
                   </div>
 
@@ -2738,20 +2796,31 @@ function Profile() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                       </svg>
                       <p style={{ margin: '0 0 1.5rem', fontSize: '0.95rem' }}>No menu uploaded yet</p>
-                      <input type="file" accept="application/pdf" id="dash-menu-upload" style={{ display: 'none' }} onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const updated = { ...restaurantProfile, menuPdf: ev.target.result };
-                          setRestaurantProfile(updated);
-                          persistRestaurant(updated);
-                        };
-                        reader.readAsDataURL(file);
-                      }} />
-                      <label htmlFor="dash-menu-upload" style={{ cursor: 'pointer', color: '#fff', fontWeight: 600, display: 'inline-block', padding: '0.65rem 1.5rem', background: '#6366f1', borderRadius: '12px', fontSize: '0.9rem' }}>
+                      <button
+                        type="button"
+                        className="upload-trigger-btn"
+                        style={{ width: 'auto', background: '#6366f1', color: '#fff', borderRadius: '12px', padding: '0.65rem 1.5rem', border: 'none', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-block' }}
+                        onClick={() => { if (restaurantMenuInputRef.current) { restaurantMenuInputRef.current.value = ''; restaurantMenuInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={restaurantMenuInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const updated = { ...restaurantProfile, menuPdf: ev.target.result };
+                              setRestaurantProfile(updated);
+                              persistRestaurant(updated);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
                         Upload Menu PDF
-                      </label>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2925,12 +2994,23 @@ function Profile() {
                 </div>
                 <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
                   <label>Banner Image</label>
-                  <label htmlFor="restaurant-banner-input" style={{ display: 'block', cursor: 'pointer' }}>
+                  <button
+                    type="button"
+                    className="upload-trigger-btn"
+                    onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
+                    aria-label="Upload restaurant banner"
+                  >
                     <div className="upload-preview-banner">
-                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Click to upload banner</span>}
+                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
                     </div>
-                  </label>
-                  <input id="restaurant-banner-input" type="file" hidden onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)} accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" />
+                  </button>
+                  <input
+                    ref={restaurantBannerInputRef}
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)}
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                  />
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
@@ -3014,15 +3094,22 @@ function Profile() {
                   {!restaurantForm.menuPdf ? (
                     <div style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.15)', borderRadius: '16px', textAlign: 'center', background: 'rgba(0,0,0,0.02)' }}>
                       <input
+                        ref={restaurantMenuInputRef}
                         type="file"
                         accept="application/pdf"
                         onChange={handlePdfUpload}
                         style={{ display: 'none' }}
-                        id="menu-pdf-upload"
                       />
-                      <label htmlFor="menu-pdf-upload" style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.1)', borderRadius: '8px' }}>
-                        Click to upload PDF
-                      </label>
+                      <button
+                        type="button"
+                        className="upload-trigger-btn"
+                        style={{ width: 'auto', display: 'inline-block' }}
+                        onClick={() => { if (restaurantMenuInputRef.current) { restaurantMenuInputRef.current.value = ''; restaurantMenuInputRef.current.click(); } }}
+                      >
+                        <span style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600, display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.1)', borderRadius: '8px' }}>
+                          Upload PDF
+                        </span>
+                      </button>
                       <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#64748b' }}>Max file size: 5MB</p>
                     </div>
                   ) : (
@@ -3097,14 +3184,14 @@ function Profile() {
                     {(restaurantForm.gallery || []).length < 3 && (
                       <>
                         <input
+                          ref={restaurantGalleryInputRef}
                           type="file"
                           accept="image/*,image/gif"
                           multiple
-                          id="onboarding-r-gallery-upload"
                           style={{ display: 'none' }}
                           onChange={async (e) => {
                             const picked = Array.from(e.target.files || []);
-                            e.target.value = '';
+                            if (restaurantGalleryInputRef.current) restaurantGalleryInputRef.current.value = '';
                             if (picked.length === 0) return;
                             let latest = restaurantForm;
                             const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
@@ -3142,9 +3229,18 @@ function Profile() {
                             }
                           }}
                         />
-                        <label htmlFor="onboarding-r-gallery-upload" style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>
-                          {restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}
-                        </label>
+                        <button
+                          type="button"
+                          className="upload-trigger-btn"
+                          style={{ width: 'auto' }}
+                          onClick={() => { if (restaurantGalleryInputRef.current) { restaurantGalleryInputRef.current.value = ''; restaurantGalleryInputRef.current.click(); } }}
+                          disabled={restaurantGalleryUploading}
+                          aria-label="Add images or GIFs"
+                        >
+                          <span style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>
+                            {restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}
+                          </span>
+                        </button>
                       </>
                     )}
                   </div>
@@ -3565,7 +3661,12 @@ function Profile() {
                 <div className="onboarding-field">
                   <label>Profile photo (optional)</label>
                   <div className="image-upload-box">
-                    <label htmlFor="gen-photo-input" style={{ display: 'block', cursor: 'pointer' }}>
+                    <button
+                      type="button"
+                      className="upload-trigger-btn"
+                      onClick={() => { if (genPhotoInputRef.current) { genPhotoInputRef.current.value = ''; genPhotoInputRef.current.click(); } }}
+                      aria-label="Upload profile photo"
+                    >
                       <div className="upload-preview-circle dash-avatar-trigger" style={{ position: 'relative', overflow: 'hidden' }}>
                         {(generalForm.photo || generalPhotoFile) ? <img src={generalPhotoPreviewUrl || generalForm.photo} alt="Preview" /> : <span>+</span>}
                         <div className="dash-avatar-overlay">
@@ -3575,8 +3676,14 @@ function Profile() {
                           </svg>
                         </div>
                       </div>
-                    </label>
-                    <input id="gen-photo-input" type="file" hidden accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
+                    </button>
+                    <input
+                      ref={genPhotoInputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                      onChange={e => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))}
+                    />
                   </div>
                 </div>
                 <div className="onboarding-field">
@@ -3856,9 +3963,15 @@ function Profile() {
                     <div className="dash-profile-hero" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', minHeight: 'auto', padding: '2rem' }}>
                       <div className="dash-profile-hero-content" style={{ alignItems: 'center' }}>
                         <div className="dash-profile-hero-avatar" style={{ width: '100px', height: '100px', border: '3px solid rgba(255,255,255,0.15)' }}>
-                          <label className="dash-avatar-trigger">
+                          <button
+                            type="button"
+                            className="dash-avatar-trigger upload-trigger-btn"
+                            style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
+                            onClick={() => { if (genDashPhotoInputRef.current) { genDashPhotoInputRef.current.value = ''; genDashPhotoInputRef.current.click(); } }}
+                            aria-label="Change profile photo"
+                          >
                             <input
-                              id="gen-dash-photo-input-hero"
+                              ref={genDashPhotoInputRef}
                               type="file"
                               accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               style={{ display: 'none' }}
@@ -3881,7 +3994,7 @@ function Profile() {
                               </svg>
                             </div>
                             {generalSaving && <div className="dash-avatar-uploading-spinner" style={{ position: 'absolute', inset: 0, border: '3px solid rgba(99, 102, 241, 0.4)', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'rotate 1s linear infinite' }} />}
-                          </label>
+                          </button>
                         </div>
                         <div className="dash-profile-hero-info">
                           <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
@@ -3891,9 +4004,10 @@ function Profile() {
                             @{generalProfile.username}
                           </p>
                           
-                          <label
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
                             style={{
-                              cursor: 'pointer',
                               padding: '10px 20px',
                               borderRadius: '12px',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -3908,6 +4022,7 @@ function Profile() {
                               lineHeight: 1,
                               boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                             }}
+                            onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
                               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -3916,6 +4031,7 @@ function Profile() {
                             </svg>
                             Change Photo
                             <input
+                              ref={genDashChangePhotoInputRef}
                               type="file"
                               accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               style={{ display: 'none' }}
@@ -3924,7 +4040,7 @@ function Profile() {
                                 handleGeneralPhotoSave(file);
                               })}
                             />
-                          </label>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -4473,15 +4589,26 @@ function Profile() {
               <div className="profile-edit-field">
                 <label>Profile photo</label>
                 <div className="profile-edit-photo-row">
-                  <label className="profile-edit-file-btn">
+                  <button
+                    type="button"
+                    className="profile-edit-file-btn upload-trigger-btn"
+                    style={{ width: 'auto' }}
+                    onClick={() => { if (genPhotoInputRef.current) { genPhotoInputRef.current.value = ''; genPhotoInputRef.current.click(); } }}
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     <span>{generalPhotoFile ? 'Change photo' : 'Upload photo'}</span>
-                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))} />
-                  </label>
+                    <input
+                      ref={genPhotoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))}
+                    />
+                  </button>
                   {(generalForm.photo || generalPhotoFile) && (
                     <div className="profile-edit-photo-preview">
                       <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" />
@@ -5631,8 +5758,14 @@ function Profile() {
                         <div className="dash-profile-bio-section">
                           <div className="dash-section-header">
                             <h3 className="dash-section-label">Gallery</h3>
-                            <label className="dash-add-platform-btn">
+                            <button
+                              type="button"
+                              className="dash-add-platform-btn upload-trigger-btn"
+                              style={{ width: 'auto' }}
+                              onClick={() => { if (artistGalleryInputRef.current) { artistGalleryInputRef.current.value = ''; artistGalleryInputRef.current.click(); } }}
+                            >
                               <input
+                                ref={artistGalleryInputRef}
                                 type="file"
                                 accept="image/*,image/gif"
                                 multiple
@@ -5643,7 +5776,7 @@ function Profile() {
                                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                               </svg>
                               {galleryUploading ? 'Uploading...' : 'Add Images'}
-                            </label>
+                            </button>
                           </div>
 
                           <div className="dash-gallery-grid">
@@ -5796,10 +5929,21 @@ function Profile() {
                           <span className="profile-edit-photo-caption">Current</span>
                         </div>
                       )}
-                      <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))} />
+                      <button
+                        type="button"
+                        className="profile-edit-file-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistProfilePhotoInputRef.current) { artistProfilePhotoInputRef.current.value = ''; artistProfilePhotoInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistProfilePhotoInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))}
+                        />
                         {photoFile ? 'New image chosen' : 'Choose photo'}
-                      </label>
+                      </button>
                     </div>
                   </div>
                   <div className="profile-edit-field profile-edit-photo-field">
@@ -5811,10 +5955,21 @@ function Profile() {
                           <span className="profile-edit-photo-caption">Current</span>
                         </div>
                       )}
-                      <label className="profile-edit-file-btn">
-                        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))} />
+                      <button
+                        type="button"
+                        className="profile-edit-file-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistBannerPhotoInputRef.current) { artistBannerPhotoInputRef.current.value = ''; artistBannerPhotoInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistBannerPhotoInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))}
+                        />
                         {bgFile ? 'New image chosen' : 'Choose photo'}
-                      </label>
+                      </button>
                     </div>
                   </div>
                 </section>
@@ -5930,13 +6085,23 @@ function Profile() {
                         placeholder="Slide title (optional)"
                         className="profile-edit-gallery-name-in"
                       />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                        onChange={(e) => handlePickAndCrop(e, 2, (file) => setNewGalleryFile(file))}
-                      />
+                      <button
+                        type="button"
+                        className="profile-edit-gallery-add-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistGalleryAddInputRef.current) { artistGalleryAddInputRef.current.value = ''; artistGalleryAddInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistGalleryAddInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 2, (file) => setNewGalleryFile(file))}
+                        />
+                        {galleryUploading ? 'Uploading…' : (newGalleryFile ? 'Image ready' : 'Pick Image')}
+                      </button>
                       <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
-                        {galleryUploading ? 'Uploading…' : 'Add to slideshow'}
+                        Add to slideshow
                       </button>
                     </div>
                   </div>
