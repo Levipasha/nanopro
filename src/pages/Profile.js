@@ -3776,15 +3776,15 @@ function Profile() {
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
         {cropper.open && (
-          <div style={{ position: 'relative', zIndex: 100000 }}>
-            <ImageCropperModal
-              image={cropper.image}
-              aspect={cropper.aspect}
-              onSave={cropper.onComplete}
-              onCancel={cropper.onCancel}
-            />
-          </div>
-        )}
+           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+             <ImageCropperModal
+               image={cropper.image}
+               aspect={cropper.aspect}
+               onSave={cropper.onComplete}
+               onCancel={cropper.onCancel}
+             />
+           </div>
+         )}
       </div>
     );
   }
@@ -4465,15 +4465,15 @@ function Profile() {
           </div>
         )}
         {cropper.open && (
-          <div style={{ position: 'relative', zIndex: 100000 }}>
-            <ImageCropperModal
-              image={cropper.image}
-              aspect={cropper.aspect}
-              onSave={cropper.onComplete}
-              onCancel={cropper.onCancel}
-            />
-          </div>
-        )}
+           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+             <ImageCropperModal
+               image={cropper.image}
+               aspect={cropper.aspect}
+               onSave={cropper.onComplete}
+               onCancel={cropper.onCancel}
+             />
+           </div>
+         )}
       </div>
     );
   }
