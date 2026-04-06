@@ -132,6 +132,16 @@ export default function ProfileArtistOnboardingWizard({
                     />
                   </div>
                   <div className="onboarding-field">
+                    <label>Years of Experience</label>
+                    <input
+                      type="text"
+                      className="onboarding-input"
+                      value={formData.experience}
+                      onChange={e => setFormData(prev => ({ ...prev, experience: e.target.value }))}
+                      placeholder="e.g. 2 years, 5+ years"
+                    />
+                  </div>
+                  <div className="onboarding-field">
                     <label>Email Address <span className="onboarding-required-star">*</span></label>
                     <input
                       type="email"

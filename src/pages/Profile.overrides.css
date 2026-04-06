@@ -1349,25 +1349,97 @@ h3.dash-section-label {
   max-width: 100% !important;
 }
 
-/* Redesigned specialization tag: Smaller, modern badge UI */
+/* 2. Redesigned Specialization + Experience Badge (Uiverse-inspired) */
+.gp-artist-badge-wrapper {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.Btn {
+  min-width: 140px;
+  width: fit-content;
+  height: 34px;
+  display: flex;
+  align-items: stretch; /* Stretch children to full height exactly */
+  justify-content: flex-start;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--artist-glass-pill-border, rgba(255, 255, 255, 0.18)), 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: default;
+  background-color: transparent;
+  font-family: inherit;
+  position: relative;
+  isolation: isolate;
+  /* Ultimate clip fix for Chrome/Safari rounded corners with backdrop-filter */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+}
+
+.leftContainer {
+  padding: 0 0.95rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--artist-accent, #fff);
+  z-index: 2;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.leftContainer .like {
+  color: var(--artist-bg-contrast, #000);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.likeCount {
+  padding: 0 0.8rem 0 1rem;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--artist-accent, #fff);
+  font-weight: 700;
+  font-size: 0.68rem;
+  position: relative;
+  background-color: var(--artist-link-bg, rgba(23, 23, 23, 0.88));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.likeCount::before {
+  height: 10px;
+  width: 10px;
+  position: absolute;
+  content: "";
+  background-color: var(--artist-accent, #fff);
+  transform: rotate(45deg);
+  left: -5px;
+  z-index: 1;
+}
+
+/* Hover effect only if there's interaction, but these are tags */
+/* .Btn:hover .leftContainer { background-color: rgb(219, 0, 0); } */
+
+/* Desktop layout adjustment - centered if name is centered */
+@media (min-width: 769px) {
+  .gp-artist-badge-wrapper {
+    justify-content: flex-start;
+  }
+}
+
+/* Redesigned specialization tag: Hide the old one */
 .gp-artist-themed-card .gp-title-overlay {
-  align-self: flex-start !important;
-  margin-top: 0 !important; /* Zero space from name */
-  margin-bottom: 0 !important; /* Zero gap from the row bottom */
-  padding: 0.3rem 0.65rem !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.14em !important;
-  text-transform: uppercase !important;
-  color: var(--artist-text, #fff) !important;
-  opacity: 0.9 !important;
-  box-shadow: none !important;
-  transform: none !important;
+  display: none !important;
 }
 
 /* Hidden artist ID/Username as it's not necessary */

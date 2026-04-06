@@ -36,6 +36,7 @@ const defaultForm = {
   name: '',
   bio: '',
   specialization: '',
+  experience: '',
   photo: '',
   backgroundPhoto: '',
   email: '',
@@ -5505,28 +5506,48 @@ function Profile() {
                                 )}
                               </div>
 
-                              <div className="dash-hero-editable-wrapper">
-                                {editingHeroField === 'specialization' ? (
+                            <div className="gp-artist-badge-wrapper" style={{ cursor: 'pointer' }}>
+                              <div className="Btn" onClick={() => openHeroEditor('specialization', artist)}>
+                                <div className="leftContainer">
+                                  <span className="like">{artist.specialization || 'Add specialization'}</span>
+                                </div>
+                                <div className="likeCount" onClick={(e) => { e.stopPropagation(); openHeroEditor('experience', artist); }}>
+                                  {artist.experience || '+ XP'}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Mobile inline editors (hidden by default, shown when editing) */}
+                            <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'specialization' ? 'block' : 'none' }}>
+                                {editingHeroField === 'specialization' && (
                                   <div className="dash-hero-edit-row">
                                     <input
                                       className="dash-hero-inline-input spec"
                                       autoFocus
                                       value={heroUpdates.specialization !== undefined ? heroUpdates.specialization : (artist.specialization || '')}
                                       onChange={(e) => setHeroUpdates(prev => ({ ...prev, specialization: e.target.value }))}
+                                      placeholder="e.g. Visual Artist"
                                     />
                                     <button onClick={() => handleUpdateHeroField('specialization', heroUpdates.specialization)}>Save</button>
                                     <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
                                   </div>
-                                ) : (
-                                  <p
-                                    className="dash-profile-hero-spec clickable"
-                                    onClick={() => openHeroEditor('specialization', artist)}
-                                  >
-                                    <span>{artist.specialization || 'Add specialization'}</span>
-                                  </p>
                                 )}
-                              </div>
-                              <span className="dash-profile-hero-id">ID: {artist.artistId}</span>
+                            </div>
+                            <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'experience' ? 'block' : 'none' }}>
+                                {editingHeroField === 'experience' && (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      autoFocus
+                                      value={heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, experience: e.target.value }))}
+                                      placeholder="e.g. 2 years experience"
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('experience', heroUpdates.experience)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                )}
+                            </div>
                             </div>
                           </div>
                           <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
@@ -5539,14 +5560,20 @@ function Profile() {
                           >
                             <div
                               className="dash-mobile-edit-modal"
-                              role="dialog"
-                              aria-modal="true"
-                              aria-label={mobileHeroEditField === 'name' ? 'Edit name' : 'Edit artist tag'}
+                              aria-label={
+                                mobileHeroEditField === 'name' ? 'Edit name' : 
+                                mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                'Edit artist tag'
+                              }
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="dash-mobile-edit-header">
                                 <div className="dash-mobile-edit-title">
-                                  {mobileHeroEditField === 'name' ? 'Edit name' : 'Edit artist tag'}
+                                  {
+                                    mobileHeroEditField === 'name' ? 'Edit name' : 
+                                    mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                    'Edit artist tag'
+                                  }
                                 </div>
                                 <button
                                   type="button"
@@ -5559,10 +5586,12 @@ function Profile() {
                               </div>
                               <div className="dash-mobile-edit-body">
                                 <input
-                                  className="dash-mobile-edit-input"
-                                  autoFocus
                                   value={mobileHeroDraft}
-                                  placeholder={mobileHeroEditField === 'name' ? 'Enter your name' : 'Enter your artist tag'}
+                                  placeholder={
+                                    mobileHeroEditField === 'name' ? 'Enter your name' : 
+                                    mobileHeroEditField === 'experience' ? 'Enter experience (e.g. 2 years)' :
+                                    'Enter your artist tag'
+                                  }
                                   onChange={(e) => setMobileHeroDraft(e.target.value)}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Escape') setMobileHeroEditField(null);
@@ -5863,7 +5892,7 @@ function Profile() {
         <div className="profile-edit-overlay" onClick={closeEdit}>
           <div className="profile-edit-modal" onClick={(e) => e.stopPropagation()}>
             <div className="profile-edit-header">
-              <h3>Edit artist: {editingArtist.artistId}</h3>
+              <h3>Edit Profile</h3>
               <button type="button" className="profile-edit-close" onClick={closeEdit} aria-label="Close">×</button>
             </div>
             <form onSubmit={handleSave} className="profile-edit-form">
@@ -5877,6 +5906,10 @@ function Profile() {
                   <div className="profile-edit-field">
                     <label>Specialization</label>
                     <input name="specialization" value={formData.specialization} onChange={handleInputChange} placeholder="e.g. Visual Artist" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Experience</label>
+                    <input name="experience" value={formData.experience} onChange={handleInputChange} placeholder="e.g. 2 years" />
                   </div>
                   <div className="profile-edit-field">
                     <label>Bio</label>

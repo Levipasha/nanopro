@@ -336,12 +336,14 @@ function ArtistPublicView() {
         '--artist-link-bg': themeLinkBg,
         '--artist-glass-pill-bg': glassPillBg,
         '--artist-glass-pill-border': glassPillBorder,
+        '--artist-accent': themeText,
+        '--artist-bg-contrast': isTextDark ? '#fff' : '#000',
         background: themeBg
       }}
     >
       <Helmet>
         <title>{nanoProfilesPageTitle}</title>
-        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. Smart Digital Identity Solutions.`} />
+        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. ${[artist?.specialization, artist?.experience].filter(Boolean).join(' • ') || 'Smart Digital Identity Solutions'}.`} />
         
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="profile" />
@@ -422,8 +424,20 @@ function ArtistPublicView() {
           </button>
           <div className="gp-avatar-text">
             {artist.name && <h1 className="gp-name">{artist.name}</h1>}
-            {artist.specialization && <p className="gp-title-overlay">{artist.specialization}</p>}
-            <p className="gp-username">ID: {artist.artistId || artist.username || artistId}</p>
+            {(artist.specialization || artist.experience) && (
+              <div className="gp-artist-badge-wrapper">
+                <div className="Btn">
+                  <div className="leftContainer">
+                    <span className="like">{artist.specialization || 'Artist'}</span>
+                  </div>
+                  {artist.experience && (
+                    <div className="likeCount">
+                      {artist.experience}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -621,8 +635,19 @@ function ArtistPublicView() {
                 {artist.name && <span className="gp-profile-preview-name">{artist.name}</span>}
                 {artist.specialization && <span className="gp-profile-preview-dot" />}
               </div>
-              {artist.specialization && (
-                <p className="gp-profile-preview-role">{artist.specialization}</p>
+              {(artist.specialization || artist.experience) && (
+                <div className="gp-artist-badge-wrapper" style={{ marginTop: '0.35rem' }}>
+                  <div className="Btn" style={{ height: '28px', minWidth: '120px' }}>
+                    <div className="leftContainer">
+                      <span className="like" style={{ fontSize: '0.65rem' }}>{artist.specialization || 'Artist'}</span>
+                    </div>
+                    {artist.experience && (
+                      <div className="likeCount" style={{ fontSize: '0.65rem' }}>
+                        {artist.experience}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>

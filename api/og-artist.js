@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
     ? `${artist.name || 'Artist Profile'} | Nano Profiles`
     : 'Artist Profile | Nano Profiles';
   const description = artist
-    ? (artist.specialization || artist.bio || 'Smart Digital Identity Solutions for Artists')
+    ? ([artist.specialization, artist.experience].filter(Boolean).join(' • ') || artist.bio || 'Smart Digital Identity Solutions for Artists')
     : 'Smart Digital Identity Solutions for Artists';
   const image = artist && (artist.photo || artist.photoUrl)
     ? absoluteImageUrl(artist.photo || artist.photoUrl, apiBase)
