@@ -1298,3 +1298,138 @@ h3.dash-section-label {
   line-height: 1.4;
 }
 
+
+/* Artist Profile: Custom Layout for Profile Pic and Text 
+   - Move profile pic to the left side
+   - Position name/tag directly next to the pic with minimal gap
+   - Name starts below the banner level
+*/
+.gp-artist-themed-card .gp-avatar-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  margin-top: -60px !important;
+  padding: 0 1.5rem 0 !important; /* Removed bottom padding */
+  position: relative !important;
+  z-index: 10 !important;
+  gap: 0.75rem !important;
+}
+
+/* 1. Name and Tag (specialization) area - moved closer to the pic */
+.gp-artist-themed-card .gp-avatar-text {
+  position: static !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  margin-top: 60px !important; /* Start exactly where the banner ends */
+  padding-top: 0 !important;
+  margin-left: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* Stylize the name - aligned left close to pic with multi-line truncation */
+.gp-artist-themed-card .gp-name {
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+  margin: 0 0 0.15rem 0 !important; /* Minimal gap before tag */
+  text-shadow: none !important;
+  display: -webkit-box !important;
+  line-clamp: 2 !important;
+  -webkit-line-clamp: 2 !important; /* Limit to 2 lines */
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: break-word !important; /* Prevent long words from breaking layout */
+  width: 100% !important;
+  text-align: left !important;
+  color: var(--artist-text, #fff) !important;
+  max-width: 100% !important;
+}
+
+/* Redesigned specialization tag: Smaller, modern badge UI */
+.gp-artist-themed-card .gp-title-overlay {
+  align-self: flex-start !important;
+  margin-top: 0 !important; /* Zero space from name */
+  margin-bottom: 0 !important; /* Zero gap from the row bottom */
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--artist-text, #fff) !important;
+  opacity: 0.9 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Hidden artist ID/Username as it's not necessary */
+.gp-artist-themed-card .gp-username {
+  display: none !important;
+}
+
+/* Dramatically reduce section spacing for artist profiles */
+.gp-artist-themed-card .gp-section {
+  padding-top: 0.15rem !important;
+}
+
+/* Hide the pagination dots for the gallery/events slideshow */
+.gp-artist-themed-card .gp-events-dots {
+  display: none !important;
+}
+
+/* 2. Profile Pic on the left side, keeping vertical overlap */
+.gp-artist-themed-card .gp-avatar-circle {
+  align-self: flex-start !important;
+  margin: 0 !important;
+  width: 110px !important;
+  height: 110px !important;
+  border: 3px solid var(--artist-bg, #0b1220) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+  background: #000 !important;
+  flex-shrink: 0 !important;
+  z-index: 15 !important;
+}
+
+/* Reduce banner height for artist profiles */
+.gp-artist-themed-card .gp-cover-img {
+  height: 170px !important;
+}
+
+@media (max-width: 420px) {
+  .gp-artist-themed-card .gp-cover-img {
+    height: 150px !important;
+  }
+  
+  .gp-artist-themed-card .gp-avatar-row {
+    margin-top: -55px !important; /* Adjust overlap for shorter banner */
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    gap: 0.6rem !important;
+  }
+  
+  .gp-artist-themed-card .gp-name {
+    font-size: 1.6rem !important;
+  }
+  
+  .gp-artist-themed-card .gp-avatar-circle {
+    width: 95px !important;
+    height: 95px !important;
+  }
+  
+  .gp-artist-themed-card .gp-avatar-text {
+    margin-top: 55px !important; /* Match mobile overlap */
+  }
+
+  /* Reduce gap between profile header and bio sections for artist profiles */
+  .gp-artist-themed-card .gp-section {
+    padding-top: 0.15rem !important;
+  }
+}
