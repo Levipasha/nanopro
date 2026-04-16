@@ -35,7 +35,8 @@
   background: rgba(255, 255, 255, 0.95) !important;
   color: #020617 !important;
   border-color: rgba(255, 255, 255, 0.22) !important;
-  border-radius: 18px !important; /* rounded-rectangle, not full pill */
+  border-radius: 18px !important;
+  /* rounded-rectangle, not full pill */
 }
 
 .dash-mobile-bottom-nav {
@@ -250,14 +251,14 @@
 }
 
 /* Dashboard header: gap between subtitle (e.g. “Manage your NFC…”) and copy/open pill bar; center the pill */
-.dash-main-header > div:first-child {
+.dash-main-header>div:first-child {
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
   min-width: 0 !important;
 }
 
-.dash-main-header .dash-main-subtitle + .dash-profile-link-iconbar {
+.dash-main-header .dash-main-subtitle+.dash-profile-link-iconbar {
   margin-top: 1rem !important;
   align-self: center !important;
   width: fit-content !important;
@@ -266,7 +267,7 @@
 }
 
 @media (max-width: 768px) {
-  .dash-main-header .dash-main-subtitle + .dash-profile-link-iconbar {
+  .dash-main-header .dash-main-subtitle+.dash-profile-link-iconbar {
     margin-top: 0.875rem !important;
   }
 }
@@ -279,14 +280,14 @@
     overflow: hidden !important;
   }
 
-  .general-onboarding-card .profile-edit-link-block > div:first-child {
+  .general-onboarding-card .profile-edit-link-block>div:first-child {
     display: flex !important;
     flex-wrap: wrap !important;
     gap: 0.65rem !important;
     width: 100% !important;
   }
 
-  .general-onboarding-card .profile-edit-link-block > div:first-child > * {
+  .general-onboarding-card .profile-edit-link-block>div:first-child>* {
     min-width: 0 !important;
     width: 100% !important;
     flex: 1 1 100% !important;
@@ -303,8 +304,8 @@
 }
 
 /* Artist dashboard events/showcase cards: use 'cover' to fill and crop for a cleaner look */
-.dash-gallery-grid .dash-gallery-item > img,
-.dash-gallery-item > img {
+.dash-gallery-grid .dash-gallery-item>img,
+.dash-gallery-item>img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
@@ -747,9 +748,7 @@
 /* Artist onboarding — “Select Platforms” grid + Selected button: avoid overlap on short phones
    (base Profile.part24 uses max-height:340px; card overflow can clip so the CTA sits on the last row). */
 @media (max-width: 768px) {
-  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card)
-    .general-onboarding-card
-    .onboarding-fields {
+  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card) .general-onboarding-card .onboarding-fields {
     overflow: visible !important;
     min-height: 0 !important;
   }
@@ -775,7 +774,7 @@
     overscroll-behavior: contain !important;
   }
 
-  .general-onboarding-card .onboarding-selector-view > .onboarding-btn-primary {
+  .general-onboarding-card .onboarding-selector-view>.onboarding-btn-primary {
     flex-shrink: 0 !important;
     margin-top: 0 !important;
     position: relative !important;
@@ -988,8 +987,7 @@
     -webkit-overflow-scrolling: touch !important;
   }
 
-  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card)
-    .profile-login-card.profile-choice-card.general-onboarding-card {
+  .profile-page.profile-login-wrap.onboarding-screen:has(.general-onboarding-card) .profile-login-card.profile-choice-card.general-onboarding-card {
     height: auto !important;
     max-height: none !important;
     min-height: 0 !important;
@@ -1087,7 +1085,7 @@
   flex-shrink: 0 !important;
 }
 
-.general-onboarding-card .onboarding-inline-loader > * {
+.general-onboarding-card .onboarding-inline-loader>* {
   width: 100% !important;
   height: 100% !important;
 }
@@ -1269,7 +1267,7 @@ h3.dash-section-label {
   pointer-events: auto;
 }
 
-.dash-profile-hero > .dash-preview-sync-overlay {
+.dash-profile-hero>.dash-preview-sync-overlay {
   border-radius: 24px;
 }
 
@@ -1304,47 +1302,74 @@ h3.dash-section-label {
    - Position name/tag directly next to the pic with minimal gap
    - Name starts below the banner level
 */
-.gp-artist-themed-card .gp-avatar-row {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  margin-top: -60px !important;
-  padding: 0 1.5rem 0 !important; /* Removed bottom padding */
-  position: relative !important;
-  z-index: 10 !important;
-  gap: 0.75rem !important;
+/* Desktop/Table: Row layout with circle next to name */
+@media (min-width: 481px) {
+
+  .gp-artist-themed-card .gp-avatar-row,
+  .gp-student-themed-card .gp-avatar-row {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    padding: 0 1.5rem 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  .gp-artist-themed-card .gp-avatar-text,
+  .gp-student-themed-card .gp-avatar-text {
+    margin-top: 60px !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+  }
+
+  .gp-artist-themed-card .gp-name,
+  .gp-student-themed-card .gp-name {
+    text-align: left !important;
+  }
 }
 
-/* 1. Name and Tag (specialization) area - moved closer to the pic */
-.gp-artist-themed-card .gp-avatar-text {
-  position: static !important;
-  flex: 1 !important;
+/* Base/Mobile behavior: ensure centered and aligned */
+.gp-artist-themed-card .gp-avatar-row,
+.gp-student-themed-card .gp-avatar-row {
   display: flex !important;
   flex-direction: column !important;
-  align-items: flex-start !important;
-  text-align: left !important;
-  margin-top: 60px !important; /* Start exactly where the banner ends */
+  align-items: center !important;
+  margin-top: -60px !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.gp-artist-themed-card .gp-avatar-text,
+.gp-student-themed-card .gp-avatar-text {
+  position: static !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  margin-top: 0.75rem !important;
   padding-top: 0 !important;
   margin-left: 0 !important;
   pointer-events: auto !important;
 }
 
 /* Stylize the name - aligned left close to pic with multi-line truncation */
-.gp-artist-themed-card .gp-name {
+.gp-artist-themed-card .gp-name,
+.gp-student-themed-card .gp-name {
   font-size: 1.85rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.01em !important;
-  margin: 0 0 0.15rem 0 !important; /* Minimal gap before tag */
+  margin: 0 0 0.15rem 0 !important;
   text-shadow: none !important;
   display: -webkit-box !important;
   line-clamp: 2 !important;
-  -webkit-line-clamp: 2 !important; /* Limit to 2 lines */
+  -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  word-break: break-word !important; /* Prevent long words from breaking layout */
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
   width: 100% !important;
-  text-align: left !important;
+  text-align: center !important;
   color: var(--artist-text, #fff) !important;
   max-width: 100% !important;
 }
@@ -1355,14 +1380,17 @@ h3.dash-section-label {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  max-width: 100%;
 }
 
 .Btn {
   min-width: 140px;
   width: fit-content;
+  max-width: 100%;
   height: 34px;
   display: flex;
-  align-items: stretch; /* Stretch children to full height exactly */
+  align-items: stretch;
+  /* Stretch children to full height exactly */
   justify-content: flex-start;
   border-radius: 8px;
   overflow: hidden;
@@ -1396,6 +1424,10 @@ h3.dash-section-label {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  /* Limit badge text width */
 }
 
 .likeCount {
@@ -1438,7 +1470,8 @@ h3.dash-section-label {
 }
 
 /* Redesigned specialization tag: Hide the old one */
-.gp-artist-themed-card .gp-title-overlay {
+.gp-artist-themed-card .gp-title-overlay,
+.gp-student-themed-card .gp-title-overlay {
   display: none !important;
 }
 
@@ -1479,25 +1512,27 @@ h3.dash-section-label {
   .gp-artist-themed-card .gp-cover-img {
     height: 150px !important;
   }
-  
+
   .gp-artist-themed-card .gp-avatar-row {
-    margin-top: -55px !important; /* Adjust overlap for shorter banner */
+    margin-top: -55px !important;
+    /* Adjust overlap for shorter banner */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     gap: 0.6rem !important;
   }
-  
+
   .gp-artist-themed-card .gp-name {
     font-size: 1.6rem !important;
   }
-  
+
   .gp-artist-themed-card .gp-avatar-circle {
     width: 95px !important;
     height: 95px !important;
   }
-  
+
   .gp-artist-themed-card .gp-avatar-text {
-    margin-top: 55px !important; /* Match mobile overlap */
+    margin-top: 55px !important;
+    /* Match mobile overlap */
   }
 
   /* Reduce gap between profile header and bio sections for artist profiles */

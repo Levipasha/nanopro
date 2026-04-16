@@ -79,7 +79,7 @@ export default function HomeHero() {
                             <span className="feature-arrow">→</span>
                         </Link>
 
-                        <Link to="/restaurant-showcase" className="hero-feature-item">
+                         <Link to="/restaurant-showcase" className="hero-feature-item">
                             <div className="feature-icon chef-icon">
                                 <ChefIcon />
                             </div>

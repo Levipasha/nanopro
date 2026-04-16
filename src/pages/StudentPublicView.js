@@ -6,6 +6,7 @@ import './GeneralProfileView.css';
 import { getThemeById } from '../constants/generalThemes';
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 import { getLinkIcon } from '../components/LinkIcons';
+import { fixImageUrl } from '../utils/imageHelper';
 
 function StudentPublicView() {
   const [searchParams] = useSearchParams();
@@ -33,12 +34,11 @@ function StudentPublicView() {
       school: 'Greenwood High',
       title: 'Student • Robotics Club',
       email: 'aarav.patel@example.com',
-      photo:
-        'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=900&h=900&fit=crop',
+      backgroundPhoto: 'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?auto=format&fit=crop&w=1200&q=80',
+      photo: 'https://images.unsplash.com/photo-1519085189623-28400037eb85?auto=format&fit=crop&w=600&h=600&q=80',
       theme: 'ocean',
       font: 'outfit',
-      bio:
-        'Building smarter prototypes with the Robotics Club. Passionate about AI, sensors, and community science challenges.',
+      bio: 'Building smarter prototypes with the Robotics Club. Passionate about AI, sensors, and community science challenges.',
       achievements: [
         { title: 'Robotics Champion', desc: 'Inter-school Robotics League (2025)' },
         { title: 'Hackathon Finalist', desc: 'Open Innovation Hack (2024)' },
@@ -56,7 +56,7 @@ function StudentPublicView() {
   }, [isMock, studentId]);
 
   const theme = getThemeById(student?.theme || 'ocean');
-  const sharePrimaryName = (student.name || '').trim() || 'Student';
+  const sharePrimaryName = (student?.name || '').trim() || 'Student';
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const copyToClipboard = (text) => {
@@ -111,19 +111,19 @@ function StudentPublicView() {
         <meta property="og:url" content={window.location.href} />
         <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
         <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
-        <meta property="og:image" content={student.photo} />
+        <meta property="og:image" content={fixImageUrl(student?.photo) || student?.photo} />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={window.location.href} />
         <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
         <meta name="twitter:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions.`} />
-        <meta name="twitter:image" content={student.photo} />
+        <meta name="twitter:image" content={fixImageUrl(student?.photo) || student?.photo} />
       </Helmet>
 
       <div className={`gp-view gp-layout${isEmbed ? ' gp-embed-showcase' : ''}`}>
         <div
-          className="gp-card gp-card-themed"
+          className="gp-card gp-student-themed-card"
           style={{
             background: theme.bg,
             color: theme.text,
@@ -138,18 +138,42 @@ function StudentPublicView() {
               <line x1="12" y1="2" x2="12" y2="15" />
             </svg>
           </button>
-          <div className="gp-photo-header">
-            {student.photo ? (
-              <img src={student.photo} alt={student.name} className="gp-avatar-img" />
-            ) : (
-              <div className="gp-avatar-placeholder gp-avatar-placeholder-header">
-                {student.name?.charAt(0) || '?'}
-              </div>
-            )}
 
-            <div className="gp-photo-overlay">
+          {/* Cover banner */}
+          <div className="gp-photo-header">
+            {student.backgroundPhoto && (
+              <img src={fixImageUrl(student.backgroundPhoto) || student.backgroundPhoto} alt={student.name || 'Cover'} className="gp-cover-img" />
+            )}
+          </div>
+
+          {/* Avatar Row (Circle + Name/Tags) */}
+          <div className="gp-avatar-row">
+            <div className="gp-avatar-circle">
+              {student.photo ? (
+                <img src={fixImageUrl(student.photo) || student.photo} alt={student.name} className="gp-avatar-img" />
+              ) : (
+                <div className="gp-avatar-circle-fallback">
+                  {student.name?.charAt(0) || '?'}
+                </div>
+              )}
+            </div>
+
+            <div className="gp-avatar-text">
               {student.name && <h1 className="gp-name">{student.name}</h1>}
-              {student.school && <p className="gp-title-overlay">{student.school}</p>}
+              {(student.school || student.title) && (
+                <div className="gp-artist-badge-wrapper">
+                  <div className="Btn">
+                    <div className="leftContainer">
+                      <span className="like">{student.school || 'Student'}</span>
+                    </div>
+                    {student.title && (
+                      <div className="likeCount">
+                        {student.title.split('•')[1]?.trim() || student.title}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

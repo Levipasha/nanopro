@@ -11,6 +11,7 @@ import ArtistShowcase from './pages/ArtistShowcase';
 import StudentShowcase from './pages/StudentShowcase';
 import RestaurantShowcase from './pages/RestaurantShowcase';
 
+
 function App() {
   return (
     <div>
@@ -24,6 +25,7 @@ function App() {
         <Route path="/artist-showcase" element={<ArtistShowcase />} />
         <Route path="/student-showcase" element={<StudentShowcase />} />
         <Route path="/restaurant-showcase" element={<RestaurantShowcase />} />
+
         <Route path="/*" element={<Home />} />
       </Routes>
     </div>

@@ -36,7 +36,13 @@
 
 .home-hero-section .feature-icon svg {
   flex-shrink: 0;
+  color: #00f2ff; /* High-tech cyan accent */
+  drop-shadow: 0 0 8px rgba(0, 242, 255, 0.4);
 }
+
+.home-hero-section .artist-icon svg { color: #00f2ff; }
+.home-hero-section .student-icon svg { color: #00ffd5; }
+.home-hero-section .chef-icon svg { color: #ffae00; }
 
 /* Text column: starts exactly after icon + gap on every card */
 .home-hero-section .feature-info {

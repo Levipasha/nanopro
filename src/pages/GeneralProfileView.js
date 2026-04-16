@@ -156,7 +156,7 @@ function GeneralProfileView() {
   const activeHeadingFont = profile.font || 'outfit';
   const activeBodyFont = profile.bioFont || activeHeadingFont;
 
-  const sharePrimaryName = (profile.name || '').trim() || 'Profile';
+  const sharePrimaryName = (profile?.name || '').trim() || 'Profile';
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const handleShare = async () => {

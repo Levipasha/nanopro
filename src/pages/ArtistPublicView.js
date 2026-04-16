@@ -101,30 +101,30 @@ function ArtistPublicView() {
         profileFont: 'outfit',
         email: 'example.artist@example.com',
         phone: '',
-        backgroundPhoto: makeSvgDataUrl('Example Artist', '#0b1220', '#111827'),
-        photo: makeSvgDataUrl('Artist', '#111827', '#0b1220'),
-        bio:
-          'Exploring texture, light, and form through mixed media. This is a static showcase profile used in the landing page.',
-        // Social/contact fields used by this page
+        backgroundPhoto: 'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?auto=format&fit=crop&w=1200&q=80',
+        photo: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&h=600&q=80',
+        bio: 'Exploring texture, light, and form through mixed media. This is a static showcase profile used in the landing page.',
         website: 'https://example.com',
         portfolio: 'https://example.com/portfolio',
         instagram: 'exampleinsta',
         whatsapp: '9183746501',
-        // Events slideshow images
         gallery: [
           {
-            url: makeSvgDataUrl('Gallery Night', '#0f172a', '#4f46e5'),
-            name: 'Gallery Night',
+            url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80',
+            name: 'Gallery Exhibition',
+          },
+          {
+            url: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=800&q=80',
+            name: 'Studio Work',
           }
         ],
-        // Art tiles shown in the “Show My Art” modal
         artLinks: [
           {
             id: 'mock-art-1',
             title: 'Neon Study #1',
             description: 'A neon-inspired exploration of color gradients.',
             images: [
-              makeSvgDataUrl('Neon Study #1', '#0ea5e9', '#a855f7')
+              'https://images.unsplash.com/photo-1501472312651-726afe119ff1?auto=format&fit=crop&w=800&q=80'
             ]
           },
           {
@@ -132,7 +132,7 @@ function ArtistPublicView() {
             title: 'Texture & Shadow',
             description: 'Light-driven texture composition.',
             images: [
-              makeSvgDataUrl('Texture & Shadow', '#111827', '#db2777')
+              'https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=800&q=80'
             ]
           }
         ],
@@ -304,7 +304,7 @@ function ArtistPublicView() {
   const fontId = artist.profileFont || 'outfit';
   const fontFamily = resolveFontFamily(fontId);
 
-  const sharePrimaryName = (artist.name || '').trim() || 'Artist';
+  const sharePrimaryName = (artist?.name || '').trim() || 'Artist';
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const handleShare = async () => {
@@ -396,7 +396,7 @@ function ArtistPublicView() {
         {/* Cover banner */}
         <div className="gp-photo-header">
           {artist.backgroundPhoto && (
-            <img src={artist.backgroundPhoto} alt={artist.name || 'Cover'} className="gp-cover-img" />
+            <img src={fixImageUrl(artist.backgroundPhoto) || artist.backgroundPhoto} alt={artist.name || 'Cover'} className="gp-cover-img" />
           )}
         </div>
 
@@ -412,7 +412,7 @@ function ArtistPublicView() {
           >
             {artist.photo ? (
               <img
-                src={artist.photo}
+                src={fixImageUrl(artist.photo) || artist.photo}
                 alt={artist.name || 'Artist'}
                 className="gp-avatar-img"
               />
@@ -470,7 +470,7 @@ function ArtistPublicView() {
                 <img
                   key={activeEvent?.url || 'event'}
                   className="gp-events-stage-img"
-                  src={activeEvent?.url}
+                  src={fixImageUrl(activeEvent?.url) || activeEvent?.url}
                   alt={activeEvent?.name || 'Event'}
                   loading="lazy"
                 />
@@ -601,7 +601,7 @@ function ArtistPublicView() {
           />
           <img
             className="gp-modal-img"
-            src={activeEventPreview.url}
+            src={fixImageUrl(activeEventPreview.url) || activeEventPreview.url}
             alt={activeEventPreview.name || 'Event image'}
           />
           <button
@@ -626,7 +626,7 @@ function ArtistPublicView() {
           />
           <div className="gp-profile-preview-card">
             <img
-              src={artist.photo}
+              src={fixImageUrl(artist.photo) || artist.photo}
               alt={artist.name || 'Artist'}
               className="gp-profile-preview-img"
             />
@@ -690,7 +690,7 @@ function ArtistPublicView() {
                       onClick={() => setSelectedArtItem(item)}
                     >
                       {firstImage ? (
-                        <img src={firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
+                        <img src={fixImageUrl(firstImage) || firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
                       ) : (
                         <div className="gp-art-card-empty">🎨</div>
                       )}

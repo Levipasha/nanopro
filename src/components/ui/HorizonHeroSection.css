@@ -1,0 +1,172 @@
+.hero-container.cosmos-style {
+  position: relative;
+  width: 100%;
+  min-height: 400vh; /* Plenty of room for 3 sections */
+  background-color: #000;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+}
+
+.hero-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.side-menu {
+  position: fixed;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.menu-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.menu-icon span {
+  width: 100%;
+  height: 2px;
+  background: #fff;
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-transform: uppercase;
+  letter-spacing: 0.5em;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.hero-content.cosmos-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 1000px;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-scroll-item {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.v2-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: #fff;
+  opacity: 0.5;
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.hero-title {
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 900;
+  margin: 0;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.4) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.subtitle-line {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  color: #94a3b8;
+  max-width: 600px;
+  margin: 2rem auto;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.profile-scroll-cta {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  margin-top: 1rem;
+}
+
+.profile-scroll-cta:hover {
+  background: white;
+  color: black !important;
+  transform: scale(1.05);
+}
+
+.scroll-progress {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.scroll-text {
+  font-size: 0.6rem;
+  letter-spacing: 0.5em;
+  opacity: 0.4;
+}
+
+.progress-track {
+  width: 250px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-fill {
+  height: 100%;
+  background: #fff;
+}
+
+.section-counter {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+
+.scroll-sections {
+  position: relative;
+  z-index: 2;
+}
+
+.content-section {
+  height: 133vh; /* Slightly longer sections for smoother transitions */
+}
+
+@media (max-width: 768px) {
+  .side-menu { display: none; }
+  .progress-track { width: 150px; }
+  .hero-title { font-size: 3.5rem; }
+}
