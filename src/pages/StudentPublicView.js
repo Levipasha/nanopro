@@ -44,11 +44,7 @@ function StudentPublicView() {
         { title: 'Hackathon Finalist', desc: 'Open Innovation Hack (2024)' },
         { title: 'Volunteer Tutor', desc: 'STEM mentoring for juniors (2023-2026)' }
       ],
-      links: [
-        { id: 'website', title: 'Portfolio', url: 'https://example.com' },
-        { id: 'instagram', title: 'Instagram', url: 'https://instagram.com/exampleinsta' },
-        { id: 'whatsapp', title: 'WhatsApp', url: 'https://wa.me/9183746501' }
-      ]
+      links: []
     };
 
     setStudent(MOCK_STUDENT);
