@@ -78,21 +78,6 @@ function ArtistPublicView() {
 
     if (isMock) {
       // Hard-coded mock showcase data (so landing page doesn't depend on user-created profiles)
-      const makeSvgDataUrl = (text, bg1 = '#0f172a', bg2 = '#1e293b') => {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="${bg1}" />
-              <stop offset="1" stop-color="${bg2}" />
-            </linearGradient>
-          </defs>
-          <rect width="1200" height="800" fill="url(#g)" />
-          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-            fill="#ffffff" font-family="Arial, sans-serif" font-size="72" font-weight="700">${text}</text>
-        </svg>`;
-        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-      };
-
       const MOCK_ARTIST = {
         artistId: 'mock-artist',
         name: 'Example Artist Profile',
