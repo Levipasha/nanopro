@@ -272,14 +272,6 @@ function ArtistPublicView() {
     });
   }
 
-  // Combine artLinks (structured pieces) and gallery (simple uploads)
-  const galleryItems = (artist.gallery || [])
-    .filter((g) => g && g.url)
-    .map((g) => ({
-      title: g.name || 'Untitled',
-      images: [g.url],
-      description: '',
-    }));
 
   const linkedArtItems = artist?.artLinks
     ? (Array.isArray(artist.artLinks) ? artist.artLinks : Object.values(artist.artLinks))
@@ -291,9 +283,6 @@ function ArtistPublicView() {
   const hasContact = artist.email || artist.phone;
 
   const eventSlides = (artist.gallery || []).filter((x) => x && x.url);
-  const activeEvent = eventSlides.length > 0
-    ? eventSlides[Math.min(eventSlideIndex, eventSlides.length - 1)]
-    : null;
 
   const currentThemeId = themeOverride === 'light' ? 'grey' : (artist?.profileTheme || 'midnight');
   const theme = getThemeById(currentThemeId);
@@ -303,9 +292,6 @@ function ArtistPublicView() {
   const themeText = themeOverride === 'light' ? '#1a1a1a' : (theme?.text || '#ffffff');
   const themeLinkBg = themeOverride === 'light' ? 'rgba(0,0,0,0.05)' : (theme?.linkBg || 'rgba(255,255,255,0.08)');
 
-  const getThemeClass = () => {
-    return `theme-${currentThemeId} ${theme.isAnimated ? theme.className : ''}`;
-  };
 
   const isDarkColor = (color) => {
     if (!color) return false;

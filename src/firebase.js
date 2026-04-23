@@ -6,8 +6,6 @@ import {
   signOut, 
   onAuthStateChanged as firebaseOnAuthStateChanged 
 } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
-
 /**
  * Updated Firebase Configuration
  * Project: nanoprofiles-54c87
@@ -24,7 +22,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 

@@ -32,7 +32,6 @@ const SphereImageGrid = ({
   const [imagePositions, setImagePositions] = useState([]);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [, forceUpdate] = useState(0);
 
   const actualRadius = sphereRadius != null ? sphereRadius : containerSize * 0.45;
   const baseImgSize = containerSize * baseImageScale;
