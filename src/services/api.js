@@ -3,12 +3,26 @@
  * Set REACT_APP_API_URL in .env or Vercel Environment Variables to override.
  * Falls back to the Railway production backend if not explicitly configured.
  */
-// Forced to local for development as requested
-export const API_URL = 
-  process.env.REACT_APP_API_URL || 
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://127.0.0.1:5000'
-    : 'https://nfcschoolbe-production.up.railway.app');
+// Resolve API base URL from env var, with a safe fallback to the Railway backend.
+// IMPORTANT: REACT_APP_API_URL must include the full protocol (e.g. https://...)
+// If the env var is set without a protocol it will be treated as a relative path
+// by the browser, causing all API calls to be routed to the wrong host.
+function resolveApiUrl() {
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    // Safety guard: ensure the URL always starts with a protocol
+    if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+      return `https://${envUrl}`;
+    }
+    return envUrl;
+  }
+  if (typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://127.0.0.1:5000';
+  }
+  return 'https://nfcschoolbe-production-4da5.up.railway.app';
+}
+export const API_URL = resolveApiUrl();
 
 async function request(method, path, { body, getIdToken, getFirebaseUser, headers: customHeaders = {}, cache } = {}) {
   const headers = { 'Content-Type': 'application/json', ...customHeaders };
