@@ -151,6 +151,17 @@ function GeneralProfileView() {
     .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
     .filter((g) => g.url);
 
+  const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'twitter', 'whatsapp', 'tiktok', 'youtube', 'linkedin', 'snapchat', 'pinterest', 'spotify', 'telegram', 'discord'];
+
+  const socialLinks = links.filter(link => {
+    const p = (link.platform || '').toLowerCase();
+    const u = (link.url || '').toLowerCase();
+    const t = (link.title || '').toLowerCase();
+    return SOCIAL_PLATFORMS.some(s => p.includes(s) || u.includes(s) || t.includes(s)) || p === 'x' || u.includes('x.com');
+  });
+
+  const remainingLinks = links.filter(link => !socialLinks.includes(link));
+
 
 
   const activeHeadingFont = profile.font || 'outfit';
@@ -217,120 +228,156 @@ function GeneralProfileView() {
           </svg>
         </button>
 
-        {/* Profile photo - full width header with overlay */}
-        <div className="gp-photo-header">
-          {profile.photo && !imgError ? (
-            <img
-              src={fixImageUrl(profile.photo) || profile.photo}
-              alt={profile.name}
-              className="gp-avatar-img"
-              onError={() => setImgError(true)}
-              onClick={() => setShowEnlarged(true)}
-              title="Click to enlarge"
+        {/* Profile banner/header */}
+        <div className="gp-photo-header" style={{ background: theme.headerBg || theme.linkBg || 'rgba(0,0,0,0.05)' }}>
+          {profile.photo && !imgError && (
+            <img 
+              src={fixImageUrl(profile.photo) || profile.photo} 
+              alt="" 
+              className="gp-banner-bg-fallback"
             />
-          ) : (
-            <div className="gp-avatar-placeholder gp-avatar-placeholder-header">
-              {profile.name?.charAt(0) || '?'}
-            </div>
           )}
-          <div className="gp-photo-overlay">
-            {profile.name && <h1 className="gp-name">{profile.name}</h1>}
-            {profile.title && (
-              <p className="gp-title-overlay">{profile.title}</p>
-            )}
-          </div>
+          <div className="gp-photo-overlay-minimal" />
         </div>
 
-        {/* Username - @username */}
-        <p className="gp-username">@{profile.username}</p>
-
-        {/* Bio */}
-        {cleanBio && (
-          <p className="gp-bio">{cleanBio}</p>
-        )}
-
-        {/* Restaurant / profile gallery (persisted via API) */}
-        {galleryItems.length > 0 && (
-          <div className="gp-restaurant-gallery">
-            <p className="gp-restaurant-gallery-heading">Gallery</p>
-            <div className="gp-restaurant-gallery-grid">
-              {galleryItems.map((g, idx) => (
-                <button
-                  key={`${g.url}-${idx}`}
-                  type="button"
-                  className="gp-restaurant-gallery-tile"
-                  onClick={() => setGalleryModalIndex(idx)}
-                  aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
-                >
-                  <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
-                </button>
-              ))}
+        <div className="gp-content-wrap">
+          {/* Profile Avatar Row (Left aligned like Artist Profile) */}
+          <div className="gp-avatar-row gp-avatar-row-left">
+            <div className="gp-avatar-circle" onClick={() => setShowEnlarged(true)} style={{ cursor: 'pointer' }}>
+              {profile.photo && !imgError ? (
+                <img
+                  src={fixImageUrl(profile.photo) || profile.photo}
+                  alt={profile.name}
+                  className="gp-avatar-img"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="gp-avatar-circle-fallback">
+                  {profile.name?.charAt(0) || '?'}
+                </div>
+              )}
+            </div>
+            <div className="gp-avatar-text">
+              {profile.name && <h1 className="gp-name">{profile.name}</h1>}
+              {profile.title && (
+                <p className="gp-title-small">{profile.title}</p>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Contact + link buttons (same .gp-link sizing for all rows) */}
-        {(restaurantPhone || restaurantEmail || profile.menuPdf || links.length > 0) && (
-        <div className="gp-links">
-          {profile.menuPdf && (
-            <a
-              role="button"
-              tabIndex={0}
-              href="#menu"
-              className="gp-link gp-link-menu gp-link-menu-cta"
-              aria-label="See my menu"
-              style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
-              onClick={(e) => {
-                e.preventDefault();
-                openMenuViewer();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+          {/* Username - @username */}
+          <p className="gp-username">@{profile.username}</p>
+
+          {/* Bio */}
+          {cleanBio && (
+            <p className="gp-bio">{cleanBio}</p>
+          )}
+
+          {/* Restaurant / profile gallery (persisted via API) */}
+          {galleryItems.length > 0 && (
+            <div className="gp-restaurant-gallery" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <p className="gp-restaurant-gallery-heading">Gallery</p>
+              <div className="gp-restaurant-gallery-grid">
+                {galleryItems.map((g, idx) => (
+                  <button
+                    key={`${g.url}-${idx}`}
+                    type="button"
+                    className="gp-restaurant-gallery-tile"
+                    onClick={() => setGalleryModalIndex(idx)}
+                    aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
+                  >
+                    <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Social Marquee */}
+          {socialLinks.length > 0 && (
+            <div className="gp-social-marquee-container">
+              <div className="gp-social-marquee-content">
+                {[...socialLinks, ...socialLinks, ...socialLinks, ...socialLinks].map((link, idx) => {
+                  const platform = (link.platform || '').toLowerCase() || (link.url.includes('instagram') ? 'instagram' : link.url.includes('facebook') ? 'facebook' : link.url.includes('whatsapp') ? 'whatsapp' : link.url.includes('twitter') || link.url.includes('x.com') ? 'twitter' : 'website');
+                  return (
+                    <a
+                      key={idx}
+                      href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`gp-social-icon-link platform-${platform}`}
+                    >
+                      {getLinkIcon(link)}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Contact + link buttons */}
+          {(restaurantPhone || restaurantEmail || profile.menuPdf || remainingLinks.length > 0) && (
+          <div className="gp-links" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            {profile.menuPdf && (
+              <a
+                role="button"
+                tabIndex={0}
+                href="#menu"
+                className="gp-link gp-link-menu gp-link-menu-cta"
+                aria-label="See my menu"
+                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
+                onClick={(e) => {
                   e.preventDefault();
                   openMenuViewer();
-                }
-              }}
-            >
-              <span className="gp-link-icon">{getMenuPdfIcon()}</span>
-              <span className="gp-link-text">See my menu</span>
-            </a>
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openMenuViewer();
+                  }
+                }}
+              >
+                <span className="gp-link-icon">{getMenuPdfIcon()}</span>
+                <span className="gp-link-text">See my menu</span>
+              </a>
+            )}
+            {restaurantPhone && (
+              <a
+                href={`tel:${restaurantPhone}`}
+                className="gp-link"
+                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
+              >
+                <span className="gp-link-icon" aria-hidden="true">📞</span>
+                <span className="gp-link-text">{restaurantPhone}</span>
+              </a>
+            )}
+            {restaurantEmail && (
+              <a
+                href={`mailto:${restaurantEmail}`}
+                className="gp-link"
+                title={restaurantEmail}
+                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
+              >
+                <span className="gp-link-icon" aria-hidden="true">✉</span>
+                <span className="gp-link-text">{restaurantEmail}</span>
+              </a>
+            )}
+            {remainingLinks.map((link, idx) => (
+              <a
+                key={idx}
+                href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gp-link"
+                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
+              >
+                <span className="gp-link-icon">{getLinkIcon(link)}</span>
+                <span className="gp-link-text">{displayGeneralLinkLabel(link)}</span>
+              </a>
+            ))}
+          </div>
           )}
-          {restaurantPhone && (
-            <a
-              href={`tel:${restaurantPhone}`}
-              className="gp-link"
-              style={{ color: theme.text, background: theme.linkBg || theme.bg, borderColor: theme.text }}
-            >
-              <span className="gp-link-icon" aria-hidden="true">📞</span>
-              <span className="gp-link-text">{restaurantPhone}</span>
-            </a>
-          )}
-          {restaurantEmail && (
-            <a
-              href={`mailto:${restaurantEmail}`}
-              className="gp-link"
-              title={restaurantEmail}
-              style={{ color: theme.text, background: theme.linkBg || theme.bg, borderColor: theme.text }}
-            >
-              <span className="gp-link-icon" aria-hidden="true">✉</span>
-              <span className="gp-link-text">{restaurantEmail}</span>
-            </a>
-          )}
-          {links.map((link, idx) => (
-            <a
-              key={idx}
-              href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gp-link"
-              style={{ background: theme.linkBg || theme.bg, color: theme.text, borderColor: theme.text }}
-            >
-              <span className="gp-link-icon">{getLinkIcon(link)}</span>
-              <span className="gp-link-text">{displayGeneralLinkLabel(link)}</span>
-            </a>
-          ))}
         </div>
-        )}
 
         <div className="gp-footer">
           <span>Powered by <a href="https://nanoprofiles.com" target="_blank" rel="noopener noreferrer">NanoProfiles</a></span>

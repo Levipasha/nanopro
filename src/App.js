@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import ArtistShowcase from './pages/ArtistShowcase';
 import StudentShowcase from './pages/StudentShowcase';
 import RestaurantShowcase from './pages/RestaurantShowcase';
+import ArtGalleryPage from './pages/ArtGalleryPage';
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/link/:username" element={<GeneralProfileView />} />
         <Route path="/artist" element={<ArtistPublicView />} />
         <Route path="/student" element={<StudentPublicView />} />
+        <Route path="/show-my-art" element={<ArtGalleryPage />} />
         <Route path="/artist-showcase" element={<ArtistShowcase />} />
         <Route path="/student-showcase" element={<StudentShowcase />} />
         <Route path="/restaurant-showcase" element={<RestaurantShowcase />} />

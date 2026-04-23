@@ -14,11 +14,25 @@ function Login() {
         localStorage.removeItem('profile_type_lock');
     };
 
-    const [view, setView] = useState('choice'); // 'choice' | 'form'
+    const [mode, setMode] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const m = params.get('mode');
+        if (m === 'signup' || m === 'login') return m;
+        return 'login';
+    });
+
+    const [view, setView] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const m = params.get('mode');
+        if (m === 'signup' || m === 'login') {
+            return 'form';
+        }
+        return 'choice';
+    });
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [mode, setMode] = useState('login'); // 'login' | 'signup'
     const [showSignupLink, setShowSignupLink] = useState(false);
 
     const navigate = useNavigate();
@@ -27,9 +41,12 @@ function Login() {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const m = params.get('mode');
+        
         if (m === 'signup' || m === 'login') {
             setMode(m);
             setView('form');
+        } else {
+            setView('choice');
         }
     }, [location.search]);
 
@@ -123,15 +140,14 @@ function Login() {
                         <span>Back</span>
                     </button>
                     <div className="choice-content">
-                        <p className="title">
-                            {mode === 'signup' ? 'Create your account' : 'Welcome back'}
-                            <span>Choose how you want to continue</span>
+                        <p className="title big-title">
+                            <span className="title-text">{mode === 'signup' ? 'Create your account' : 'Welcome back'}</span>
                         </p>
                         <div className="choice-buttons">
-                            <button className="choice-btn login-active" onClick={() => { setMode('login'); setView('form'); }}>
+                            <button className="choice-btn login-active" onClick={() => { setMode('login'); setView('form'); navigate('/login?mode=login', { replace: true }); }}>
                                 Login to account
                             </button>
-                            <button className="choice-btn signup-btn" onClick={() => { setMode('signup'); setView('form'); }}>
+                            <button className="choice-btn signup-btn" onClick={() => { setMode('signup'); setView('form'); navigate('/login?mode=signup', { replace: true }); }}>
                                 Sign up fresh
                             </button>
                         </div>
@@ -152,7 +168,8 @@ function Login() {
                     className="back-button"
                     style={{ top: '20px', left: '20px' }}
                     onClick={() => {
-                        navigate('/');
+                        setView('choice');
+                        navigate('/login', { replace: true });
                         setError('');
                         setSuccess('');
                     }}
@@ -164,14 +181,12 @@ function Login() {
                     <span>Back</span>
                 </button>
 
-                <p className="title" style={{ marginTop: '20px' }}>
-                    {mode === 'signup' ? 'Create profile' : 'Login to profile'}
-                    <span>{mode === 'signup' ? 'Join the artist community' : 'Manage your digital identity'}</span>
+                <p className="title big-title" style={{ marginTop: '20px' }}>
+                    <span className="title-text">{mode === 'signup' ? 'Create profile' : 'Login to profile'}</span>
                 </p>
 
                 <form onSubmit={(e) => e.preventDefault()}>
                     <div className="login-with">
-                        <p>Log in with</p>
                         <button
                             type="button"
                             className="button-log"
@@ -186,6 +201,26 @@ function Login() {
                             </svg>
                             {loading ? 'Please wait...' : 'Continue with Google'}
                         </button>
+                    </div>
+
+                    <div className="mode-toggle">
+                        <p>
+                            {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}
+                            <button
+                                type="button"
+                                className="mode-toggle-btn"
+                                onClick={() => {
+                                    const newMode = mode === 'signup' ? 'login' : 'signup';
+                                    setMode(newMode);
+                                    setView('form');
+                                    setError('');
+                                    setSuccess('');
+                                    navigate(`/login?mode=${newMode}`, { replace: true });
+                                }}
+                            >
+                                {mode === 'signup' ? 'Login' : 'Sign Up'}
+                            </button>
+                        </p>
                     </div>
 
                     {error && (

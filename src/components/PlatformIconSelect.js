@@ -14,6 +14,7 @@ const PLATFORMS = [
   { value: 'facebook', label: 'Facebook', icon: icons.facebook },
   { value: 'whatsapp', label: 'WhatsApp', icon: icons.whatsapp },
   { value: 'discord', label: 'Discord', icon: icons.discord },
+  { value: 'google_maps', label: 'Google Maps', icon: icons.google_maps },
   { value: 'snapchat', label: 'Snapchat', icon: icons.snapchat },
   { value: 'telegram', label: 'Telegram', icon: icons.telegram },
   { value: 'reddit', label: 'Reddit', icon: icons.reddit },

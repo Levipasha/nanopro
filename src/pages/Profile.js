@@ -65,7 +65,6 @@ const GENERAL_FLOW_MODE_KEY = 'general_flow_mode';
 const PROFILE_PREF_BY_EMAIL_KEY = 'profile_pref_by_email_v1';
 
 const ALL_PLATFORMS = [
-  { id: 'google_maps', label: 'Google Maps' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'website', label: 'Website' },
@@ -80,8 +79,10 @@ const ALL_PLATFORMS = [
   { id: 'reddit', label: 'Reddit' },
   { id: 'threads', label: 'Threads' },
   { id: 'discord', label: 'Discord' },
+  { id: 'google_maps', label: 'Google Maps' },
   { id: 'portfolio', label: 'Portfolio' },
   { id: 'pinterest', label: 'Pinterest' },
+  { id: 'tumblr', label: 'Tumblr' },
   { id: 'medium', label: 'Medium' },
   { id: 'twitch', label: 'Twitch' },
   { id: 'quora', label: 'Quora' },
@@ -100,7 +101,7 @@ function titleForRestaurantLinkPlatform(platformKey) {
     .join(' ');
 }
 
-const MAX_PLATFORM_LINKS = 6;
+const MAX_PLATFORM_LINKS = 50;
 
 const SMART_PLATFORMS = ['whatsapp', 'telegram', 'instagram', 'twitter', 'tiktok', 'snapchat', 'threads'];
 
@@ -381,23 +382,46 @@ function Profile() {
   // RAW camera formats that look like images but browsers cannot render
   const RAW_EXTENSIONS = /\.(arw|cr2|cr3|nef|nrw|orf|raf|rw2|dng|pef|srw|x3f|3fr|fff|iiq|rwl|mef|mrw|erf)$/i;
 
-  /** Helper to open cropper before actual upload/save logic (single file) */
+  /** Helper to open cropper for multiple files sequentially */
+  const handlePickAndCropBatch = async (e, aspect, onCroppedDone) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    e.target.value = '';
+
+    for (const file of files) {
+      // Check for RAW camera formats
+      if (RAW_EXTENSIONS.test(file.name)) {
+        setError(`"${file.name}" is a RAW camera file which is not supported. Please convert it to JPEG/PNG.`);
+        continue;
+      }
+      // Check MIME type
+      if (file.type && !RENDERABLE_IMAGE_TYPES.has(file.type.toLowerCase())) {
+        continue; 
+      }
+
+      try {
+        const croppedFile = await getFileAfterCropOrPassThrough(file, aspect);
+        // Wait for current file to be fully processed/uploaded before moving to next
+        await onCroppedDone(croppedFile);
+      } catch (err) {
+        if (err?.message === 'CROP_CANCEL') continue; // Skip to next image if one is cancelled
+        console.error('Batch crop error:', err);
+      }
+    }
+  };
+
   const handlePickAndCrop = (e, aspect, onCroppedDone) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
 
-    // Check for RAW camera formats — browsers cannot render them
     if (RAW_EXTENSIONS.test(file.name)) {
-      setError(
-        `Camera RAW files (like .ARW, .CR2, .NEF) cannot be used directly — your browser cannot render them.\n\nPlease export or convert the photo to JPEG or PNG first (use Google Photos, Windows Photos, or any photo editor), then upload it.`
-      );
+      setError(`Camera RAW files (like .ARW, .CR2, .NEF) cannot be used directly. Please convert to JPEG or PNG.`);
       return;
     }
 
-    // Check MIME type — only allow renderable image types (not PDF, video, etc.)
     if (file.type && !RENDERABLE_IMAGE_TYPES.has(file.type.toLowerCase())) {
-      setError(`"${file.name}" is not a supported image format. Please use JPEG, PNG, WebP, or GIF.`);
+      setError(`"${file.name}" is not a supported image format.`);
       return;
     }
 
@@ -445,6 +469,7 @@ function Profile() {
       return 1;
     }
   });
+  const [isGeneralPlatformSelectorOpen, setIsGeneralPlatformSelectorOpen] = useState(false);
   const updateGeneralOnboardingStep = (step) => {
     setGeneralOnboardingStep(step);
     localStorage.setItem('general_onboarding_step', step.toString());
@@ -470,7 +495,8 @@ function Profile() {
     photo: '',
     theme: 'mint',
     font: 'outfit',
-    links: [{ title: '', url: '', platform: 'website', order: 0 }]
+    links: [{ title: '', url: '', platform: 'website', order: 0 }],
+    gallery: []
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
   const [generalPhotoPreviewUrl, setGeneralPhotoPreviewUrl] = useState(null);
@@ -489,6 +515,7 @@ function Profile() {
 
   // Refs for General profile onboarding inputs
   const genPhotoInputRef = useRef(null);
+  const genGalleryInputRef = useRef(null);
 
   // Refs for Restaurant profile onboarding inputs
   const restaurantBannerInputRef = useRef(null);
@@ -558,6 +585,8 @@ function Profile() {
   // Using a ref avoids any "state update ordering" issues between setRestaurantProfile(null)
   // and updateRestaurantOnboardingStep(1).
   const restaurantEditInProgressRef = useRef(false);
+  const restaurantProfileRef = useRef(null);
+  restaurantProfileRef.current = restaurantProfile;
   const [restaurantGalleryUploading, setRestaurantGalleryUploading] = useState(false);
   const [restaurantBannerUploading, setRestaurantBannerUploading] = useState(false);
 
@@ -798,7 +827,7 @@ function Profile() {
       }
 
       const galleryNormalized = [];
-      const rawGallery = Array.isArray(profileInput.gallery) ? profileInput.gallery.slice(0, 3) : [];
+      const rawGallery = Array.isArray(profileInput.gallery) ? profileInput.gallery.slice(0, 4) : [];
       for (let gi = 0; gi < rawGallery.length; gi++) {
         const item = rawGallery[gi];
         let gUrl = (item && item.url) ? String(item.url) : '';
@@ -1087,13 +1116,21 @@ function Profile() {
       return true;
     };
 
-    // Make preview feel instant: include local (unsaved) inputs too.
+    // Include platforms that have data in legacy fields, pending local edits, explicit session visibility, or the modern links array
     const active = ALL_PLATFORMS
-      .filter((p) => isNonEmpty(artist[p.id]) || isNonEmpty(pendingLinks[p.id]))
+      .filter((p) => 
+        isNonEmpty(artist[p.id]) || 
+        isNonEmpty(pendingLinks[p.id]) || 
+        (visiblePlatforms && visiblePlatforms.includes(p.id)) ||
+        (Array.isArray(artist.links) && artist.links.some(l => (l.platform || '').toLowerCase() === p.id.toLowerCase()))
+      )
       .map((p) => p.id);
 
-    setVisiblePlatforms(active);
-  }, [myArtists, pendingLinks]);
+    // Only update if the set has actually changed to avoid unnecessary re-renders
+    if (JSON.stringify(active) !== JSON.stringify(visiblePlatforms)) {
+      setVisiblePlatforms(active);
+    }
+  }, [myArtists, pendingLinks, visiblePlatforms]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
@@ -1145,6 +1182,13 @@ function Profile() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [loading, user, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -1438,8 +1482,25 @@ function Profile() {
         }
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
+      
+      const gallery = [];
+      for (let i = 0; i < generalForm.gallery.length; i++) {
+        const item = generalForm.gallery[i];
+        if (item.url.startsWith('data:')) {
+          const res = await fetch(item.url);
+          const blob = await res.blob();
+          const file = new File([blob], item.name || `gallery-${i}.jpg`, { type: blob.type });
+          const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
+          const url = extractUploadUrl(up);
+          if (url) gallery.push({ url, name: item.name });
+        } else if (item.url.startsWith('http')) {
+          gallery.push(item);
+        }
+      }
+
       const { phone: _gp, email: _ge, ...generalRest } = generalForm;
-      const payload = { ...generalRest, bio: mergeGeneralBioForSave(generalForm), photo: photoUrl, links, profileType: 'general' };
+      const payload = { ...generalRest, bio: mergeGeneralBioForSave(generalForm), photo: photoUrl, links, gallery, profileType: 'general' };
+
 
       // If a general profile already exists for this account, use update; otherwise create.
       let res;
@@ -1474,10 +1535,10 @@ function Profile() {
     }
   };
 
-  const addLink = () => {
+  const addLink = (platform = 'custom') => {
     setGeneralForm(prev => ({
       ...prev,
-      links: [...prev.links, { title: '', url: '', platform: 'website', order: prev.links.length }]
+      links: [...prev.links, { title: '', url: '', platform: platform, order: prev.links.length }]
     }));
   };
 
@@ -1495,7 +1556,7 @@ function Profile() {
     }));
   };
 
-  const nfcFrontendBase = (process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+  const frontendBase = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
 
   const getProfileLink = () => {
     const base = window.location.origin;
@@ -1752,29 +1813,63 @@ function Profile() {
     try {
       let finalValue = value;
       if (platform === 'whatsapp' && value && !value.includes('http')) {
-        // Clean the number and prepend wa.me
         const cleanNumber = value.replace('+', '').replace(/\s/g, '');
         finalValue = `https://wa.me/${cleanNumber}`;
       }
-      const payload = { [platform]: finalValue }; // value could be null
-      await landingArtistAPI.updateMyProfile(
-        artist.artistId || artist._id,
+
+      // Prepare payload with both the specific field and a unified links array
+      const payload = { [platform]: finalValue };
+
+      // Maintain a synchronized 'links' array on the artist object for better compatibility
+      const existingLinks = Array.isArray(artist.links) ? [...artist.links] : [];
+      let updatedLinks = [];
+
+      if (finalValue === null || (typeof finalValue === 'string' && finalValue.trim() === '')) {
+        // Remove from links array
+        updatedLinks = existingLinks.filter(l => (l.platform || '').toLowerCase() !== platform.toLowerCase());
+      } else {
+        // Add or update in links array
+        const idx = existingLinks.findIndex(l => (l.platform || '').toLowerCase() === platform.toLowerCase());
+        const platformObj = ALL_PLATFORMS.find(p => p.id === platform);
+        const newLink = {
+          platform,
+          url: finalValue,
+          title: platformObj ? platformObj.label : platform.charAt(0).toUpperCase() + platform.slice(1),
+          order: idx > -1 ? (existingLinks[idx].order || 0) : existingLinks.length
+        };
+
+        if (idx > -1) {
+          existingLinks[idx] = newLink;
+          updatedLinks = existingLinks;
+        } else {
+          updatedLinks = [...existingLinks, newLink];
+        }
+      }
+      payload.links = updatedLinks;
+
+      const res = await landingArtistAPI.updateMyProfile(
+        artist._id || artist.artistId,
         payload,
         () => getIdToken(),
         getFirebaseUser
       );
-      // Update server-side source of truth
-      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [platform]: finalValue } : a));
-      // Clear local pending state after successful save
+
+      if (res && res.success === false) {
+        throw new Error(res.message || 'The server rejected this update.');
+      }
+
+      // Update local state with both legacy field and new links array
+      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [platform]: finalValue, links: updatedLinks } : a));
+
       setPendingLinks(prev => {
         const next = { ...prev };
         delete next[platform];
         return next;
       });
-      // Auto-refresh preview
       setPreviewKey(prev => prev + 1);
     } catch (err) {
       console.error('Failed to update link:', err);
+      window.alert('Failed to save link. Please try again.');
     } finally {
       setSavingLink(null);
     }
@@ -1786,7 +1881,7 @@ function Profile() {
     setSavingLink(field); // reuse savingLink state for spinner
     try {
       const payload = { [field]: value, ...extraPayload };
-      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      await landingArtistAPI.updateMyProfile(artist._id || artist.artistId, payload, () => getIdToken(), getFirebaseUser);
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, ...payload } : a));
       setEditingHeroField(null);
       setHeroUpdates(prev => {
@@ -1830,7 +1925,7 @@ function Profile() {
       const uploadedUrl = extractUploadUrl(up);
       if (uploadedUrl) {
         const payload = { [field]: uploadedUrl };
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+        await landingArtistAPI.updateMyProfile(artist._id || artist.artistId, payload, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, [field]: uploadedUrl } : a));
         // Auto-refresh preview
         setPreviewKey(prev => prev + 1);
@@ -1858,7 +1953,7 @@ function Profile() {
         const newItem = { url: uploadedUrl, name: name || 'Gallery image' };
         const newGallery = [...(artist.gallery || []), newItem];
         const payload = { gallery: newGallery };
-        await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+        await landingArtistAPI.updateMyProfile(artist._id || artist.artistId, payload, () => getIdToken(), getFirebaseUser);
         setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
         setPreviewKey(prev => prev + 1);
       } else {
@@ -1877,37 +1972,38 @@ function Profile() {
    * Each file is uploaded sequentially; gallery state is refreshed after all uploads.
    */
   const handleAddMultipleGalleryItems = async (e) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = '';
-    if (!files.length) return;
-    const artist = myArtists[0];
-    if (!artist) return;
-    setGalleryUploading(true);
-    try {
-      const token = await getIdToken();
-      let currentGallery = [...(artist.gallery || [])];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          const up = await landingArtistAPI.uploadPhoto(file, token);
-          const uploadedUrl = extractUploadUrl(up);
-          if (uploadedUrl) {
+    const filesCount = e.target.files?.length || 0;
+    if (filesCount === 0) return;
+
+    handlePickAndCropBatch(e, 1, async (croppedFile) => {
+      const artist = myArtists[0];
+      if (!artist) return;
+      setGalleryUploading(true);
+      try {
+        const token = await getIdToken();
+        const up = await landingArtistAPI.uploadPhoto(croppedFile, token);
+        const uploadedUrl = extractUploadUrl(up);
+        if (uploadedUrl) {
+          // Use functional update to ensure we don't drop items in rapid succession
+          setMyArtists(prev => {
+            const currentArtist = prev[0];
+            const currentGallery = [...(currentArtist.gallery || [])];
             const label = `Gallery image ${currentGallery.length + 1}`;
-            currentGallery = [...currentGallery, { url: uploadedUrl, name: label }];
-          }
-        } catch (err) {
-          console.error('Failed to upload gallery image:', file.name, err);
+            const updatedGallery = [...currentGallery, { url: uploadedUrl, name: label }];
+            
+            // Background sync with API
+            landingArtistAPI.updateMyProfile(currentArtist._id || currentArtist.artistId, { gallery: updatedGallery }, () => getIdToken(), getFirebaseUser)
+              .catch(err => console.error('Gallery sync failed:', err));
+
+            return prev.map((a, j) => j === 0 ? { ...a, gallery: updatedGallery } : a);
+          });
         }
+      } catch (err) {
+        console.error('Failed to upload cropped gallery image:', err);
+      } finally {
+        setGalleryUploading(false);
       }
-      const payload = { gallery: currentGallery };
-      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
-      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: currentGallery } : a));
-      setPreviewKey(prev => prev + 1);
-    } catch (err) {
-      console.error('Failed to update gallery:', err);
-    } finally {
-      setGalleryUploading(false);
-    }
+    });
   };
 
   const handleRemoveGalleryItem = async (idx) => {
@@ -1938,7 +2034,7 @@ function Profile() {
 
       if (combined.size > MAX_PLATFORM_LINKS) {
         // Hard cap: only allow up to MAX_PLATFORM_LINKS platforms in total
-        window.alert(`You can add up to ${MAX_PLATFORM_LINKS} platforms only.`);
+        window.alert(`You can add up to ${MAX_PLATFORM_LINKS} platforms.`);
         return prev;
       }
 
@@ -2047,7 +2143,7 @@ function Profile() {
         }
         payload.gallery = [...(payload.gallery || []), ...galleryUrls];
       }
-      await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+      await landingArtistAPI.updateMyProfile(artist._id || artist.artistId, payload, () => getIdToken(), getFirebaseUser);
 
       // Refresh data
       await loadMyProfiles();
@@ -2124,6 +2220,7 @@ function Profile() {
           saving={saving}
           handleLogout={handleLogout}
           handlePickAndCrop={handlePickAndCrop}
+          handlePickAndCropBatch={handlePickAndCropBatch}
         />
         {cropper.open && (
          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
@@ -2208,12 +2305,6 @@ function Profile() {
           </nav>
 
           <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            <button
-              className="dash-sidebar-signout-btn dash-sidebar-home-btn"
-              onClick={() => navigate('/')}
-            >
-              ← Back to Home
-            </button>
             <button className="dash-sidebar-signout-btn" onClick={handleLogout}>Sign out</button>
           </div>
         </aside>
@@ -2445,7 +2536,7 @@ function Profile() {
                   <div style={{ marginTop: '2rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
-                      {(restaurantProfile.gallery || []).length < 3 && (
+                      {(restaurantProfile.gallery || []).length < 4 && (
                         <>
                         <button
                           type="button"
@@ -2461,45 +2552,42 @@ function Profile() {
                             multiple
                             style={{ display: 'none' }}
                             onChange={async (e) => {
-                              const picked = Array.from(e.target.files || []);
-                              if (restaurantGalleryInputRef.current) restaurantGalleryInputRef.current.value = '';
-                              if (picked.length === 0) return;
-                              let latest = restaurantProfile;
-                              const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
-                              const slice = picked.slice(0, maxAdd);
-                              if (slice.length === 0) {
-                                alert('Only 3 images are allowed.');
+                              const pickedCount = e.target.files?.length || 0;
+                              if (pickedCount === 0) return;
+
+                              const currentLimit = 4;
+                              const existingCount = (restaurantProfile.gallery || []).length;
+                              if (existingCount >= currentLimit) {
+                                alert(`Only ${currentLimit} images are allowed.`);
+                                e.target.value = '';
                                 return;
                               }
-                              setRestaurantGalleryUploading(true);
-                              try {
-                                for (const file of slice) {
-                                  if ((latest.gallery || []).length >= 3) break;
-                                  let finalFile;
-                                  try {
-                                    finalFile = await getFileAfterCropOrPassThrough(file, 1);
-                                  } catch (err) {
-                                    if (err?.message === 'CROP_CANCEL') break;
-                                    throw err;
-                                  }
-                                  assertGalleryFileKind(finalFile);
-                                  await assertVideoMaxDuration(finalFile);
-                                  const up = await generalProfileAPI.uploadPhoto(finalFile, () => getIdToken());
+
+                              handlePickAndCropBatch(e, 1, async (croppedFile) => {
+                                setRestaurantGalleryUploading(true);
+                                try {
+                                  // Refresh restaurantProfile within the callback to get latest state
+                                  const latest = restaurantProfileRef.current || restaurantProfile;
+                                  if ((latest.gallery || []).length >= currentLimit) return;
+
+                                  assertGalleryFileKind(croppedFile);
+                                  const up = await generalProfileAPI.uploadPhoto(croppedFile, () => getIdToken());
                                   const url = extractUploadUrl(up);
-                                  if (!url) continue;
+                                  if (!url) return;
+
                                   const existing = latest.gallery || [];
-                                  const base = (file.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
-                                  latest = { ...latest, gallery: [...existing, { url, name: base }] };
-                                  setRestaurantProfile(latest);
-                                  persistRestaurant(latest);
-                                  await handleRestaurantPublish(latest, { silent: true });
+                                  const base = (croppedFile.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                  const updated = { ...latest, gallery: [...existing, { url, name: base }] };
+                                  
+                                  setRestaurantProfile(updated);
+                                  persistRestaurant(updated);
+                                  await handleRestaurantPublish(updated, { silent: true });
+                                } catch (err) {
+                                  console.error('Restaurant gallery item upload:', err);
+                                } finally {
+                                  setRestaurantGalleryUploading(false);
                                 }
-                              } catch (err) {
-                                console.error('Restaurant gallery upload:', err);
-                                alert(err.message || 'Could not upload gallery image.');
-                              } finally {
-                                setRestaurantGalleryUploading(false);
-                              }
+                              });
                             }}
                           />
                           <span style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</span>
@@ -2509,7 +2597,7 @@ function Profile() {
                     </div>
                     {(restaurantProfile.gallery || []).length === 0 ? (
                       <div style={{ padding: '2rem', border: '2px dashed var(--dash-border)', borderRadius: '16px', textAlign: 'center', color: 'var(--dash-subtext)', fontSize: '0.9rem' }}>
-                        No gallery images yet. Add up to 3.
+                        No gallery images yet. Add up to 4.
                       </div>
                     ) : (
                       <div className="dash-gallery-grid">
@@ -3192,7 +3280,7 @@ function Profile() {
                 <div className="onboarding-field">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                     <label style={{ color: '#1a1b2e', margin: 0 }}>Gallery images</label>
-                    {(restaurantForm.gallery || []).length < 3 && (
+                    {(restaurantForm.gallery || []).length < 4 && (
                       <>
                         <input
                           ref={restaurantGalleryInputRef}
@@ -3205,7 +3293,7 @@ function Profile() {
                             if (restaurantGalleryInputRef.current) restaurantGalleryInputRef.current.value = '';
                             if (picked.length === 0) return;
                             let latest = restaurantForm;
-                            const maxAdd = Math.max(0, 3 - (latest.gallery || []).length);
+                            const maxAdd = Math.max(0, 4 - (latest.gallery || []).length);
                             const slice = picked.slice(0, maxAdd);
                             if (slice.length === 0) {
                               alert('Only 3 images are allowed.');
@@ -3214,7 +3302,7 @@ function Profile() {
                             setRestaurantGalleryUploading(true);
                             try {
                               for (const file of slice) {
-                                if ((latest.gallery || []).length >= 3) break;
+                                if ((latest.gallery || []).length >= 4) break;
                                 let finalFile;
                                 try {
                                   finalFile = await getFileAfterCropOrPassThrough(file, 1);
@@ -3257,7 +3345,7 @@ function Profile() {
                   </div>
                   {(restaurantForm.gallery || []).length === 0 ? (
                     <div style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.15)', borderRadius: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.9rem', background: 'rgba(0,0,0,0.02)' }}>
-                      No gallery images yet. Add up to 3.
+                      No gallery images yet. Add up to 4.
                     </div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
@@ -3710,67 +3798,145 @@ function Profile() {
 
           {genStep === 4 && (
             <form className="onboarding-step fade-in" onSubmit={handleGeneralCreate}>
-              <h2>Step 4 – Links</h2>
-              <p className="onboarding-subtitle">Add links for your page</p>
-              {error && <div className="profile-error-msg">{error}</div>}
-              <div className="onboarding-fields">
-                {generalForm.links.map((link, idx) => (
-                  <div key={idx} className="profile-edit-link-block fade-in" style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '16px', background: 'rgba(0,0,0,0.02)' }}>
-                    <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '0.8rem' }}>
-                      <select className="onboarding-input" value={link.platform} onChange={e => updateLink(idx, 'platform', e.target.value)} style={{ flex: 1, padding: '0.8rem', background: 'rgba(0,0,0,0.03)', color: '#1a1b2e', border: '1px solid rgba(0,0,0,0.1)' }}>
-                        <option value="website" style={{ color: '#000' }}>Website</option>
-                        <option value="whatsapp" style={{ color: '#000' }}>WhatsApp</option>
-                        <option value="telegram" style={{ color: '#000' }}>Telegram</option>
-                        <option value="instagram" style={{ color: '#000' }}>Instagram</option>
-                        <option value="twitter" style={{ color: '#000' }}>Twitter / X</option>
-                        <option value="tiktok" style={{ color: '#000' }}>TikTok</option>
-                        <option value="snapchat" style={{ color: '#000' }}>Snapchat</option>
-                        <option value="threads" style={{ color: '#000' }}>Threads</option>
-                        <option value="linkedin" style={{ color: '#000' }}>LinkedIn</option>
-                        <option value="youtube" style={{ color: '#000' }}>YouTube</option>
-                        <option value="custom" style={{ color: '#000' }}>Custom</option>
-                      </select>
-                      <input className="onboarding-input" style={{ flex: 2 }} placeholder="Link title (e.g. Chat on WhatsApp)" value={link.title} onChange={e => updateLink(idx, 'title', e.target.value)} />
+              {!isGeneralPlatformSelectorOpen ? (
+                <>
+                  <h2>Connect Your Digital World</h2>
+                  <p className="onboarding-subtitle">Link your social media and other platforms</p>
+                  
+                  <div className="onboarding-fields">
+                    <div className="dash-links-section onboarding-added-links" style={{ marginBottom: '1.5rem' }}>
+                      {generalForm.links.length === 0 ? (
+                        <div className="general-onboarding-artist-empty">
+                          <p>No platforms added yet.<br/>Click below to add some!</p>
+                        </div>
+                      ) : (
+                        generalForm.links.map((link, idx) => {
+                          const platform = ALL_PLATFORMS.find(p => p.id === link.platform) || { id: 'custom', label: 'Custom' };
+                          return (
+                            <div className="dash-link-card fade-in general-onboarding-dash-link" key={idx}>
+                              <div className="dash-link-icon-circle">
+                                {getLinkIcon({ platform: platform.id })}
+                              </div>
+                              <div className="dash-link-content" style={{ flex: 1, minWidth: 0 }}>
+                                <div className="dash-link-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                  <span className="dash-link-title">{platform.label}</span>
+                                  <button
+                                    type="button"
+                                    className="dash-link-remove-btn general-onboarding-dash-remove"
+                                    onClick={() => removeLink(idx)}
+                                  >✕</button>
+                                </div>
+                                <div className="dash-link-url">
+                                  <input 
+                                    className="onboarding-input" 
+                                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.5rem' }} 
+                                    placeholder="Link Title (e.g. My Website)" 
+                                    value={link.title} 
+                                    onChange={e => updateLink(idx, 'title', e.target.value)} 
+                                  />
+                                  {link.platform === 'whatsapp' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                      <PhoneINInput
+                                        wrapClassName="onboarding-phone-in"
+                                        value={toINFullPhone(getINDisplayDigits(link.waPhone || ''))}
+                                        onChange={(v) => updateLink(idx, 'waPhone', v)}
+                                      />
+                                      <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={e => updateLink(idx, 'waMessage', e.target.value)} />
+                                    </div>
+                                  )}
+                                  {(link.platform === 'telegram') && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                      <span className="general-onboarding-input-prefix">t.me/</span>
+                                      <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="username" value={link.platformUsername || ''} onChange={e => updateLink(idx, 'platformUsername', e.target.value)} />
+                                    </div>
+                                  )}
+                                  {(link.platform === 'instagram' || link.platform === 'twitter' || link.platform === 'tiktok' || link.platform === 'threads') && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                      <span className="general-onboarding-input-prefix">@</span>
+                                      <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="username" value={link.platformUsername || ''} onChange={e => updateLink(idx, 'platformUsername', e.target.value)} />
+                                    </div>
+                                  )}
+                                  {link.platform === 'snapchat' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                      <span className="general-onboarding-input-prefix">add/</span>
+                                      <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="username" value={link.platformUsername || ''} onChange={e => updateLink(idx, 'platformUsername', e.target.value)} />
+                                    </div>
+                                  )}
+                                  {(!['whatsapp', 'telegram', 'instagram', 'twitter', 'tiktok', 'snapchat', 'threads'].includes(link.platform)) && (
+                                     <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
-                    {link.platform === 'whatsapp' && (
-                      <div style={{ marginBottom: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <PhoneINInput
-                          wrapClassName="onboarding-phone-in"
-                          value={toINFullPhone(getINDisplayDigits(link.waPhone || ''))}
-                          onChange={(v) => updateLink(idx, 'waPhone', v)}
-                        />
-                        <input className="onboarding-input" placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={e => updateLink(idx, 'waMessage', e.target.value)} />
-                      </div>
-                    )}
-                    {(link.platform === 'instagram' || link.platform === 'twitter' || link.platform === 'tiktok' || link.platform === 'snapchat' || link.platform === 'threads') && (
-                      <div style={{ marginBottom: '0.8rem' }}>
-                        <input className="onboarding-input" placeholder={link.platform === 'instagram' ? 'Username only (no @ or link)' : 'Username only'} value={link.platformUsername || ''} onChange={e => { updateLink(idx, 'platformUsername', e.target.value); }} />
-                      </div>
-                    )}
-                    {link.platform === 'telegram' && (
-                      <div style={{ marginBottom: '0.8rem' }}>
-                        <input className="onboarding-input" placeholder="Username or phone (e.g. johndoe or 919876543210)" value={link.platformUsername || ''} onChange={e => updateLink(idx, 'platformUsername', e.target.value)} />
-                      </div>
-                    )}
-                    {!SMART_PLATFORMS.includes(link.platform) && (
-                      <div style={{ marginBottom: '0.8rem' }}>
-                        <input className="onboarding-input" placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button type="button" onClick={() => removeLink(idx)} style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Remove Link</button>
+
+                    <button
+                      type="button"
+                      className="general-onboarding-add-platforms"
+                      onClick={() => setIsGeneralPlatformSelectorOpen(true)}
+                    >
+                      <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Platforms
+                    </button>
+                    
+                    <div className="onboarding-actions" style={{ marginTop: '2.5rem' }}>
+                      <button type="submit" className="onboarding-btn-primary" disabled={generalSaving} style={{ width: '100%' }}>
+                        {generalSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Next Step →'}
+                      </button>
                     </div>
                   </div>
-                ))}
-                <button type="button" onClick={addLink} style={{ width: '100%', padding: '1rem', borderRadius: '16px', background: 'rgba(0,0,0,0.03)', border: '2px dashed rgba(0,0,0,0.15)', color: '#1a1b2e', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s ease', marginTop: '0.5rem' }}>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Another Link
-                </button>
-              </div>
-              <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
-                <button type="submit" className="onboarding-btn-complete" disabled={generalSaving}>
-                  {generalSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Create General Profile ✓'}
-                </button>
-              </div>
+                </>
+              ) : (
+                <div className="onboarding-selector-view fade-in">
+                  <div className="selector-header">
+                    <h3>Select Platforms</h3>
+                    <button 
+                      type="button" 
+                      className="selector-close-btn"
+                      onClick={() => setIsGeneralPlatformSelectorOpen(false)}
+                    >←</button>
+                  </div>
+                  <p className="selector-subtitle">Choose the platforms you want on your profile</p>
+                  
+                  <div className="dash-selector-grid">
+                    {ALL_PLATFORMS.map((p) => {
+                      const isActive = generalForm.links.some(l => l.platform === p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                          onClick={() => {
+                            if (isActive) {
+                              setGeneralForm(prev => ({ ...prev, links: prev.links.filter(l => l.platform !== p.id) }));
+                            } else {
+                              addLink(p.id);
+                            }
+                          }}
+                        >
+                          <div className="dash-selector-icon">
+                            {getLinkIcon({ platform: p.id })}
+                          </div>
+                          <span className="dash-selector-label">{p.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="onboarding-actions" style={{ marginTop: '1.5rem' }}>
+                    <button 
+                      type="button" 
+                      className="onboarding-btn-primary" 
+                      onClick={() => setIsGeneralPlatformSelectorOpen(false)}
+                      style={{ width: '100%', borderRadius: '24px' }}
+                    >
+                      Selected ({generalForm.links.length})
+                    </button>
+                  </div>
+                </div>
+              )}
             </form>
           )}
 
@@ -3813,11 +3979,6 @@ function Profile() {
                 <span className="profile-theme-name">{t.name}</span>
                 <span className="profile-theme-desc">{t.desc}</span>
                 <div className="profile-theme-icons">📷 ▶️ 🎵 📷</div>
-                <div className="profile-theme-links">
-                  <div className="profile-theme-link" />
-                  <div className="profile-theme-link" />
-                  <div className="profile-theme-link" />
-                </div>
               </button>
             ))}
           </div>
@@ -3872,21 +4033,10 @@ function Profile() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 Links
               </button>
-
-              <button className={`dash-nav-item ${generalActiveTab === 'preview' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('preview')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" /></svg>
-                Preview
-              </button>
             </div>
           </nav>
 
           <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            <button
-              className="dash-sidebar-signout-btn dash-sidebar-home-btn"
-              onClick={() => navigate('/')}
-            >
-              ← Back to Home
-            </button>
             <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
               Sign out
             </button>
@@ -3971,9 +4121,9 @@ function Profile() {
                   {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
 
                   {/* Re-designed General Profile Hero (matches Artist style) */}
-                    <div className="dash-profile-hero" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', minHeight: 'auto', padding: '2rem' }}>
+                    <div className="dash-profile-hero" style={{ minHeight: 'auto', padding: '2rem' }}>
                       <div className="dash-profile-hero-content" style={{ alignItems: 'center' }}>
-                        <div className="dash-profile-hero-avatar" style={{ width: '100px', height: '100px', border: '3px solid rgba(255,255,255,0.15)' }}>
+                        <div className="dash-profile-hero-avatar" style={{ width: '100px', height: '100px' }}>
                           <button
                             type="button"
                             className="dash-avatar-trigger upload-trigger-btn"
@@ -4437,19 +4587,6 @@ function Profile() {
               </button>
               <button
                 type="button"
-                className={`dash-mobile-bottom-btn ${generalActiveTab === 'preview' ? 'dash-mobile-bottom-btn-active' : ''}`}
-                onClick={() => setGeneralActiveTab('preview')}
-              >
-                <div className="dash-mobile-bottom-btn-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z" />
-                  </svg>
-                </div>
-                <span>Preview</span>
-              </button>
-              <button
-                type="button"
                 className="dash-mobile-bottom-btn"
                 onClick={handleLogout}
               >
@@ -4693,6 +4830,85 @@ function Profile() {
                 ))}
                 <button type="button" onClick={addLink} className="profile-edit-add-link">+ Add link</button>
               </div>
+
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Gallery</h4>
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>Upload up to 4 images or showcase videos (max 30s).</p>
+                <div className="profile-edit-photo-row" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                  <button
+                    type="button"
+                    className="profile-edit-file-btn upload-trigger-btn"
+                    style={{ width: 'auto' }}
+                    onClick={() => { if (genGalleryInputRef.current) { genGalleryInputRef.current.value = ''; genGalleryInputRef.current.click(); } }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>Add Media</span>
+                    <input
+                      ref={genGalleryInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        const currentCount = generalForm.gallery.length;
+                        const available = 4 - currentCount;
+                        const toAdd = files.slice(0, available);
+                        
+                        for (const file of toAdd) {
+                          try {
+                            if (file.type.startsWith('video/')) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setGeneralForm(prev => ({
+                                  ...prev,
+                                  gallery: [...prev.gallery, { url: ev.target.result, name: file.name, type: 'video' }].slice(0, 4)
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            } else {
+                              const cropped = await getFileAfterCropOrPassThrough(file, 1);
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setGeneralForm(prev => ({
+                                  ...prev,
+                                  gallery: [...prev.gallery, { url: ev.target.result, name: file.name, type: 'image' }].slice(0, 4)
+                                }));
+                              };
+                              reader.readAsDataURL(cropped);
+                            }
+                          } catch (err) {
+                            if (err.message !== 'CROP_CANCEL') console.error('Gallery crop failed:', err);
+                          }
+                        }
+                      }}
+                    />
+                  </button>
+                </div>
+                <div className="dash-gallery-grid" style={{ marginTop: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
+                  {generalForm.gallery.map((item, idx) => (
+                    <div key={idx} className="dash-gallery-item" style={{ height: '100px' }}>
+                       {item.type === 'video' || item.url.includes('video') ? (
+                         <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       ) : (
+                         <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       )}
+                       <div className="dash-gallery-item-overlay">
+                          <button
+                            type="button"
+                            className="dash-gallery-remove-btn"
+                            onClick={() => setGeneralForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }))}
+                          >✕</button>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
             <div className="profile-edit-footer">
               <button type="submit" disabled={generalSaving}>{generalSaving ? 'Saving…' : 'Create profile'}</button>
@@ -4779,58 +4995,59 @@ function Profile() {
               </h1>
               <p className="dash-main-subtitle">
                 {activeTab === 'profiles'
-                  ? 'Manage your NFC artist profiles and portfolio'
+                  ? 'Manage your artist profiles and portfolio'
                   : activeTab === 'design'
                     ? 'Customize the visual theme and typography of your public artist profile'
                     : activeTab === 'preview'
                       ? 'See a live preview of your public artist profile'
                       : 'Connect your external portfolios, galleries, and art marketplaces'}
               </p>
-              {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
-                const profileUrl = `${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`;
-                return (
-                  <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
-                    <button
-                      type="button"
-                      className="dash-icon-pill"
-                      onClick={() => {
-                        navigator.clipboard.writeText(profileUrl);
-                        setLinkCopiedArtist(true);
-                        setTimeout(() => setLinkCopiedArtist(false), 2000);
-                      }}
-                      aria-label={linkCopiedArtist ? 'Copied' : 'Copy profile link'}
-                    >
-                      {linkCopiedArtist ? (
-                        <>
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                          <span>Copy Link</span>
-                        </>
-                      )}
-                    </button>
-                    <a
-                      className="dash-icon-pill"
-                      href={profileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Open profile link"
-                    >
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                      </svg>
-                      <span>Go to Site</span>
-                    </a>
-                  </div>
-                );
-              })()}
             </div>
+
+            {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
+              const profileUrl = `${frontendBase}/artist?id=${myArtists[0].artistId}`;
+              return (
+                <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
+                  <button
+                    type="button"
+                    className="dash-icon-pill"
+                    onClick={() => {
+                      navigator.clipboard.writeText(profileUrl);
+                      setLinkCopiedArtist(true);
+                      setTimeout(() => setLinkCopiedArtist(false), 2000);
+                    }}
+                    aria-label={linkCopiedArtist ? 'Copied' : 'Copy profile link'}
+                  >
+                    {linkCopiedArtist ? (
+                      <>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>Copy Link</span>
+                      </>
+                    )}
+                  </button>
+                  <a
+                    className="dash-icon-pill"
+                    href={profileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Open profile link"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                    </svg>
+                    <span>Go to Site</span>
+                  </a>
+                </div>
+              );
+            })()}
           </header>
         )}
 
@@ -4842,11 +5059,11 @@ function Profile() {
                 <iframe
                   key={previewKey}
                   title="Artist Preview"
-                  src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
+                  src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
                   className="dash-mobile-preview-iframe"
                   sandbox="allow-scripts allow-same-origin"
                 />
-                <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
+
               </div>
             </div>
           )}
@@ -4879,31 +5096,33 @@ function Profile() {
                   <iframe
                     key={previewKey}
                     title="Profile Design Preview"
-                    src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
+                    src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
                     className="dash-design-mobile-preview-iframe"
                     sandbox="allow-scripts allow-same-origin"
                   />
-                  <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
+
                 </div>
 
                 <div className="dash-design-mobile-sheet">
-                  <div className="dash-design-subnav">
-                    <button
-                      type="button"
-                      className={`dash-design-subnav-btn ${designSubTab === 'theme' ? 'active' : ''}`}
-                      onClick={() => setDesignSubTab(prev => (prev === 'theme' ? null : 'theme'))}
-                    >
-                      <span className="dash-design-subnav-icon">🎨</span>
-                      <span>Themes</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`dash-design-subnav-btn ${designSubTab === 'font' ? 'active' : ''}`}
-                      onClick={() => setDesignSubTab(prev => (prev === 'font' ? null : 'font'))}
-                    >
-                      <span className="dash-design-subnav-icon">Aa</span>
-                      <span>Fonts</span>
-                    </button>
+                  <div className="dash-premium-toggle-container">
+                    <div className="dash-premium-toggle">
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'theme' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab(prev => (prev === 'theme' ? null : 'theme'))}
+                      >
+                        <span className="toggle-icon">🎨</span>
+                        <span>Themes</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab(prev => (prev === 'font' ? null : 'font'))}
+                      >
+                        <span className="toggle-icon">Aa</span>
+                        <span>Fonts</span>
+                      </button>
+                    </div>
                   </div>
                   {designSubTab && (
                     <div className="dash-design-mobile-body">
@@ -5010,23 +5229,26 @@ function Profile() {
               <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
                   {/* Desktop sub‑toggle: Theme / Font */}
-                  <div className="dash-design-subnav">
-                    <button
-                      type="button"
-                      className={`dash-design-subnav-btn ${(!designSubTab || designSubTab === 'theme') ? 'active' : ''}`}
-                      onClick={() => setDesignSubTab('theme')}
-                    >
-                      <span className="dash-design-subnav-icon">🎨</span>
-                      <span>Theme</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`dash-design-subnav-btn ${designSubTab === 'font' ? 'active' : ''}`}
-                      onClick={() => setDesignSubTab('font')}
-                    >
-                      <span className="dash-design-subnav-icon">Aa</span>
-                      <span>Font</span>
-                    </button>
+                  {/* Desktop sub‑toggle: Theme / Font */}
+                  <div className="dash-premium-toggle-container">
+                    <div className="dash-premium-toggle">
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${(!designSubTab || designSubTab === 'theme') ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab('theme')}
+                      >
+                        <span className="toggle-icon">🎨</span>
+                        <span>Theme</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab('font')}
+                      >
+                        <span className="toggle-icon">Aa</span>
+                        <span>Font</span>
+                      </button>
+                    </div>
                   </div>
 
                   {(!designSubTab || designSubTab === 'theme') && (
@@ -5132,7 +5354,7 @@ function Profile() {
                     <iframe
                       key={previewKey}
                       title="Profile Design Preview"
-                      src={`${nfcFrontendBase}/artist?id=${myArtists[0].artistId}`}
+                      src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
                       className="dash-preview-iframe"
                       sandbox="allow-scripts allow-same-origin"
                     />
@@ -5161,18 +5383,15 @@ function Profile() {
               const artShowcase = myArtists[0].artLinks || [];
               const items = Array.isArray(artShowcase) ? artShowcase : [];
               const artistToken = myArtists[0].artistId || myArtists[0]._id;
-              const getArtUrl = (artId) => `${nfcFrontendBase}/artist?id=${artistToken}&art=${artId}`;
+              const getArtUrl = (artId) => `${frontendBase}/artist?id=${artistToken}&art=${artId}`;
               const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
 
               const handleArtImagePick = (e) => {
-                if (artImagePreview.length >= 3) {
-                  alert('Only 3 images are allowed per showcase.');
-                  e.target.value = '';
-                  return;
-                }
-                handlePickAndCrop(e, 3 / 4, (croppedFile) => {
+                handlePickAndCropBatch(e, 3 / 4, async (croppedFile) => {
                   const reader = new FileReader();
-                  reader.onload = (ev) => setArtImagePreview(prev => [...prev, { file: croppedFile, url: ev.target.result }]);
+                  reader.onload = (ev) => {
+                    setArtImagePreview(prev => [...prev, { file: croppedFile, url: ev.target.result }]);
+                  };
                   reader.readAsDataURL(croppedFile);
                 });
               };
@@ -5193,7 +5412,7 @@ function Profile() {
                     throw new Error('Image upload did not return URLs. Try again.');
                   }
                   const artId = Date.now();
-                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls.slice(0, 3) };
+                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls };
                   await handleUpdateHeroField('artLinks', [...items, newItem]);
                   document.getElementById('art-title-input').value = '';
                   document.getElementById('art-desc-input').value = '';
@@ -5215,8 +5434,8 @@ function Profile() {
               // Pick first item for preview by default
               const previewArtId = artPreviewId || (items[0]?.id ?? null);
               const artPreviewSrc = previewArtId
-                ? `${nfcFrontendBase}/artist?id=${artistToken}&art=${previewArtId}`
-                : `${nfcFrontendBase}/artist?id=${artistToken}`;
+                ? `${frontendBase}/artist?id=${artistToken}&art=${previewArtId}`
+                : `${frontendBase}/artist?id=${artistToken}`;
 
               return (
                 <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
@@ -5232,7 +5451,7 @@ function Profile() {
                       {/* Multi-image upload */}
                       <div style={{ marginBottom: '1.5rem' }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length}/3 added)</span>}
+                          Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length} added)</span>}
                         </label>
 
                         {/* Thumbnail strip if images picked */}
@@ -5251,8 +5470,8 @@ function Profile() {
                         {/* Upload zone */}
                         <label htmlFor="art-image-file" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', border: '2px dashed var(--dash-accent)', borderRadius: '14px', padding: '1.25rem', cursor: 'pointer', background: 'var(--dash-bg)', transition: 'all 0.2s' }}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ color: 'var(--dash-accent)', opacity: 0.7 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images (max 3)' : 'Click to upload artwork photos (max 3)'}</span>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Up to 3 images per showcase — shown as slideshow</span>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images' : 'Click to upload artwork photos'}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Multiple images per showcase — shown as slideshow</span>
                           <input id="art-image-file" type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
                         </label>
                       </div>
@@ -5295,7 +5514,7 @@ function Profile() {
                       <div>
                         <div className="dash-art-header">
                           <h3 className="dash-art-title">Your Art Showcase ({items.length})</h3>
-                          <span className="dash-art-subtitle">Each card has its own NFC/QR URL</span>
+                          <span className="dash-art-subtitle">Each card has its own unique URL + QR</span>
                         </div>
                         <div className="dash-art-grid">
                           {items.map(item => {
@@ -5382,7 +5601,7 @@ function Profile() {
                         ) : (
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--dash-subtext)', gap: '0.75rem', padding: '2rem' }}>
                             <span style={{ fontSize: '3rem' }}>📱</span>
-                            <p style={{ fontSize: '0.82rem', textAlign: 'center', margin: 0 }}>Add an artwork to see the live NFC/QR preview here</p>
+                            <p style={{ fontSize: '0.82rem', textAlign: 'center', margin: 0 }}>Add an artwork to see the live preview here</p>
                           </div>
                         )}
                       </div>
@@ -5409,7 +5628,7 @@ function Profile() {
                       <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
                     </svg>
                     <h3 style={{ marginBottom: '0.75rem', fontSize: '1.3rem' }}>Create Your Artist Profile</h3>
-                    <p style={{ marginBottom: '1.5rem', color: 'var(--dash-subtext)', maxWidth: '380px', margin: '0 auto 1.5rem' }}>Set up your portfolio, connect social links, and get your unique NFC-ready profile link.</p>
+                    <p style={{ marginBottom: '1.5rem', color: 'var(--dash-subtext)', maxWidth: '380px', margin: '0 auto 1.5rem' }}>Set up your portfolio, connect social links, and get your unique profile link.</p>
                     <button
                       onClick={async () => {
                         try {
@@ -5440,26 +5659,7 @@ function Profile() {
                       <div className="dash-single-profile">
                         {/* Profile Hero */}
                         <div className="dash-profile-hero">
-                          {artist.backgroundPhoto && (
-                            <img src={artist.backgroundPhoto} alt="" className="dash-profile-hero-bg" />
-                          )}
-                          <div className="dash-profile-hero-overlay" />
 
-                          {/* Background Change Trigger */}
-                          <label className={`dash-hero-bg-trigger${isUploading === 'backgroundPhoto' ? ' dash-hero-bg-trigger--busy' : ''}`} style={{ cursor: isUploading === 'backgroundPhoto' ? 'wait' : undefined, opacity: isUploading === 'backgroundPhoto' ? 0.9 : undefined }}>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                              disabled={isUploading === 'backgroundPhoto'}
-                              onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => handleUploadField('backgroundPhoto', file))}
-                              style={{ display: 'none' }}
-                            />
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                              <circle cx="12" cy="13" r="4" />
-                            </svg>
-                            <span>{isUploading === 'backgroundPhoto' ? 'Uploading…' : 'Change Cover'}</span>
-                          </label>
 
                           <div className="dash-profile-hero-content">
                             <div className="dash-profile-hero-avatar">
@@ -5773,25 +5973,6 @@ function Profile() {
                           </div>
                         </div>
 
-                        {/* Show My Art Button */}
-                        <div className="dash-profile-bio-section">
-                          <button
-                            className="show-my-art-btn"
-                            onClick={() => {
-                              if ((artist.artLinks || []).length > 0) {
-                                setShowArtGallery(true);
-                              } else {
-                                setActiveTab('link-art');
-                              }
-                            }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <span>{(artist.artLinks || []).length > 0 ? 'Show My Art' : 'Add Your Art'}</span>
-                            {(artist.artLinks || []).length > 0 && (
-                              <span className="show-my-art-count">{(artist.artLinks || []).length}</span>
-                            )}
-                          </button>
-                        </div>
 
                         {/* Gallery Section */}
                         <div className="dash-profile-bio-section">
@@ -5869,7 +6050,7 @@ function Profile() {
                             <iframe
                               key={previewKey}
                               title="Profile Preview"
-                              src={`${nfcFrontendBase}/artist?id=${artist.artistId}`}
+                              src={`${frontendBase}/artist?id=${artist.artistId}`}
                               className="dash-preview-iframe"
                               sandbox="allow-scripts allow-same-origin"
                             />

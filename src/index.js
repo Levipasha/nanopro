@@ -17,7 +17,19 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// Unregister any legacy service workers (e.g. old Workbox/CRA SW that blocked
+// cross-origin API calls to Railway with "no-response" errors).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((reg) => reg.unregister());
+  });
+  // Also wipe all caches so stale responses don't persist.
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name));
+    });
+  }
+}
+
 reportWebVitals();
+

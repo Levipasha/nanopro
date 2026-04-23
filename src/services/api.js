@@ -1,9 +1,14 @@
 /**
- * Landing page API – same backend as nfcschoolbe.
- * Used for "My artist profiles" only (artists, not students).
- * Set REACT_APP_API_URL in .env (e.g. http://localhost:5000 or https://your-api.vercel.app).
+ * Landing page API – handles profile management and data persistence.
+ * Set REACT_APP_API_URL in .env or Vercel Environment Variables to override.
+ * Falls back to the Railway production backend if not explicitly configured.
  */
-export const API_URL = process.env.REACT_APP_API_URL || '';
+// Forced to local for development as requested
+export const API_URL = 
+  process.env.REACT_APP_API_URL || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:5000'
+    : 'https://nfcschoolbe-production.up.railway.app');
 
 async function request(method, path, { body, getIdToken, getFirebaseUser, headers: customHeaders = {}, cache } = {}) {
   const headers = { 'Content-Type': 'application/json', ...customHeaders };
@@ -16,14 +21,18 @@ async function request(method, path, { body, getIdToken, getFirebaseUser, header
     if (user?.uid) headers['X-Firebase-UID'] = user.uid;
     if (user?.email) headers['X-Firebase-Email'] = user.email;
   }
-  const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+  const base = API_URL;
+  const fullUrl = `${base}${path}`;
+  console.log(`[API] ${method} ${fullUrl}`);
   const fetchOpts = {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
+    mode: 'cors',
+    credentials: 'include'
   };
   if (cache !== undefined) fetchOpts.cache = cache;
-  const res = await fetch(`${base}${path}`, fetchOpts);
+  const res = await fetch(fullUrl, fetchOpts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const errText = [data.message, data.error].filter(Boolean).join(' — ') || `Request failed: ${res.status}`;
@@ -38,7 +47,7 @@ async function uploadPhoto(file, getIdToken) {
   form.append('photo', file);
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
-  const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+  const base = API_URL;
   const res = await fetch(`${base}/api/artist/upload-photo`, {
     method: 'POST',
     headers,
@@ -94,7 +103,7 @@ export const generalProfileAPI = {
     const user = typeof getFirebaseUser === 'function' ? getFirebaseUser() : getFirebaseUser;
     if (user?.uid) headers['X-Firebase-UID'] = user.uid;
     if (user?.email) headers['X-Firebase-Email'] = user.email;
-    const base = API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+    const base = API_URL;
     const res = await fetch(`${base}/api/general-profile/upload-pdf`, {
       method: 'POST',
       headers,

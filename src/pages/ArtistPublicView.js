@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
@@ -8,12 +8,14 @@ import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 import { Helmet } from 'react-helmet-async';
 import { fixImageUrl } from '../utils/imageHelper';
+import SkyToggle from '../components/ui/SkyToggle';
 
 /**
- * Public artist profile route used for NFC / share links.
+ * Public artist profile route used for share links.
  * URL shape: /artist?id=<artistId>&art=<optionalArtId>
  */
 function ArtistPublicView() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const artistId = searchParams.get('id');
   const artId = searchParams.get('art');
@@ -29,6 +31,7 @@ function ArtistPublicView() {
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
   const [showEventPreview, setShowEventPreview] = useState(false);
   const [activeEventPreview, setActiveEventPreview] = useState(null);
+  const [themeOverride, setThemeOverride] = useState(null);
 
   useShowcaseEmbedHeight(isEmbed);
   const [success, setSuccess] = useState('');
@@ -251,9 +254,39 @@ function ArtistPublicView() {
     });
   });
 
-  const artItems = artist?.artLinks
+  // Also pull from the modern unified 'links' array if it exists
+  if (Array.isArray(artist.links)) {
+    artist.links.forEach((l) => {
+      if (!l.url) return;
+      const platform = (l.platform || '').toLowerCase();
+      const id = platform || (l.title || '').toLowerCase().replace(/\s+/g, '_');
+
+      // Avoid duplication if the same platform was already added via field logic
+      if (primaryLinks.some(pl => pl.id === id)) return;
+
+      primaryLinks.push({
+        id: id || 'website',
+        title: l.title || (id.charAt(0).toUpperCase() + id.slice(1)),
+        url: l.url
+      });
+    });
+  }
+
+  // Combine artLinks (structured pieces) and gallery (simple uploads)
+  const galleryItems = (artist.gallery || [])
+    .filter((g) => g && g.url)
+    .map((g) => ({
+      title: g.name || 'Untitled',
+      images: [g.url],
+      description: '',
+    }));
+
+  const linkedArtItems = artist?.artLinks
     ? (Array.isArray(artist.artLinks) ? artist.artLinks : Object.values(artist.artLinks))
     : [];
+
+  // Use ONLY artLinks (structured pieces) for the Art Gallery Page
+  const artItems = linkedArtItems;
 
   const hasContact = artist.email || artist.phone;
 
@@ -262,10 +295,17 @@ function ArtistPublicView() {
     ? eventSlides[Math.min(eventSlideIndex, eventSlides.length - 1)]
     : null;
 
-  const theme = getThemeById(artist.profileTheme || 'mono');
-  const themeBg = theme?.bg || '#0f172a';
-  const themeText = theme?.text || '#ffffff';
-  const themeLinkBg = theme?.linkBg || 'rgba(255,255,255,0.08)';
+  const currentThemeId = themeOverride === 'light' ? 'grey' : (artist?.profileTheme || 'midnight');
+  const theme = getThemeById(currentThemeId);
+
+  // Force white background if themeOverride is 'light'
+  const themeBg = themeOverride === 'light' ? '#ffffff' : (theme?.bg || '#0f172a');
+  const themeText = themeOverride === 'light' ? '#1a1a1a' : (theme?.text || '#ffffff');
+  const themeLinkBg = themeOverride === 'light' ? 'rgba(0,0,0,0.05)' : (theme?.linkBg || 'rgba(255,255,255,0.08)');
+
+  const getThemeClass = () => {
+    return `theme-${currentThemeId} ${theme.isAnimated ? theme.className : ''}`;
+  };
 
   const isDarkColor = (color) => {
     if (!color) return false;
@@ -323,13 +363,14 @@ function ArtistPublicView() {
         '--artist-glass-pill-border': glassPillBorder,
         '--artist-accent': themeText,
         '--artist-bg-contrast': isTextDark ? '#fff' : '#000',
+        '--artist-border': isTextDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
         background: themeBg
       }}
     >
       <Helmet>
         <title>{nanoProfilesPageTitle}</title>
         <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. ${[artist?.specialization, artist?.experience].filter(Boolean).join(' • ') || 'Smart Digital Identity Solutions'}.`} />
-        
+
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={window.location.href} />
@@ -377,192 +418,167 @@ function ArtistPublicView() {
             {success}
           </div>
         )}
-
-        {/* Cover banner */}
-        <div className="gp-photo-header">
-          {artist.backgroundPhoto && (
-            <img src={fixImageUrl(artist.backgroundPhoto) || artist.backgroundPhoto} alt={artist.name || 'Cover'} className="gp-cover-img" />
-          )}
-        </div>
-
-        {/* Centered circular avatar + basic details */}
-        <div className="gp-avatar-row">
-          <button
-            type="button"
-            className="gp-avatar-circle"
-            onClick={() => {
-              if (!artist.photo) return;
-              setShowProfilePreview(true);
-            }}
-          >
-            {artist.photo ? (
-              <img
-                src={fixImageUrl(artist.photo) || artist.photo}
-                alt={artist.name || 'Artist'}
-                className="gp-avatar-img"
-              />
-            ) : (
-              <div className="gp-avatar-circle-fallback">
-                {artist.name?.charAt(0) || 'A'}
-              </div>
-            )}
-          </button>
-          <div className="gp-avatar-text">
-            {artist.name && <h1 className="gp-name">{artist.name}</h1>}
-            {(artist.specialization || artist.experience) && (
-              <div className="gp-artist-badge-wrapper">
-                <div className="Btn">
-                  <div className="leftContainer">
-                    <span className="like">{artist.specialization || 'Artist'}</span>
-                  </div>
-                  {artist.experience && (
-                    <div className="likeCount">
-                      {artist.experience}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* About */}
-        {artist.bio && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">About</h2>
-            <p className="gp-bio">{artist.bio}</p>
-          </div>
-        )}
-
-        {/* 1. Events slideshow */}
-        {eventSlides.length > 0 && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Gallery</h2>
-
-            <div className="gp-events-slideshow">
-              <button
-                type="button"
-                className="gp-events-stage"
-                onClick={() => {
-                  if (!activeEvent?.url) return;
-                  setActiveEventPreview({
-                    url: activeEvent.url,
-                    name: activeEvent.name || 'Event'
-                  });
-                  setShowEventPreview(true);
-                }}
-              >
-                <img
-                  key={activeEvent?.url || 'event'}
-                  className="gp-events-stage-img"
-                  src={fixImageUrl(activeEvent?.url) || activeEvent?.url}
-                  alt={activeEvent?.name || 'Event'}
-                  loading="lazy"
+        {/* New 'Hero' Layout (DaBaby Style) */}
+        <div className="gp-artist-hero">
+          {artist.photo || artist.backgroundPhoto ? (
+            <div className="gp-artist-hero-overlay-wrap">
+              <div className="gp-artist-hero-toggle-wrap">
+                <SkyToggle
+                  checked={themeOverride !== 'light'}
+                  onChange={(e) => {
+                    const isDark = e.target.checked;
+                    setThemeOverride(isDark ? null : 'light');
+                  }}
                 />
-                {(activeEvent?.name || '') && (
-                  <div className="gp-events-stage-caption">
-                    <div className="gp-events-stage-title">{activeEvent.name}</div>
-                  </div>
-                )}
-              </button>
-
-              <div className="gp-events-dots">
-                {eventSlides.map((item, i) => (
-                  <button
-                    key={`${item.url}-${i}`}
-                    type="button"
-                    className={`gp-events-dot ${i === eventSlideIndex ? 'is-active' : ''}`}
-                    onClick={() => setEventSlideIndex(i)}
-                    aria-label={`Show slide ${i + 1}`}
-                    title={item.name || `Slide ${i + 1}`}
-                  >
-                  </button>
-                ))}
               </div>
+              <img
+                src={fixImageUrl(artist.photo || artist.backgroundPhoto) || (artist.photo || artist.backgroundPhoto)}
+                alt=""
+                className="gp-artist-hero-bg"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 100%)',
+                  maskImage: 'linear-gradient(to bottom, black 45%, transparent 100%)'
+                }}
+              />
+              <div className="gp-artist-hero-fade" />
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="gp-artist-hero-placeholder" />
+          )}
 
-        {/* 2. Show My Art / Add Your Art (gallery entry point) */}
-        {artItems.length > 0 && (
-          <div className="gp-section">
-            <button
-              className="gp-art-button"
-              style={{
-                background: 'var(--artist-link-bg)',
-                color: 'var(--artist-text)',
-                border: '1px solid var(--artist-text)'
-              }}
-              onClick={() => {
-                setShowArtGallery(true);
-                setSelectedArtItem(null);
-              }}
-            >
-              <span className="gp-art-button-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </span>
-              <span className="gp-art-button-text">Show My Art</span>
-            </button>
-          </div>
-        )}
+          <div className="gp-artist-hero-content">
+            <div className="gp-artist-hero-name-row">
+              <h1 className="gp-artist-hero-name">{artist.name}</h1>
 
-        {/* 3. Get in touch (below gallery, above social icons) */}
-        {hasContact && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Get in Touch</h2>
-            <div className="gp-contact-stack">
-              {artist.email && (
-                <div className="gp-contact-item">
-                  <div className="gp-contact-label">Email</div>
-                  <a href={`mailto:${artist.email}`} className="gp-contact-value">
-                    {artist.email}
-                  </a>
-                </div>
-              )}
-              {artist.phone && (
-                <div className="gp-contact-item">
-                  <div className="gp-contact-label">Phone</div>
-                  <a href={`tel:${artist.phone}`} className="gp-contact-value">
-                    {artist.phone}
-                  </a>
-                </div>
-              )}
             </div>
-          </div>
-        )}
+            <p className="gp-artist-hero-username">@{artist.username || artist.artistId}</p>
 
-        {/* 4. Social media icons (Links grid) */}
-        {primaryLinks.length > 0 && (
-          <div className="gp-section">
-            <h2 className="gp-section-title">Links</h2>
-            <div className="gp-links-grid">
-              {primaryLinks.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gp-link-icon-only"
-                  title={link.title}
-                >
-                  <span className="gp-link-icon-only-inner">
-                    {getLinkIcon({ platform: link.id })}
-                  </span>
+            {/* Quick social links overlay */}
+            <div className={`gp-artist-hero-socials ${primaryLinks.length > 13 ? 'gp-social-marquee' : ''}`}>
+              {(primaryLinks.length > 13 ? [...primaryLinks, ...primaryLinks, ...primaryLinks, ...primaryLinks] : primaryLinks).map((link, idx) => (
+                <a key={`${link.id}-${idx}`} href={link.url} target="_blank" rel="noopener noreferrer" className={`gp-hero-social-pill gp-pill-${link.id}`}>
+                  {getLinkIcon({ platform: link.id })}
                 </a>
               ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {artId && (
-          <p style={{ opacity: 0.75, marginTop: '12px' }}>
-            Viewing artwork: <strong>{artId}</strong>
-          </p>
-        )}
+        <div className="gp-content-wrap">
+          {/* About section moved to top and enriched with meta header */}
+          {(artist.bio || artist.specialization || artist.experience) && (
+            <div className="gp-section gp-about-section" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '0' }}>
+              <div className="gp-about-header">
+                <h2 className="gp-section-title" style={{ margin: 0 }}>About</h2>
+                {(artist.specialization || artist.experience) && (
+                  <div className="gp-about-meta">
+                    {artist.specialization && <span>{artist.specialization}</span>}
+                    {artist.specialization && artist.experience && <span className="gp-meta-sep">/</span>}
+                    {artist.experience && <span>{artist.experience}</span>}
+                  </div>
+                )}
+              </div>
+              {artist.bio && <p className="gp-bio" style={{ marginTop: '0.75rem' }}>{artist.bio}</p>}
+            </div>
+          )}
+
+          {/* 1. Events slideshow */}
+          {eventSlides.length > 0 && (
+            <div className="gp-section gp-gallery-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <h2 className="gp-section-title">Gallery</h2>
+
+              <div className="gp-gallery-grid-artist">
+                {eventSlides.map((item, i) => {
+                  const rotation = (i % 2 === 0 ? -1.5 : 1.5) + (i % 3 === 0 ? 0.5 : -0.5);
+                  return (
+                    <div
+                      key={`${item.url}-${i}`}
+                      className="gp-gallery-polaroid-item"
+                      style={{ transform: `rotate(${rotation}deg)` }}
+                      onClick={() => {
+                        setActiveEventPreview({
+                          url: item.url,
+                          name: item.name || 'Gallery Item'
+                        });
+                        setShowEventPreview(true);
+                      }}
+                    >
+                      <div className="gp-gallery-polaroid-frame">
+                        <img
+                          src={fixImageUrl(item.url) || item.url}
+                          alt={item.name || ''}
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="gp-gallery-polaroid-caption">
+                        {item.name || 'Art Title'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 2. Show My Art / Add Your Art (gallery entry point) */}
+          {artItems.length > 0 && (
+            <div className="gp-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <button
+                className="gp-art-button"
+                onClick={() => {
+                  navigate('/show-my-art', { 
+                    state: { 
+                      artItems: artItems,
+                      artistName: artist.name 
+                    } 
+                  });
+                }}
+              >
+                <span className="gp-art-button-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </span>
+                <span className="gp-art-button-text">Show My Art</span>
+              </button>
+            </div>
+          )}
+
+          {/* 3. Get in touch (below gallery, above social icons) */}
+          {hasContact && (
+            <div className="gp-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <h2 className="gp-section-title">Get in Touch</h2>
+              <div className="gp-contact-stack">
+                {artist.email && (
+                  <div className="gp-contact-item">
+                    <div className="gp-contact-label">Email</div>
+                    <a href={`mailto:${artist.email}`} className="gp-contact-value">
+                      {artist.email}
+                    </a>
+                  </div>
+                )}
+                {artist.phone && (
+                  <div className="gp-contact-item">
+                    <div className="gp-contact-label">Phone</div>
+                    <a href={`tel:${artist.phone}`} className="gp-contact-value">
+                      {artist.phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+
+
+          {artId && (
+            <p style={{ opacity: 0.75, marginTop: '12px' }}>
+              Viewing artwork: <strong>{artId}</strong>
+            </p>
+          )}
+        </div>
 
         <div className="gp-footer">
           <span>

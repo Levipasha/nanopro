@@ -55,14 +55,13 @@ export default function ProfileArtistOnboardingWizard({
   saving,
   handleLogout,
   handlePickAndCrop,
+  handlePickAndCropBatch,
 }) {
   const photoPreviewUrl = useBlobUrl(photoFile);
-  const bgPreviewUrl = useBlobUrl(bgFile);
 
   // Refs for file inputs — iOS Safari requires direct .click() on the input element;
   // using <label htmlFor> on hidden inputs is unreliable on mobile.
   const photoInputRef = useRef(null);
-  const bgInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
   const isArtistStep1Valid =
@@ -385,7 +384,7 @@ export default function ProfileArtistOnboardingWizard({
             {onboardingStep === 3 && (
               <div className="onboarding-step fade-in">
                 <h2>Show your style</h2>
-                <p className="onboarding-subtitle">Upload your profile, banner, and gallery images</p>
+                <p className="onboarding-subtitle">Upload your profile and gallery images</p>
                 <div className="onboarding-images">
                   <div className="image-upload-box">
                     <label>Profile Image</label>
@@ -408,31 +407,12 @@ export default function ProfileArtistOnboardingWizard({
                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                     />
                   </div>
-                  <div className="image-upload-box">
-                    <label>Banner Image</label>
-                    <button
-                      type="button"
-                      className="upload-trigger-btn"
-                      onClick={() => { if (bgInputRef.current) { bgInputRef.current.value = ''; bgInputRef.current.click(); } }}
-                      aria-label="Upload banner image"
-                    >
-                      <div className="upload-preview-banner">
-                        {bgPreviewUrl ? <img src={bgPreviewUrl} alt="Preview" /> : <span>+ Tap to upload banner</span>}
-                      </div>
-                    </button>
-                    <input
-                      ref={bgInputRef}
-                      type="file"
-                      style={{ display: 'none' }}
-                      onChange={e => handlePickAndCrop(e, 16 / 9, file => setBgFile(file))}
-                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                    />
-                  </div>
+
                 </div>
 
                 <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
-                  <label>Gallery — images, GIFs, or videos up to 30s (max 3)</label>
-                  <p className="onboarding-gallery-hint">Add one or many at a time (up to 3 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
+                  <label>Gallery — images, GIFs, or videos up to 30s (max 4)</label>
+                  <p className="onboarding-gallery-hint">Add one or many at a time (up to 4 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
                   <input
                     ref={galleryInputRef}
                     type="file"
@@ -441,28 +421,50 @@ export default function ProfileArtistOnboardingWizard({
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
                       if (galleryInputRef.current) galleryInputRef.current.value = '';
-                      files.forEach((file) => {
-                        if (file.type.startsWith('video/')) {
-                          setOnboardingGalleryFiles((prev) => [...prev, file].slice(0, 3));
-                        } else {
+                      
+                      const videoFiles = files.filter(f => f.type.startsWith('video/'));
+                      const imageFiles = files.filter(f => !f.type.startsWith('video/'));
+
+                      if (videoFiles.length > 0) {
+                        setOnboardingGalleryFiles((prev) => [...prev, ...videoFiles].slice(0, 4));
+                      }
+                      
+                      if (imageFiles.length > 0 && handlePickAndCropBatch) {
+                        handlePickAndCropBatch(
+                          { target: { files: imageFiles, value: '' } },
+                          2,
+                          (croppedFile) => {
+                            setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 4));
+                          }
+                        );
+                      } else if (imageFiles.length > 0) {
+                        imageFiles.forEach((file) => {
                           handlePickAndCrop(
                             { target: { files: [file], value: '' } },
                             2,
                             (croppedFile) => {
-                              setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 3));
+                              setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 4));
                             }
                           );
-                        }
-                      });
+                        });
+                      }
                     }}
                     accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml,video/*"
                   />
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={onboardingGalleryFiles.length >= 4 ? -1 : 0}
                     className="upload-preview-banner onboarding-gallery-grid upload-trigger-btn"
                     style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer', display: 'grid' }}
                     onClick={() => {
-                      if (onboardingGalleryFiles.length < 3 && galleryInputRef.current) {
+                      if (onboardingGalleryFiles.length < 4 && galleryInputRef.current) {
+                        galleryInputRef.current.value = '';
+                        galleryInputRef.current.click();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && onboardingGalleryFiles.length < 4 && galleryInputRef.current) {
+                        e.preventDefault();
                         galleryInputRef.current.value = '';
                         galleryInputRef.current.click();
                       }
@@ -487,6 +489,7 @@ export default function ProfileArtistOnboardingWizard({
                             aria-label={`Remove ${isVideo ? 'video' : 'image'} ${i + 1}`}
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               setOnboardingGalleryFiles((prev) => prev.filter((_, j) => j !== i));
                             }}
                           >
@@ -496,7 +499,7 @@ export default function ProfileArtistOnboardingWizard({
                         );
                       })
                     ) : null}
-                    {onboardingGalleryFiles.length < 3 && (
+                    {onboardingGalleryFiles.length < 4 && (
                       <span
                         className={
                           onboardingGalleryFiles.length > 0
@@ -505,16 +508,16 @@ export default function ProfileArtistOnboardingWizard({
                         }
                         style={
                           onboardingGalleryFiles.length > 0
-                            ? { gridColumn: `span ${3 - onboardingGalleryFiles.length}` }
+                            ? { gridColumn: `span ${4 - onboardingGalleryFiles.length}` }
                             : undefined
                         }
                       >
                         {onboardingGalleryFiles.length > 0
-                          ? `+ Add more (${3 - onboardingGalleryFiles.length} left)`
-                          : '+ Click to add images (up to 3)'}
+                          ? `+ Add more (${4 - onboardingGalleryFiles.length} left)`
+                          : '+ Click to add images (up to 4)'}
                       </span>
                     )}
-                  </button>
+                  </div>
                 </div>
 
                 <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>

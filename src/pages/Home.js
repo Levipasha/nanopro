@@ -13,12 +13,12 @@ export default function Home() {
         <>
             <Helmet>
                 <title>Nano Profiles - Smart Digital Identity Solutions</title>
-                <meta name="description" content="NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Contactless and secure. Just tap to trust." />
+                <meta name="description" content="Smart digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Contactless and secure. Just tap to trust." />
                 <meta property="og:title" content="Nano Profiles - Smart Digital Identity Solutions" />
-                <meta property="og:description" content="NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Just tap to trust." />
+                <meta property="og:description" content="Smart digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Just tap to trust." />
                 <meta property="og:url" content="https://nanoprofiles.com/" />
                 <meta name="twitter:title" content="Nano Profiles - Smart Digital Identity Solutions" />
-                <meta name="twitter:description" content="NFC digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Just tap to trust." />
+                <meta name="twitter:description" content="Smart digital identity for schools, restaurants, and artists. Tap to get menu and bills, student ID cards, artist portfolios. Just tap to trust." />
             </Helmet>
 
             <main className="landing-page-container">

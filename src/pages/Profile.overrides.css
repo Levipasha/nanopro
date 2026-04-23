@@ -19,12 +19,28 @@
 .dash-art-card,
 .dash-selector-modal,
 .dash-selector-item,
-.dash-mobile-edit-modal {
-  background: #000 !important;
-  color: #fff !important;
+.dash-mobile-edit-modal,
+.dash-single-profile section,
+.dash-profile-bio-section,
+.dash-profile-hero,
+.dash-profile-hero-content,
+.dash-single-profile,
+.dash-profile-layout,
+.dash-content {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
   background-image: none !important;
-  border-color: rgba(255, 255, 255, 0.28) !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-profile-hero-bg,
+.dash-profile-hero-overlay,
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  display: none !important;
+  content: none !important;
 }
 
 /* Theme preview swatches: do not override backgrounds */
@@ -32,11 +48,11 @@
 /* Keep the mobile bottom nav visible (white pill) */
 .dash-mobile-bottom-nav,
 .dash-mobile-bottom-nav-inner {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
   color: #020617 !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 18px !important;
-  /* rounded-rectangle, not full pill */
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03) !important;
 }
 
 .dash-mobile-bottom-nav {
@@ -104,17 +120,23 @@
 
 /* Artist/General/Restaurant hero background: remove linear-gradient */
 .dash-profile-hero {
-  background: #000 !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   background-image: none !important;
 }
 
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  display: none !important;
+}
+
 .dash-profile-hero-bg {
-  background: #000 !important;
+  background: #f1f5f9 !important;
   background-image: none !important;
 }
 
 .dash-profile-hero-overlay {
-  background: rgba(0, 0, 0, 0.65) !important;
+  background: rgba(255, 255, 255, 0.3) !important;
   background-image: none !important;
   pointer-events: none !important;
 }
@@ -138,8 +160,60 @@
   pointer-events: auto !important;
 }
 
-.dash-hero-bg-trigger--busy {
+.dash-profile-hero--restaurant .dash-hero-bg-trigger--busy {
   pointer-events: none !important;
+}
+
+/* Redesigned Sidebar and Navigation for Light Mode */
+.dash-sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dash-nav-item,
+.dash-sidebar .dash-nav-item {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-nav-item:hover,
+.dash-sidebar .dash-nav-item:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-nav-active {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-nav-active svg {
+  color: #0f172a !important;
+}
+
+/* Fix sidebar bottom buttons */
+.dash-sidebar-signout-btn {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dash-sidebar-signout-btn:hover {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border-color: #fca5a5 !important;
+}
+
+.dash-sidebar-home-btn {
+  background: #f8fafc !important;
+  color: #0f172a !important;
 }
 
 /* Contact cards used overflow:hidden; it clips the phone field caret and can block taps */
@@ -158,16 +232,99 @@
 /* Dashboard background: remove remaining gradients/patterns */
 .dash-root,
 .dash-root.dash-theme-aura,
-.dash-theme-aura,
-.dash-content,
-.dash-profile-layout,
-.dash-single-profile,
-.dash-profile-bio-section,
-.dash-contact-grid,
-.dash-links-section {
-  background: #000 !important;
+.dash-main.dash-main,
+.dash-root.dash-root,
+.dash-content.dash-content,
+.dash-profile-layout.dash-profile-layout,
+.dash-single-profile.dash-single-profile,
+.dash-design-mobile-sheet {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   background-image: none !important;
+  color: #0f172a !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
+
+.dash-root.dash-root,
+.dash-root.dash-theme-aura,
+.dash-root.dash-theme-midnight,
+.dash-root.dash-theme-glass {
+  --dash-bg: #ffffff !important;
+  --dash-sidebar-bg: #ffffff !important;
+  --dash-text: #0f172a !important;
+  --dash-subtext: #64748b !important;
+  --dash-border: rgba(0, 0, 0, 0.08) !important;
+  --dash-card-bg: #ffffff !important;
+  --dash-header-bg: #ffffff !important;
+  --dash-accent: #0f172a !important;
+  --dash-bg-card: #ffffff !important;
+
+  --artist-bg: #ffffff !important;
+  --artist-text: #0f172a !important;
+  --artist-accent: #0f172a !important;
+  --artist-link-bg: rgba(0, 0, 0, 0.05) !important;
+  --artist-bg-contrast: #ffffff !important;
+  --artist-glass-pill-bg: rgba(0, 0, 0, 0.04) !important;
+  --artist-glass-pill-border: rgba(0, 0, 0, 0.1) !important;
+
+  background: #ffffff !important;
+}
+
+.dash-root .profile-login-header h1,
+.dash-root .profile-header-email,
+.dash-root .profile-header-sub,
+.dash-root .onboarding-step h2,
+.dash-root .onboarding-step p,
+.dash-root .gp-name,
+.dash-root .gp-bio,
+.dash-root .gp-section-title,
+.dash-root .gp-contact-label,
+.dash-root .gp-contact-value,
+.dash-root .dash-profile-hero-name,
+.dash-root .dash-profile-hero-name span,
+.dash-root .dash-hero-inline-input,
+.dash-root .dash-profile-bio,
+.dash-root .dash-profile-bio p,
+.dash-root .dash-section-label,
+.dash-root .dash-contact-value,
+.dash-root .dash-contact-label,
+.dash-root .dash-main-title,
+.dash-root .dash-main-subtitle {
+  color: #0f172a !important;
+}
+
+.dash-root .dash-profile-hero-name {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-main-header {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+
+
+.dash-sidebar {
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.dash-brand-name {
+  color: #0f172a !important;
+}
+
+.dash-sidebar-top-avatar {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
 
 /* Also kill any dotted/gradient pseudo layers (if any exist) */
 .dash-root::before,
@@ -175,10 +332,14 @@
 .dash-profile-layout::before,
 .dash-profile-layout::after,
 .dash-single-profile::before,
-.dash-single-profile::after {
+.dash-single-profile::after,
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  content: none !important;
   background: none !important;
   background-image: none !important;
   pointer-events: none !important;
+  display: none !important;
 }
 
 /* Mobile: keep "Copy your link / Open your link" on one row with equal sizing */
@@ -201,8 +362,8 @@
   gap: 14px !important;
   padding: 10px 14px !important;
   border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
 }
 
 .dash-icon-pill {
@@ -212,15 +373,15 @@
   padding: 0 16px !important;
   border-radius: 22px !important;
   margin: 0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  background: #000 !important;
-  color: #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
   cursor: pointer !important;
-  box-shadow: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
   text-decoration: none !important;
   font-size: 0.85rem !important;
   font-weight: 600 !important;
@@ -250,7 +411,7 @@
   }
 }
 
-/* Dashboard header: gap between subtitle (e.g. “Manage your NFC…”) and copy/open pill bar; center the pill */
+/* Dashboard header: gap between subtitle (e.g. “Manage your artist profiles…”) and copy/open pill bar; center the pill */
 .dash-main-header>div:first-child {
   display: flex !important;
   flex-direction: column !important;
@@ -318,12 +479,71 @@
 .dash-mobile-edit-btn,
 .dash-add-platform-btn,
 .show-art-btn,
-.dash-link-btn {
-  background: #000 !important;
-  color: #fff !important;
+.show-my-art-btn,
+.dash-link-btn,
+.dash-art-btn-copy,
+.dash-art-btn-secondary,
+.dash-icon-pill,
+.onboarding-btn-complete,
+.profile-success-ok {
+  background: #0f172a !important;
+  color: #ffffff !important;
   background-image: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  border: 1px solid #0f172a !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+  font-weight: 700 !important;
+}
+
+.dash-art-btn-secondary {
+  background: transparent !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
   box-shadow: none !important;
+}
+
+.dash-art-add-card button {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* Force text visibility in select headers */
+.dash-main-title,
+.dash-main-subtitle,
+.onboarding-selector-view .selector-header h3,
+.onboarding-selector-view .selector-subtitle {
+  color: #0f172a !important;
+}
+
+.onboarding-selector-view .selector-close-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.onboarding-selector-view .dash-selector-item {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.onboarding-selector-view .dash-selector-item:hover {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.onboarding-selector-view .dash-selector-item.is-active {
+  background: #f1f5f9 !important;
+  border-color: #0f172a !important;
+  color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Show my art count badge */
+.show-my-art-count {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #0f172a !important;
+  backdrop-filter: none !important;
 }
 
 /* Icon visibility: some SVGs use stroke-only, some fill-only. Force both to white. */
@@ -333,7 +553,7 @@
 .dash-selector-item .dash-selector-label,
 .gp-link-icon-only,
 .gp-link-icon-only-inner {
-  color: #fff !important;
+  color: #0f172a !important;
 }
 
 .dash-link-icon-circle svg,
@@ -351,7 +571,7 @@
   background: transparent !important;
   background-image: none !important;
   border: none !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
   width: 22px !important;
   height: 22px !important;
   border-radius: 0 !important;
@@ -369,7 +589,7 @@
 .dash-link-remove-icon-btn:hover {
   background: transparent !important;
   background-image: none !important;
-  color: #ffffff !important;
+  color: #000000 !important;
   transform: none !important;
 }
 
@@ -390,7 +610,7 @@
   background: transparent !important;
   background-image: none !important;
   border: none !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
   outline: none !important;
   box-shadow: none !important;
   width: 22px !important;
@@ -422,7 +642,132 @@
   outline: none !important;
   box-shadow: none !important;
   border: none !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Ensure labels and titles in sections are dark */
+.dash-art-form-title,
+.dash-art-title,
+.dash-art-header,
+.dash-section-label,
+.dash-art-subtitle,
+.dash-section-header h3,
+.dash-section-header span,
+.dash-contact-label,
+.dash-contact-value {
+  color: #0f172a !important;
+}
+
+.dash-section-header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  padding-bottom: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.dash-add-platform-btn {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+.dash-add-platform-btn svg {
+  color: #0f172a !important;
+}
+
+.dash-art-qr-section {
+  background: #f8fafc !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dash-art-add-card label {
+  color: #64748b !important;
+}
+
+.dash-art-add-card input,
+.dash-art-add-card textarea {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-art-add-card label[for="art-image-file"] {
+  background: #f8fafc !important;
+  border: 2px dashed rgba(0, 0, 0, 0.15) !important;
+}
+
+.dash-art-placeholder {
+  display: none !important;
+}
+
+/* Art Gallery & Lightbox Popups */
+.art-gallery-overlay,
+.art-lightbox-overlay {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.art-gallery-modal,
+.art-lightbox {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.art-gallery-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.art-gallery-header h2,
+.art-lightbox-info h3 {
+  color: #0f172a !important;
+}
+
+.art-gallery-count {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+.art-gallery-card {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.art-gallery-card:hover {
+  border-color: #0f172a !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.art-gallery-card-info h4 {
+  color: #0f172a !important;
+}
+
+.art-gallery-card-info p,
+.art-lightbox-info p {
+  color: #64748b !important;
+}
+
+.art-gallery-close,
+.art-lightbox-close {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.art-gallery-close:hover,
+.art-lightbox-close:hover {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+}
+
+/* Ensure pagination dots are visible if any */
+.gp-events-dots .dot {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+.gp-events-dots .dot.active {
+  background: #0f172a !important;
 }
 
 /* General profile: slideshow/gallery remove "×" (was showing red circle/ring) */
@@ -430,7 +775,7 @@
   background: transparent !important;
   background-image: none !important;
   border: none !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
   outline: none !important;
   box-shadow: none !important;
   transform: none !important;
@@ -454,7 +799,7 @@
   background: transparent !important;
   background-image: none !important;
   border: none !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
   outline: none !important;
   box-shadow: none !important;
 }
@@ -1118,29 +1463,34 @@
 
 /* Get in Touch (dashboard): section title + chips stay light on black cards even when --dash-text is dark on “light” skins */
 h3.dash-section-label {
-  color: #f8fafc !important;
+  color: #0f172a !important;
   opacity: 0.92 !important;
 }
 
 .dash-contact-item {
-  color: #f8fafc !important;
+  color: #1e293b !important;
 }
 
 .dash-contact-item .dash-contact-label {
-  color: rgba(226, 232, 240, 0.92) !important;
+  color: #64748b !important;
 }
 
 .dash-contact-item .dash-contact-value,
 .dash-contact-item p.dash-contact-value,
 .dash-contact-item .dash-contact-value.clickable {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 
-.dash-contact-item .dash-contact-icon,
+.dash-contact-item .dash-contact-icon {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
 .dash-contact-item .dash-contact-icon svg {
-  color: #e2e8f0 !important;
-  stroke: #e2e8f0 !important;
+  color: #0f172a !important;
+  stroke: #0f172a !important;
 }
 
 /* Prevent long unbroken bio text from overflowing the card on all dashboard profile types */
@@ -1220,6 +1570,33 @@ h3.dash-section-label {
   border-radius: 999px !important;
   min-height: 0 !important;
   width: 100%;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-link-card,
+.dash-link-inline-input {
+  background: #ffffff !important;
+}
+
+.dash-link-card-main,
+.dash-profile-hero-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dash-link-card.dash-link-card,
+.dash-link-card--inline.dash-link-card--inline,
+.dash-profile-hero.dash-profile-hero,
+.dash-profile-bio-section.dash-profile-bio-section,
+.dash-info-card.dash-info-card {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
 .dash-link-card--inline .dash-link-icon-circle {
@@ -1227,6 +1604,19 @@ h3.dash-section-label {
   height: 36px !important;
   min-width: 36px !important;
   border-radius: 10px !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-link-title,
+.dash-link-save-btn {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.dash-link-save-btn.active {
+  color: #2563eb !important;
 }
 
 .dash-link-card--inline .dash-link-icon-circle svg {
@@ -1347,9 +1737,17 @@ h3.dash-section-label {
   align-items: center !important;
   text-align: center !important;
   margin-top: 0.75rem !important;
-  padding-top: 0 !important;
+  padding: 12px !important;
   margin-left: 0 !important;
   pointer-events: auto !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-radius: 20px !important;
+}
+
+.gp-photo-overlay {
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
 }
 
 /* Stylize the name - aligned left close to pic with multi-line truncation */
@@ -1370,7 +1768,7 @@ h3.dash-section-label {
   overflow-wrap: break-word !important;
   width: 100% !important;
   text-align: center !important;
-  color: var(--artist-text, #fff) !important;
+  color: #0f172a !important;
   max-width: 100% !important;
 }
 
@@ -1411,14 +1809,14 @@ h3.dash-section-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--artist-accent, #fff);
+  background-color: #0f172a !important;
   z-index: 2;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
 }
 
 .leftContainer .like {
-  color: var(--artist-bg-contrast, #000);
+  color: #ffffff !important;
   font-weight: 700;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
@@ -1436,11 +1834,11 @@ h3.dash-section-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--artist-accent, #fff);
+  color: #0f172a !important;
   font-weight: 700;
   font-size: 0.68rem;
   position: relative;
-  background-color: var(--artist-link-bg, rgba(23, 23, 23, 0.88));
+  background-color: #f1f5f9 !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   white-space: nowrap;
@@ -1453,7 +1851,7 @@ h3.dash-section-label {
   width: 10px;
   position: absolute;
   content: "";
-  background-color: var(--artist-accent, #fff);
+  background-color: #0f172a !important;
   transform: rotate(45deg);
   left: -5px;
   z-index: 1;
@@ -1462,6 +1860,278 @@ h3.dash-section-label {
 /* Hover effect only if there's interaction, but these are tags */
 /* .Btn:hover .leftContainer { background-color: rgb(219, 0, 0); } */
 
+.dash-nav-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 1px solid transparent !important;
+}
+
+.dash-nav-item:hover:not(.dash-nav-active) {
+  background: rgba(37, 99, 235, 0.05) !important;
+  border-color: rgba(37, 99, 235, 0.1) !important;
+  color: #2563eb !important;
+  transform: translateX(4px);
+}
+
+.dash-nav-item.dash-nav-active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25) !important;
+  border: none !important;
+  transform: translateX(2px);
+}
+
+.dash-nav-item.dash-nav-active svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dash-nav-item.dash-nav-active span {
+  color: #ffffff !important;
+}
+
+/* Top-right Profile Actions Bar */
+.dash-profile-link-iconbar {
+  display: flex !important;
+  gap: 0.85rem !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill {
+  height: 40px !important;
+  padding: 0 1.25rem !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  border: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill:hover {
+  background: #1e293b !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15) !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2.5px !important;
+}
+
+@media (max-width: 768px) {
+  .dash-main-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1.25rem !important;
+    padding: 1.5rem !important;
+  }
+
+  .dash-profile-link-iconbar {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .dash-profile-link-iconbar .dash-icon-pill {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+}
+
+/* Premium Theme/Font Toggle - Minimalist Light Version */
+.dash-premium-toggle-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  /* Align to left */
+  width: 100% !important;
+  margin-bottom: 2rem !important;
+  margin-top: 1rem !important;
+}
+
+.dash-premium-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.35rem !important;
+  background: #f1f5f9 !important;
+  /* Light slate background */
+  border-radius: 14px !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-premium-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.65rem 1.5rem !important;
+  border: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  /* Muted slate text */
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dash-premium-toggle-btn:hover:not(.active) {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-premium-toggle-btn.active {
+  background: #ffffff !important;
+  /* White active state */
+  color: #2563eb !important;
+  /* Primary blue text */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-premium-toggle-btn .toggle-icon {
+  font-size: 1.1rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-premium-toggle {
+    width: 100% !important;
+    display: flex !important;
+  }
+
+  .dash-premium-toggle-btn {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 0.85rem 0.5rem !important;
+  }
+}
+
+.dash-design-section,
+.dash-design-grid,
+.dash-themes-grid,
+.dash-fonts-grid,
+.dash-design-mobile-body,
+.dash-profile-layout,
+.dash-single-profile {
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: 100% !important;
+}
+
+.dash-design-mobile-header,
+.dash-design-mobile-sheet {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dash-theme-indicator {
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  height: 48px !important; 
+  width: 48px !important;
+  margin: 0 auto 1.25rem !important;
+  border-radius: 50% !important;
+  transition: transform 0.3s ease !important;
+}
+
+.dash-design-card:hover .dash-theme-indicator {
+  transform: scale(1.1);
+}
+
+.dash-design-card {
+  padding: 1rem !important;
+  justify-content: center !important;
+  min-height: 110px !important;
+  max-width: 180px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.dash-themes-grid,
+.dash-fonts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 1.25rem !important;
+  max-width: 100% !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  justify-items: center !important;
+}
+
+.dash-theme-indicator {
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+  height: 40px !important; 
+  width: 40px !important;
+  margin: 0 auto 1rem !important;
+  border-radius: 50% !important;
+}
+
+@media (max-width: 580px) {
+  .dash-themes-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.85rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .dash-design-card {
+    max-width: none !important;
+    padding: 0.85rem 0.5rem !important;
+    min-height: 90px !important;
+  }
+
+  .dash-theme-indicator {
+    margin-bottom: 0.6rem !important;
+    height: 36px !important;
+    width: 36px !important;
+  }
+
+  .dash-design-card-label {
+    font-size: 0.8rem !important;
+  }
+}
+
+
+.dash-root .dash-design-section h2,
+.dash-root .dash-design-section h3,
+.dash-root .dash-design-section p,
+.dash-root .dash-main-title,
+.dash-root .dash-main-subtitle {
+  color: #0f172a !important;
+  background: transparent !important;
+}
+
+.dash-root .dash-design-card-label {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.dash-root .dash-design-mobile-header h2,
+.dash-root .dash-design-mobile-header p {
+  color: #0f172a !important;
+}
+
+/* Sidebar user footer: light theme adjustment */
 /* Desktop layout adjustment - centered if name is centered */
 @media (min-width: 769px) {
   .gp-artist-badge-wrapper {
@@ -1496,9 +2166,9 @@ h3.dash-section-label {
   margin: 0 !important;
   width: 110px !important;
   height: 110px !important;
-  border: 3px solid var(--artist-bg, #0b1220) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
-  background: #000 !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
+  background: #f1f5f9 !important;
   flex-shrink: 0 !important;
   z-index: 15 !important;
 }
@@ -1539,4 +2209,22 @@ h3.dash-section-label {
   .gp-artist-themed-card .gp-section {
     padding-top: 0.15rem !important;
   }
-}
+}/* --- ADD PLATFORMS MODAL LIGHT THEME FIX --- */
+.dash-selector-overlay { background: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(8px) !important; }
+.dash-selector-modal { background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.08) !important; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important; color: #0f172a !important; }
+.dash-selector-header h3 { color: #0f172a !important; }
+.dash-selector-header p { color: #64748b !important; }
+.dash-selector-item { background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; color: #334155 !important; }
+.dash-selector-item:hover { background: #f8fafc !important; border-color: rgba(0, 0, 0, 0.2) !important; }
+.dash-selector-item.is-active { background: #f1f5f9 !important; border-color: #0f172a !important; color: #0f172a !important; }
+.dash-selector-label { color: #334155 !important; }
+.dash-selector-item.is-active .dash-selector-label { color: #0f172a !important; }
+.dash-selector-check { color: #0f172a !important; }
+.dash-selector-actions { border-top: 1px solid rgba(0, 0, 0, 0.06) !important; }
+.dash-selector-btn-cancel { background: rgba(0,0,0,0.05) !important; border: 1px solid rgba(0,0,0,0.1) !important; color: #334155 !important; }
+.dash-selector-btn-cancel:hover { background: rgba(0,0,0,0.08) !important; color: #0f172a !important; }
+/* --- LAPTOP PREVIEW ENHANCEMENT --- */
+.dash-preview-panel { background: #ffffff !important; border-left: 1px solid rgba(0, 0, 0, 0.08) !important; width: 520px !important; }
+.dash-full-preview-container { width: 100% !important; height: 100% !important; max-height: 100% !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; }
+.dash-preview-iframe { min-height: 100% !important; border-radius: 0 !important; background: #ffffff !important; }
+.dash-preview-panel { display: flex !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; }

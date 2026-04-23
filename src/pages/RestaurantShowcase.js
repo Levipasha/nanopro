@@ -14,7 +14,7 @@ export default function RestaurantShowcase() {
         <>
             <Helmet>
                 <title>Restaurant Profiles - Nano Profiles</title>
-                <meta name="description" content="Digital menus, reservations, and restaurant profiles powered by NFC. Customers tap to view your menu, story, and links instantly." />
+                <meta name="description" content="Digital menus, reservations, and restaurant profiles. Customers tap to view your menu, story, and links instantly." />
             </Helmet>
 
             <main className="showcase-page">
@@ -65,7 +65,7 @@ export default function RestaurantShowcase() {
 
                 <section className="showcase-cta-section">
                     <h2>Go digital with your restaurant</h2>
-                    <p>Create your NFC-powered restaurant profile today.</p>
+                    <p>Create your smart restaurant profile today.</p>
                     <Link to="/login" className="showcase-cta-primary">Get Started Free</Link>
                 </section>
 

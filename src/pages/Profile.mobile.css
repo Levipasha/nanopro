@@ -263,9 +263,6 @@ body.dash-platform-selector-open .dash-selector-modal {
 .dash-preview-panel,
 .dash-link-card,
 .dash-gallery-item,
-.dash-selector-modal,
-.dash-selector-item,
-.dash-selector-actions,
 .dash-mobile-edit-modal,
 .dash-mobile-bottom-nav,
 .dash-mobile-bottom-nav-inner {
@@ -275,8 +272,6 @@ body.dash-platform-selector-open .dash-selector-modal {
   border-color: rgba(255, 255, 255, 0.28) !important;
 }
 
-.dash-selector-btn-done,
-.dash-selector-btn-cancel,
 .dash-mobile-edit-btn,
 .dash-mobile-edit-btn.primary,
 .dash-mobile-edit-btn.ghost,
@@ -290,8 +285,6 @@ body.dash-platform-selector-open .dash-selector-modal {
   box-shadow: none !important;
 }
 
-.dash-selector-btn-done:hover,
-.dash-selector-btn-cancel:hover,
 .dash-mobile-edit-btn:hover,
 .dash-add-platform-btn:hover,
 .show-art-btn:hover,

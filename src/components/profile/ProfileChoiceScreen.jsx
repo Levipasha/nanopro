@@ -66,7 +66,7 @@ export default function ProfileChoiceScreen({
 
               <div className="profile-product-body">
                 <p className="profile-product-plan">Artist Profile</p>
-                <div className="profile-product-tagline">Portfolio &amp; NFC</div>
+                <div className="profile-product-tagline">Portfolio &amp; Digital ID</div>
                 <ul className="profile-product-features">
                   <li className="profile-product-feature">
                     <svg viewBox="0 0 30 30" width="16" height="16">
@@ -102,7 +102,7 @@ export default function ProfileChoiceScreen({
                         fill="#05060f"
                       />
                     </svg>
-                    NFC Tap Ready
+                    Tap Ready
                   </li>
                 </ul>
               </div>
@@ -182,7 +182,7 @@ export default function ProfileChoiceScreen({
                           fill="#05060f"
                         />
                       </svg>
-                      NFC Tap Ready
+                      Tap Ready
                     </li>
                   </ul>
                 </div>
@@ -257,7 +257,7 @@ export default function ProfileChoiceScreen({
                           fill="#05060f"
                         />
                       </svg>
-                      NFC Tap Ready
+                      Tap Ready
                     </li>
                   </ul>
                 </div>

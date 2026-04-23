@@ -6,7 +6,7 @@ export default function HomeFooter() {
             <div className="footer-inner">
                 <div className="footer-brand">
                     <div className="footer-brandText">Nano Profiles</div>
-                    <p>Smart digital identity solutions with NFC technology</p>
+                    <p>Smart digital identity solutions for a connected world</p>
                     <div className="footer-quote">Just tap to trust</div>
                 </div>
 

@@ -44,7 +44,7 @@ export default function HomeHero() {
                 <div className="hero-left">
                     <div className="hero-tagline">
                         <span className="tagline-line"></span>
-                        <span className="tagline-text">NFC — ONE TAP IDENTITY</span>
+                        <span className="tagline-text">ONE TAP IDENTITY</span>
                     </div>
 
                     <h1 className="hero-title">
@@ -53,7 +53,7 @@ export default function HomeHero() {
                     </h1>
 
                     <p className="hero-description">
-                        One NFC chip. Zero friction. Your entire world: artist, student, chef, delivered to any phone the moment they tap.
+                        One tap. Zero friction. Your entire world: artist, student, chef, delivered to any phone the moment they tap.
                     </p>
 
                     <div className="hero-features-list">

@@ -14,7 +14,7 @@ export default function StudentShowcase() {
         <>
             <Helmet>
                 <title>Student Profiles - Nano Profiles</title>
-                <meta name="description" content="Digital student ID cards powered by NFC. Share your portfolio, skills, and achievements with a single tap." />
+                <meta name="description" content="Digital student ID cards. Share your portfolio, skills, and achievements with a single tap." />
             </Helmet>
 
             <main className="showcase-page">
@@ -23,7 +23,7 @@ export default function StudentShowcase() {
                 <section className="showcase-hero">
                     <div className="showcase-hero-inner">
                         <h1 className="showcase-title">Your Identity.<br />Always With You.</h1>
-                        <p className="showcase-subtitle">Digital ID, portfolio, skills, and achievements — everything in one NFC-powered profile card.</p>
+                        <p className="showcase-subtitle">Digital ID, portfolio, skills, and achievements — everything in one smart profile card.</p>
                         <div className="showcase-cta-row">
                             <Link to="/login" className="showcase-cta-primary">Create Your Profile</Link>
                             <a href="#preview" className="showcase-cta-secondary">See Example ↓</a>

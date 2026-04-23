@@ -14,7 +14,7 @@ export default function ArtistShowcase() {
         <>
             <Helmet>
                 <title>Artist Profiles - Nano Profiles</title>
-                <meta name="description" content="Showcase your art portfolio, gallery, and creative links with a single NFC tap. Built for artists, sculptors, and creators." />
+                <meta name="description" content="Showcase your art portfolio, gallery, and creative links with a single tap. Built for artists, sculptors, and creators." />
             </Helmet>
 
             <main className="showcase-page">
@@ -23,7 +23,7 @@ export default function ArtistShowcase() {
                 <section className="showcase-hero">
                     <div className="showcase-hero-inner">
                         <h1 className="showcase-title">Your Art.<br />One Tap Away.</h1>
-                        <p className="showcase-subtitle">Gallery, bio, links, and events — everything your audience needs, delivered instantly through NFC.</p>
+                        <p className="showcase-subtitle">Gallery, bio, links, and events — everything your audience needs, delivered instantly with a tap.</p>
                         <div className="showcase-cta-row">
                             <Link to="/login" className="showcase-cta-primary">Create Your Profile</Link>
                             <a href="#preview" className="showcase-cta-secondary">See Example ↓</a>
@@ -65,7 +65,7 @@ export default function ArtistShowcase() {
 
                 <section className="showcase-cta-section">
                     <h2>Ready to share your art?</h2>
-                    <p>Create your NFC-powered artist profile in minutes.</p>
+                    <p>Create your smart artist profile in minutes.</p>
                     <Link to="/login" className="showcase-cta-primary">Get Started Free</Link>
                 </section>
 

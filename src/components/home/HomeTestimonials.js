@@ -68,7 +68,7 @@ const TESTIMONIALS = [
         {
             name: 'Emily Jeff',
             title: 'TheWeAgency',
-            text: 'We tap the NFC tag and the profile opens instantly. No app, no friction—works perfectly for quick access on the go.',
+            text: 'We tap the profile and it opens instantly. No app, no friction—works perfectly for quick access on the go.',
             avatar: makeIndianAvatar({ skin: '#f3c7a6', hair: '#2b1b12', accent: '#f59e0b', shirt: '#dbeafe' })
         },
         {
@@ -80,7 +80,7 @@ const TESTIMONIALS = [
         {
             name: 'Elizabeth Rai',
             title: 'I2C Company',
-            text: 'Digital ID updates stay current. Users can refresh their profile anytime and the NFC content stays accurate.',
+            text: 'Digital ID updates stay current. Users can refresh their profile anytime and the content stays accurate.',
             avatar: makeIndianAvatar({ skin: '#f0c4a0', hair: '#4b2f22', accent: '#f59e0b', shirt: '#dcfce7' })
         },
         {
@@ -98,7 +98,7 @@ const TESTIMONIALS = [
         {
             name: 'Priya Nair',
             title: 'I2C School',
-            text: 'No installation needed. Any phone can tap the NFC chip and open the profile instantly with clean UI.',
+            text: 'No installation needed. Any phone can tap and open the profile instantly with clean UI.',
             avatar: makeIndianAvatar({ skin: '#f1c1a0', hair: '#2d1c14', accent: '#f59e0b', shirt: '#cffafe' })
         },
         {

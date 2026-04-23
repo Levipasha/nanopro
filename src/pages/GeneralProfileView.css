@@ -108,21 +108,21 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Profile photo - header banner (16:9 matches dashboard crop + stays shorter than old 1:1 square) */
+/* Profile photo - header banner (even shorter for a minimal look) */
 .gp-photo-header {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 25 / 7;
   overflow: hidden;
   background: transparent;
   z-index: 0;
 }
 
-/* Artist card: banner height is set by .gp-cover-img, no square ratio */
+/* Artist card: banner size matches General profile for consistency */
 .gp-artist-themed-card .gp-photo-header,
 .gp-student-themed-card .gp-photo-header {
-  aspect-ratio: unset;
-  height: auto;
+  aspect-ratio: 25 / 7 !important;
+  height: auto !important;
 }
 
 .gp-avatar-img {
@@ -133,6 +133,15 @@
   display: block;
   cursor: zoom-in;
   transition: transform 0.3s ease;
+}
+
+.gp-banner-bg-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px) brightness(0.6);
+  transform: scale(1.1);
+  opacity: 0.5;
 }
 
 .gp-avatar-img:hover {
@@ -157,15 +166,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 2rem 1.5rem 1.5rem;
+  padding: 1.25rem 1.25rem 0.85rem;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
   color: #fff;
 }
 
 .gp-photo-overlay .gp-name {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  margin: 0 0 0.35rem 0;
+  margin: 0 0 0.25rem 0;
   line-height: 1.2;
   color: #fff;
   text-align: left;
@@ -196,14 +205,18 @@
   color: var(--artist-text, rgba(255, 255, 255, 0.95));
 }
 
-/* Username */
 .gp-username {
   font-size: 0.9rem;
   font-weight: 600;
   opacity: 0.8;
   text-align: center;
-  margin: 1rem 1.5rem 0;
+  margin: 1rem 0 0;
   color: inherit;
+}
+
+.gp-avatar-row-left+.gp-username {
+  text-align: left;
+  margin-top: 0.75rem;
 }
 
 /* Bio */
@@ -212,16 +225,20 @@
   font-weight: 500;
   color: inherit;
   line-height: 1.6;
-  margin: 0.5rem 1.5rem 1.5rem;
+  margin: 0.5rem 0 1.5rem;
   text-align: left;
   opacity: 0.95;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
+.gp-avatar-row-left~.gp-bio {
+  text-align: left;
+}
+
 /* Restaurant gallery (public link) */
 .gp-restaurant-gallery {
-  padding: 0 1.5rem 1rem;
+  padding: 0 1rem 1rem;
   margin-top: 0.25rem;
 }
 
@@ -278,8 +295,8 @@
   align-items: stretch;
   width: 100%;
   box-sizing: border-box;
-  gap: 0.75rem;
-  padding: 0 1.5rem 2rem;
+  gap: 0;
+  padding: 0 1.25rem 2rem;
 }
 
 /* Artist public: icon-only links grid */
@@ -287,7 +304,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
-  padding: 0 1.5rem 2rem;
+  padding: 0 1rem 2rem;
 }
 
 .gp-link-icon-only {
@@ -318,28 +335,46 @@
 .gp-link {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.75rem;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  min-height: 3.25rem;
-  margin: 0;
-  align-self: stretch;
-  padding: 1rem 1.25rem;
-  border: 1px solid currentColor;
-  border-radius: 12px;
+  gap: 1.25rem;
+  padding: 1.25rem 0;
   text-decoration: none;
   font-weight: 600;
-  font-size: 1rem;
-  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-  /* background, color from inline style (theme) */
+  font-size: 1.05rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  background: transparent !important;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  color: inherit;
+  position: relative;
+}
+
+.gp-link:last-child {
+  border-bottom: none;
+}
+
+/* Subtle chevron arrow on the right */
+.gp-link::after {
+  content: '';
+  position: absolute;
+  right: 0.25rem;
+  width: 6px;
+  height: 6px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.15;
+  transition: all 0.25s ease;
 }
 
 .gp-link:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  opacity: 1;
+  padding-left: 0.5rem;
+}
+
+.gp-link:hover::after {
+  opacity: 0.6;
+  right: 0;
 }
 
 .gp-link-menu {
@@ -347,38 +382,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Primary CTA — menu first, stands out from other link rows */
+/* Primary CTA — menu now matches the list style */
 .gp-link-menu-cta {
-  position: relative;
-  z-index: 0;
-  overflow: hidden;
   font-weight: 700;
-  font-size: 1.08rem;
-  letter-spacing: 0.02em;
-  min-height: 3.55rem;
-  padding: 1.12rem 1.35rem;
-  border-width: 2px;
-  border-radius: 14px;
-  box-shadow:
-    0 3px 0 rgba(0, 0, 0, 0.1),
-    0 14px 36px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.gp-link-menu-cta::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.gp-link-menu-cta .gp-link-icon,
-.gp-link-menu-cta .gp-link-text {
-  position: relative;
-  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .gp-link-menu-cta .gp-link-icon {
@@ -416,7 +423,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 1.3rem;
+  line-height: 1;
   color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.gp-link-text {
+  flex: 1;
+  text-align: left;
+  margin: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  font-variant-numeric: lining-nums;
+  -moz-font-feature-settings: "lnum";
+  -webkit-font-feature-settings: "lnum";
+  font-feature-settings: "lnum";
 }
 
 /* Book-style menu PDF viewer */
@@ -729,7 +754,7 @@
 /* Artist public view enhancements */
 .gp-cover-img {
   width: 100%;
-  height: 220px;
+  height: 100% !important;
   object-fit: cover;
   display: block;
 }
@@ -739,7 +764,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: -60px;   /* overlap the banner */
+  margin-top: -60px;
+  /* overlap the banner */
   padding: 0 1.5rem;
   position: relative;
   z-index: 2;
@@ -922,7 +948,8 @@
   padding: 0;
   width: 7px;
   height: 7px;
-  border-radius: 2px; /* small square */
+  border-radius: 2px;
+  /* small square */
   cursor: pointer;
   background: #000;
   opacity: 0.4;
@@ -936,13 +963,20 @@
 
 .gp-events-dot.is-active {
   opacity: 1;
-  background: #fb7185; /* coral/pink for active */
-  transform: rotate(45deg) scale(1.7); /* diamond shape and larger */
+  background: #fb7185;
+  /* coral/pink for active */
+  transform: rotate(45deg) scale(1.7);
+  /* diamond shape and larger */
 }
 
 @keyframes gp-events-fade {
-  from { opacity: 0.75; }
-  to { opacity: 1; }
+  from {
+    opacity: 0.75;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .gp-gallery-strip-wrapper {
@@ -1250,17 +1284,20 @@
 
 .gp-artist-themed-card .gp-avatar-circle,
 .gp-student-themed-card .gp-avatar-circle {
-  width: 120px;
+  width: 100px;
   height: auto;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  border: none; /* remove dark ring */
+  border: none;
+  /* remove dark ring */
   overflow: hidden;
-  background: transparent; /* no black background */
+  background: transparent;
+  /* no black background */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: none; /* cleaner edge so photo fills circle */
+  box-shadow: none;
+  /* cleaner edge so photo fills circle */
   padding: 0;
   flex-shrink: 0;
 }
@@ -1426,6 +1463,62 @@
   font-family: var(--font-heading, "Outfit", sans-serif) !important;
 }
 
+.gp-avatar-row-left {
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: 1.25rem !important;
+  margin-top: -60px !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.gp-card-body {
+  padding: 0 1.25rem;
+}
+
+/* Specific left alignment for GeneralProfileView */
+.gp-card.gp-card-themed {
+  padding: 0;
+}
+
+.gp-card.gp-card-themed .gp-content-wrap {
+  padding: 0 1.25rem 2rem;
+}
+
+.gp-avatar-row-left .gp-avatar-circle {
+  width: 100px;
+  height: 100px;
+  border: 4px solid var(--artist-bg, #fff);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.gp-avatar-row-left .gp-avatar-text {
+  margin-top: 55px;
+  /* Push text below the banner area */
+  text-align: left;
+  padding-bottom: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gp-avatar-row-left .gp-name {
+  font-size: 1.5rem;
+  margin: 0;
+  text-align: left;
+  line-height: 1.1;
+  display: block;
+}
+
+.gp-avatar-row-left .gp-title-small {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0.25rem 0 0;
+  text-align: left;
+  display: block;
+}
+
 /* Embedded in showcase iframe (?embed=1): natural document height, parent page scrolls */
 .gp-embed-showcase.gp-view {
   min-height: 0;
@@ -1435,3 +1528,602 @@
   min-height: 0;
   overflow: visible;
 }
+
+/* Artist Hero V2 (Dynamic/Auto-Aspect) */
+.gp-artist-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.08;
+  background: transparent !important; /* Allow card theme to show through */
+  overflow: hidden;
+  margin-bottom: -1px;
+  border: none;
+}
+
+.gp-artist-hero-overlay-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gp-artist-hero-bg {
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.gp-artist-hero-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70%; /* Deep cinematic fade */
+  background: linear-gradient(to top,
+      var(--artist-bg) 0%,
+      rgba(var(--artist-bg-rgb, 0,0,0), 0.4) 40%,
+      transparent 100%);
+  pointer-events: none;
+}
+
+.gp-artist-hero-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.5rem 0.15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--artist-text, #fff) !important;
+  z-index: 5;
+}
+
+.gp-artist-hero-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 0.15rem;
+}
+
+.gp-artist-hero-name {
+  font-size: clamp(1.2rem, 6vw, 1.8rem);
+  font-weight: 900 !important;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: var(--artist-text, #fff) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 1rem;
+}
+
+.gp-artist-hero-verified {
+  color: #3b82f6;
+  /* Blue check */
+  display: flex;
+  align-items: center;
+}
+
+.gp-artist-hero-username {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.75;
+  margin: 0 0 0.05rem 0;
+  color: var(--artist-text, #fff) !important;
+}
+
+.gp-artist-hero-socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.gp-artist-hero-socials.gp-social-marquee {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: max-content;
+  animation: gp-artist-hero-marquee-scroll 30s linear infinite;
+  padding: 0.5rem 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.gp-artist-hero-socials.gp-social-marquee:active {
+  animation-play-state: paused;
+}
+
+@keyframes gp-artist-hero-marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+
+.gp-hero-social-pill {
+  width: 26px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff !important;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+}
+
+.gp-hero-social-pill:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 1) !important;
+  color: #000 !important;
+}
+
+.gp-hero-social-pill svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: currentColor;
+}
+
+.gp-hero-social-pill svg * {
+  /* Override default fill if it's too thick */
+}
+
+/* Social Brand Colors for Hero Pills */
+.gp-pill-instagram {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important;
+  color: #fff !important;
+}
+
+.gp-pill-whatsapp {
+  background: #25D366 !important;
+  color: #fff !important;
+}
+
+.gp-pill-facebook {
+  background: #1877F2 !important;
+  color: #fff !important;
+}
+
+.gp-pill-youtube {
+  background: #FF0000 !important;
+  color: #fff !important;
+}
+
+.gp-pill-twitter,
+.gp-pill-x {
+  background: #000000 !important;
+  color: #fff !important;
+}
+
+.gp-pill-threads {
+  background: #000000 !important;
+  color: #fff !important;
+}
+
+.gp-pill-tiktok {
+  background: #000000 !important;
+  color: #fff !important;
+}
+
+.gp-pill-spotify {
+  background: #1DB954 !important;
+  color: #fff !important;
+}
+
+.gp-pill-snapchat {
+  background: #FFFC00 !important;
+  color: #000 !important;
+  /* Snapchat is yellow with black icon */
+}
+
+.gp-pill-apple_music,
+.gp-pill-music {
+  background: #fa243c !important;
+  color: #fff !important;
+}
+
+.gp-pill-linkedin {
+  background: #0077b5 !important;
+  color: #fff !important;
+}
+
+.gp-pill-pinterest {
+  background: #bd081c !important;
+  color: #fff !important;
+}
+
+.gp-pill-soundcloud {
+  background: #ff5500 !important;
+  color: #fff !important;
+}
+
+@media (max-width: 480px) {
+  .gp-artist-hero-name {
+    font-size: 2rem;
+  }
+
+  .gp-artist-hero {
+    aspect-ratio: 4 / 5.2;
+  }
+}
+/* Social Marquee Styling */
+.gp-social-marquee-container {
+  width: 100%;
+  overflow: hidden;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0;
+  white-space: nowrap;
+  position: relative;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.gp-social-marquee-content {
+  display: inline-flex;
+  gap: 1.5rem;
+  animation: gp-marquee-scroll 15s linear infinite;
+  padding-left: 1.5rem;
+}
+
+.gp-social-marquee-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes gp-marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.gp-social-icon-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  color: #fff !important; /* Force white icons */
+  text-decoration: none;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: #333; /* Fallback */
+}
+
+.gp-social-icon-link svg {
+  width: 24px;
+  height: 24px;
+}
+
+.gp-social-icon-link:hover {
+  transform: scale(1.15) rotate(5deg);
+}
+
+/* Platform Colors */
+.gp-social-icon-link.platform-instagram {
+  background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+}
+.gp-social-icon-link.platform-facebook {
+  background: #1877F2;
+}
+.gp-social-icon-link.platform-whatsapp {
+  background: #25D366;
+}
+.gp-social-icon-link.platform-twitter, 
+.gp-social-icon-link.platform-x {
+  background: #000;
+}
+.gp-social-icon-link.platform-youtube {
+  background: #FF0000;
+}
+.gp-social-icon-link.platform-tiktok {
+  background: #000;
+}
+.gp-social-icon-link.platform-linkedin {
+  background: #0A66C2;
+}
+.gp-social-icon-link.platform-spotify {
+  background: #1DB954;
+}
+.gp-social-icon-link.platform-snapchat {
+  background: #FFFC00;
+  color: #000 !important;
+}
+.gp-social-icon-link.platform-pinterest {
+  background: #BD081C;
+}
+.gp-social-icon-link.platform-telegram {
+  background: #0088cc;
+}
+.gp-social-icon-link.platform-discord {
+  background: #5865F2;
+}
+
+/* Artist Profile Redesign: About Header */
+.gp-about-header {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 0.5rem; 
+  padding: 0 0 0 !important; /* Underline moved to title itself */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gp-about-meta {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: inherit !important; /* Inherit from theme */
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: right;
+}
+
+.gp-meta-sep {
+  opacity: 0.3;
+  font-weight: 400;
+}
+
+.gp-about-section .gp-bio {
+  padding: 0 !important;
+  margin-top: 1rem !important; /* Standardized gap */
+  line-height: 1.6;
+}
+
+.gp-about-section .gp-section-title {
+  padding: 0 !important;
+}
+
+/* Force uniform alignment and spacing for all Artist view titles */
+.gp-artist-themed-card .gp-section-title {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 0.25rem !important; /* Reduced from 1rem */
+  border-bottom: 1px solid var(--artist-border, rgba(255, 255, 255, 0.1)); /* Standardized line */
+  width: 100%;
+  display: block;
+}
+
+.gp-artist-themed-card .gp-section {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  padding-top: 0 !important; /* Controlled by title padding instead */
+}
+
+.gp-artist-themed-card .gp-contact-stack {
+  margin-top: 0 !important; /* Spacing handled by title padding */
+}
+.gp-about-header .gp-section-title {
+  border-bottom: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  display: inline-block;
+  width: auto;
+}
+
+.gp-about-header {
+  border-bottom: 1px solid var(--artist-border, rgba(255, 255, 255, 0.1));
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Artist Gallery Grid */
+.gp-gallery-grid-artist {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  padding: 0 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gp-gallery-polaroid-item {
+  background: #ffffff;
+  padding: 6px 6px 24px 6px; /* Optimized for denser 4-column grid */
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.gp-gallery-polaroid-item:hover {
+  transform: scale(1.05) rotate(0deg) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.gp-gallery-polaroid-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #f8fafc;
+}
+
+.gp-gallery-polaroid-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-gallery-polaroid-caption {
+  margin-top: 12px;
+  color: #334155;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.gp-gallery-section .gp-section-title {
+  padding-top: 0.5rem !important;
+  margin-bottom: 1.25rem !important; /* Increased space below gallery title */
+}
+
+/* Artist Contact List Style (Non-Box) */
+.gp-artist-themed-card .gp-contact-item {
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.6rem 0 !important; /* Compacted spacing */
+  margin-bottom: 0 !important;
+}
+
+.gp-artist-themed-card .gp-contact-item:last-child {
+  border-bottom: none !important;
+}
+
+.gp-artist-themed-card .gp-contact-label {
+  opacity: 0.5;
+  font-weight: 700;
+  font-size: 0.7rem;
+  margin-bottom: 0.35rem;
+}
+
+.gp-artist-themed-card .gp-contact-value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: inherit !important; /* Inherit from theme */
+}
+
+/* Artist Profile: Theme Toggle Positioning */
+.gp-artist-hero-toggle-wrap {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+
+
+/* ══════════════════════════════════════════════
+   Minimalist Luxury Art Button 
+   ══════════════════════════════════════════════ */
+.gp-art-button {
+  margin: 2rem 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.9rem !important;
+  width: 100% !important;
+  height: 62px !important;
+  border-radius: 18px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: #000 !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.gp-art-button:hover {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: #fff !important;
+  transform: translateY(-6px) scale(1.01) !important;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 255, 255, 0.15) !important;
+}
+
+.gp-art-button:active {
+  transform: translateY(-2px) scale(0.98) !important;
+}
+
+/* Glowing Aura on Hover */
+.gp-art-button::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 120% !important;
+  height: 120% !important;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%) !important;
+  transform: translate(-50%, -50%) scale(0) !important;
+  transition: transform 0.6s ease !important;
+  pointer-events: none !important;
+}
+
+.gp-art-button:hover::before {
+  transform: translate(-50%, -50%) scale(1) !important;
+}
+
+/* Reflective Shine Streak */
+.gp-art-button::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -150% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  ) !important;
+  transform: skewX(-20deg) !important;
+  transition: all 0.7s ease !important;
+}
+
+.gp-art-button:hover::after {
+  left: 150% !important;
+}
+
+.gp-art-button-icon {
+  display: flex !important;
+  align-items: center !important;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.gp-art-button:hover .gp-art-button-icon {
+  transform: translateX(3px) scale(1.1) rotate(5deg) !important;
+}
+
+.gp-art-button-text {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
