@@ -304,7 +304,12 @@ function ArtistPublicView() {
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const handleShare = async () => {
-    const url = window.location.href;
+    let url = window.location.href;
+    if (isEmbed && artist?.artistId) {
+      const base = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+      url = `${base}/artist?id=${artist.artistId}${artId ? `&art=${artId}` : ''}`;
+    }
+
     const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
     const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
 

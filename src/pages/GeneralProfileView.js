@@ -171,7 +171,12 @@ function GeneralProfileView() {
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const handleShare = async () => {
-    const url = window.location.href;
+    let url = window.location.href;
+    if (isEmbed && profile?.username) {
+      const base = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+      url = `${base}/link/${profile.username}`;
+    }
+
     const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
     const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
 

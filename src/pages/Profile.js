@@ -1559,8 +1559,9 @@ function Profile() {
   const frontendBase = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
 
   const getProfileLink = () => {
-    const base = window.location.origin;
-    return `${base}/link/${generalProfile?.username || generalForm.username}`;
+    const username = generalProfile?.username || generalForm.username || '';
+    if (!username) return frontendBase;
+    return `${frontendBase}/link/${username}`;
   };
 
   const handleGeneralFieldSave = async (field, value) => {
@@ -2416,11 +2417,11 @@ function Profile() {
                   <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Profile Link</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${window.location.origin}/link/${restaurantProfile.username || ''}`}</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${frontendBase}/link/${restaurantProfile.username || ''}`}</span>
                       <button
                         type="button"
                         onClick={() => {
-                          const url = `${window.location.origin}/link/${restaurantProfile.username || ''}`;
+                          const url = restaurantProfile?.username ? `${frontendBase}/link/${restaurantProfile.username}` : frontendBase;
                           navigator.clipboard.writeText(url);
                           setLinkCopiedRest(true);
                           setTimeout(() => setLinkCopiedRest(false), 2000);
@@ -2444,8 +2445,8 @@ function Profile() {
                         )}
                       </button>
                       <a
-                        href={`${window.location.origin}/link/${restaurantProfile.username || ''}`}
-                        target="_blank"
+                        href={restaurantProfile.username ? `${frontendBase}/link/${restaurantProfile.username}` : '#'}
+                        target={restaurantProfile.username ? "_blank" : undefined}
                         rel="noreferrer"
                         className="dash-icon-pill"
                         aria-label="Open profile link"
