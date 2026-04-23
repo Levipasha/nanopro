@@ -28,7 +28,6 @@ function ArtistPublicView() {
   const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [eventSlideIndex, setEventSlideIndex] = useState(0);
   const [showEventPreview, setShowEventPreview] = useState(false);
   const [activeEventPreview, setActiveEventPreview] = useState(null);
   const [themeOverride, setThemeOverride] = useState(null);
@@ -151,20 +150,6 @@ function ArtistPublicView() {
     };
   }, [artistId, isMock]);
 
-  // Auto-advance Events slideshow every 3s
-  useEffect(() => {
-    const galleryLen = Array.isArray(artist?.gallery) ? artist.gallery.length : 0;
-    if (galleryLen <= 0) return;
-
-    // Clamp index when gallery size changes
-    setEventSlideIndex((i) => (i >= galleryLen ? 0 : i));
-
-    const timer = setInterval(() => {
-      setEventSlideIndex((i) => (i + 1) % galleryLen);
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [artist?.gallery]);
 
   if (!artistId) {
     return (
