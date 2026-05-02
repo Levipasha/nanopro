@@ -23,6 +23,7 @@ import {
   toWhatsAppUrlFromINPhone
 } from '../utils/indianPhone';
 import { assertGalleryFileKind, assertVideoMaxDuration } from '../utils/galleryMedia';
+import { fixImageUrl } from '../utils/imageHelper';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -2428,32 +2429,18 @@ function Profile() {
               <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: profile info */}
                 <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
-                  {/* Hero banner — with inline edit button */}
-                  <div className="dash-profile-hero dash-profile-hero--restaurant">
+                              <div className="dash-profile-hero dash-profile-hero--restaurant" style={{ aspectRatio: '16/9', height: 'auto' }}>
                     {restaurantProfile.banner
-                      ? <img src={restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
+                      ? <img src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
                       : <div className="dash-profile-hero-bg" style={{ background: 'linear-gradient(135deg,#fceabb,#f8b500)' }} />
                     }
-                    <div className="dash-profile-hero-overlay" />
-
-                    <button
-                      type="button"
-                      className="dash-hero-bg-trigger upload-trigger-btn"
-                      style={{ cursor: restaurantBannerUploading ? 'wait' : 'pointer', opacity: restaurantBannerUploading ? 0.85 : 1, pointerEvents: restaurantBannerUploading ? 'none' : 'auto', background: 'rgba(0,0,0,0.4)', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}
-                      onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      <span>{restaurantBannerUploading ? 'Uploading…' : 'Edit Banner'}</span>
-                    </button>
+                    
                     <input
                       ref={restaurantBannerInputRef}
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                       style={{ display: 'none' }}
-                      onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 25 / 7, handleRestaurantBannerChangeDashboard); }}
+                      onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
 
                     <div className="dash-profile-hero-content">
@@ -3220,14 +3207,14 @@ function Profile() {
                     onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
                   >
                     <div className="upload-preview-banner" style={{ height: '140px' }}>
-                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
+                      {restaurantForm.banner ? <img src={fixImageUrl(restaurantForm.banner)} alt="Preview" /> : <span>+ Tap to upload banner</span>}
                     </div>
                   </button>
                   <input
                     ref={restaurantBannerInputRef}
                     type="file"
                     style={{ display: 'none' }}
-                    onChange={e => handlePickAndCrop(e, 25 / 7, handleRestaurantBannerUpload)}
+                    onChange={e => handlePickAndCrop(e, 16 / 9, handleRestaurantBannerUpload)}
                     accept="image/*"
                   />
                 </div>
