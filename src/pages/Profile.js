@@ -2428,7 +2428,7 @@ function Profile() {
             {restaurantActiveTab === 'info' && (
               <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: profile info */}
-                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                <div className="dash-single-profile" style={{ padding: '1.5rem 1.25rem', overflowY: 'auto' }}>
                               <div className="dash-profile-hero dash-profile-hero--restaurant" style={{ aspectRatio: '16/9', height: 'auto' }}>
                     {restaurantProfile.banner
                       ? <img src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
@@ -2443,8 +2443,8 @@ function Profile() {
                       onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
 
-                    <div className="dash-profile-hero-content">
-                      <div className="dash-hero-text">
+                    <div className="dash-profile-hero-content" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '2rem' }}>
+                      <div className="dash-hero-text" style={{ background: 'transparent' }}>
                         {rHeroEditingField === 'name' ? (
                           <div className="dash-hero-editable-wrapper">
                             <div className="dash-hero-edit-row">
@@ -2453,31 +2453,28 @@ function Profile() {
                                 autoFocus
                                 value={rHeroDraftName}
                                 onChange={(e) => setRHeroDraftName(e.target.value)}
+                                style={{ background: 'rgba(255,255,255,0.9)', color: '#000', borderRadius: '8px' }}
                               />
                               <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
                                 Save
-                              </button>
-                              <button type="button" className="cancel" onClick={cancelRestaurantHeroEdit} style={{ background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
-                                ✕
                               </button>
                             </div>
                           </div>
                         ) : (
                           <h2
-                            className="dash-profile-hero-name clickable"
                             onClick={() => startRestaurantHeroEdit('name')}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'pointer', fontSize: '2.5rem', fontWeight: 800, color: '#fff', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
                           >
                             <span>{restaurantProfile.name || 'Add restaurant name'}</span>
                           </h2>
                         )}
-                        <p className="dash-hero-spec">@{restaurantProfile.username}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: 700, marginTop: '0.5rem', textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{restaurantProfile.username}</p>
                         
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', flexWrap: 'wrap' }}>
                           <button
                             type="button"
                             className="dash-icon-pill upload-trigger-btn"
-                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: '#000', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', background: 'rgba(0,0,0,0.6)', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', backdropFilter: 'blur(10px)' }}
                             onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
@@ -2493,24 +2490,21 @@ function Profile() {
                           <div className="dash-hero-editable-wrapper" style={{ marginTop: '1rem' }}>
                             <div className="dash-hero-edit-row">
                               <input
-                                className="dash-hero-inline-input"
+                                className="dash-hero-inline-input tagline"
                                 autoFocus
                                 value={rHeroDraftTagline}
                                 onChange={(e) => setRHeroDraftTagline(e.target.value)}
+                                style={{ background: 'rgba(255,255,255,0.9)', color: '#000', borderRadius: '8px' }}
                               />
                               <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
                                 Save
-                              </button>
-                              <button type="button" className="cancel" onClick={cancelRestaurantHeroEdit} style={{ background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
-                                ✕
                               </button>
                             </div>
                           </div>
                         ) : (
                           <p
-                            className="dash-hero-bio"
                             onClick={() => startRestaurantHeroEdit('tagline')}
-                            style={{ cursor: 'pointer', marginTop: '1rem' }}
+                            style={{ cursor: 'pointer', marginTop: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}
                           >
                             {restaurantProfile.tagline || 'Add tagline...'}
                           </p>

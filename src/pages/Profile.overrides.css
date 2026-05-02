@@ -169,6 +169,9 @@
   flex-direction: column !important;
   align-items: stretch !important;
   justify-content: flex-start !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .dash-profile-hero--restaurant .dash-profile-hero-content {
