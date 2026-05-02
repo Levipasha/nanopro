@@ -1360,14 +1360,14 @@ function Profile() {
   // After refresh, localStorage may have no banner (large data URLs were never stored); pull photo from API.
   useEffect(() => {
     if (profileMode !== 'restaurant' || !generalProfile) return;
-    const photo = generalProfile.photo && String(generalProfile.photo).trim();
-    if (!photo || !photo.startsWith('http')) return;
+    const apiBanner = (generalProfile.banner && String(generalProfile.banner).trim()) || (generalProfile.photo && String(generalProfile.photo).trim());
+    if (!apiBanner || !apiBanner.startsWith('http')) return;
     setRestaurantProfile((prev) => {
       if (!prev) return prev;
-      const b = prev.banner != null ? String(prev.banner) : '';
-      if (b.startsWith('data:')) return prev;
-      if (b.startsWith('http') && b === photo) return prev;
-      const next = { ...prev, banner: photo };
+      const currentBanner = prev.banner != null ? String(prev.banner) : '';
+      if (currentBanner.startsWith('data:')) return prev;
+      if (currentBanner === apiBanner) return prev;
+      const next = { ...prev, banner: apiBanner };
       try {
         persistRestaurant(next);
       } catch (e) {
@@ -1381,7 +1381,7 @@ function Profile() {
       return next;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileMode, generalProfile?.photo]);
+  }, [profileMode, generalProfile?.banner, generalProfile?.photo]);
 
   useEffect(() => {
     if (!isLoggedIn || !isRestaurantMode || !restaurantProfile) return undefined;
@@ -2434,7 +2434,7 @@ function Profile() {
                                 style={{ 
                                   aspectRatio: '16/9', 
                                   height: 'auto',
-                                  backgroundImage: restaurantProfile.banner ? `url(${fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner})` : 'linear-gradient(135deg,#fceabb,#f8b500)',
+                                  backgroundImage: restaurantProfile.banner ? `url("${fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner}")` : 'linear-gradient(135deg,#fceabb,#f8b500)',
                                   backgroundSize: 'cover',
                                   backgroundPosition: 'center',
                                   position: 'relative'
