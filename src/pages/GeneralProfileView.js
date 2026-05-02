@@ -294,10 +294,11 @@ function GeneralProfileView() {
               <div className="gp-restaurant-gallery-grid">
                 {galleryItems.map((g, idx) => {
                   const hasLink = g.link && g.link.trim() !== '';
+                  const finalLink = hasLink ? (g.link.startsWith('http') ? g.link : `https://${g.link}`) : '';
                   return hasLink ? (
                     <a
                       key={`${g.url}-${idx}`}
-                      href={g.link}
+                      href={finalLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="gp-restaurant-gallery-tile"
@@ -420,7 +421,7 @@ function GeneralProfileView() {
                 {galleryItems[galleryModalIndex].name && <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem' }}>{galleryItems[galleryModalIndex].name}</p>}
                 {galleryItems[galleryModalIndex].link && (
                   <a 
-                    href={galleryItems[galleryModalIndex].link} 
+                    href={galleryItems[galleryModalIndex].link.startsWith('http') ? galleryItems[galleryModalIndex].link : `https://${galleryItems[galleryModalIndex].link}`} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     style={{ display: 'inline-block', marginTop: '10px', color: '#6366f1', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', background: '#fff', padding: '6px 14px', borderRadius: '8px' }}

@@ -6231,8 +6231,10 @@ function Profile() {
                                       newGal[idx].name = e.target.value;
                                       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
                                     }}
-                                    onBlur={() => {
-                                      const payload = { gallery: artist.gallery };
+                                    onBlur={(e) => {
+                                      const newGal = [...artist.gallery];
+                                      newGal[idx].name = e.target.value;
+                                      const payload = { gallery: newGal };
                                       landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
                                     }}
                                   />
@@ -6246,8 +6248,10 @@ function Profile() {
                                       newGal[idx].link = e.target.value;
                                       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
                                     }}
-                                    onBlur={() => {
-                                      const payload = { gallery: artist.gallery };
+                                    onBlur={(e) => {
+                                      const newGal = [...artist.gallery];
+                                      newGal[idx].link = e.target.value;
+                                      const payload = { gallery: newGal };
                                       landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
                                     }}
                                   />
