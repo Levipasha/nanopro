@@ -429,14 +429,7 @@ function ArtistPublicView() {
             </div>
             <p className="gp-artist-hero-username">@{artist.username || artist.artistId}</p>
 
-            {/* Quick social links overlay */}
-            <div className={`gp-artist-hero-socials ${primaryLinks.length > 13 ? 'gp-social-marquee' : ''}`}>
-              {(primaryLinks.length > 13 ? [...primaryLinks, ...primaryLinks, ...primaryLinks, ...primaryLinks] : primaryLinks).map((link, idx) => (
-                <a key={`${link.id}-${idx}`} href={link.url} target="_blank" rel="noopener noreferrer" className={`gp-hero-social-pill gp-pill-${link.id}`}>
-                  {getLinkIcon({ platform: link.id })}
-                </a>
-              ))}
-            </div>
+            {/* Quick social links overlay removed per user request for vertical list format */}
           </div>
         </div>
 
@@ -547,7 +540,27 @@ function ArtistPublicView() {
             </div>
           )}
 
-
+          {/* 4. Social Links List */}
+          {primaryLinks.length > 0 && (
+            <div className="gp-section gp-links-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <h2 className="gp-section-title">Links</h2>
+              <div className="gp-links">
+                {primaryLinks.map((link, idx) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="gp-link"
+                    style={{ color: themeText, background: themeLinkBg }}
+                  >
+                    <span className="gp-link-icon">{getLinkIcon({ platform: link.id })}</span>
+                    <span className="gp-link-text">{link.title}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
 
         </div>

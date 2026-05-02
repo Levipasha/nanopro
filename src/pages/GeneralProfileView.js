@@ -304,28 +304,8 @@ function GeneralProfileView() {
             </div>
           )}
 
-          {/* Social Links Row */}
-          {socialLinks.length > 0 && (
-            <div className="gp-social-links-row">
-              {socialLinks.map((link, idx) => {
-                const platform = (link.platform || '').toLowerCase() || (link.url.includes('instagram') ? 'instagram' : link.url.includes('facebook') ? 'facebook' : link.url.includes('whatsapp') ? 'whatsapp' : link.url.includes('twitter') || link.url.includes('x.com') ? 'twitter' : 'website');
-                return (
-                  <a
-                    key={idx}
-                    href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`gp-social-icon-link platform-${platform}`}
-                  >
-                    {getLinkIcon(link)}
-                  </a>
-                );
-              })}
-            </div>
-          )}
-
           {/* Contact + link buttons */}
-          {(restaurantPhone || restaurantEmail || profile.menuPdf || remainingLinks.length > 0) && (
+          {(restaurantPhone || restaurantEmail || profile.menuPdf || links.length > 0) && (
           <div className="gp-links" style={{ paddingLeft: 0, paddingRight: 0 }}>
             {profile.menuPdf && (
               <a
@@ -371,7 +351,7 @@ function GeneralProfileView() {
                 <span className="gp-link-text">{restaurantEmail}</span>
               </a>
             )}
-            {remainingLinks.map((link, idx) => (
+            {links.map((link, idx) => (
               <a
                 key={idx}
                 href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
