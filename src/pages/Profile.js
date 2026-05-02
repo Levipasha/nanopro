@@ -5110,7 +5110,7 @@ function Profile() {
   // Artist Profile (existing flow - logged in)
 
   return (
-    <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${activeTab}`}>
+    <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${activeTab} dash-mode-artist`}>
       {/* Sidebar */}
       <aside className="dash-sidebar">
         <div className="dash-sidebar-brand">
