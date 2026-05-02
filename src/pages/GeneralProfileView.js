@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { DotLottieReact as BrandLoader } from '@lottiefiles/dotlottie-react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
@@ -113,17 +113,30 @@ function GeneralProfileView() {
 
   if (loading) {
     return (
-      <div className="gp-view gp-loading">
-        <DotLottieReact
-          src="https://lottie.host/70c04cf5-4bee-45cf-a8a3-e1e67345a066/X8rq0FUjaj.lottie"
+      <div className="gp-view gp-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <BrandLoader
+          src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
           loop
           autoplay
           style={{ width: 200, height: 200 }}
         />
-        <p>Loading profile...</p>
+        <p style={{ 
+          fontFamily: "'Press Start 2P', cursive", 
+          fontSize: '10px', 
+          color: '#fff', 
+          marginTop: '1.5rem', 
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          nano is here
+        </p>
+        <p style={{ marginTop: '2rem', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '300', letterSpacing: '0.05em' }}>
+          Loading profile...
+        </p>
       </div>
     );
   }
+
 
   if (error || !profile) {
     return (

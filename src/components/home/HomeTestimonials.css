@@ -1,160 +1,367 @@
-.testimonials-section {
+/* ═══════════════════════════════════════════════
+   Testimonial Carousel — HomeTestimonials.css
+   ═══════════════════════════════════════════════ */
+
+.tc-section {
   background: #000000;
   color: #ffffff;
-  padding: 80px 20px 70px;
-  overflow-x: hidden;
+  padding: 96px 24px 80px;
+  overflow: hidden;
 }
 
-.testimonials-section .info-inner {
-  max-width: 1200px;
+.tc-inner {
+  max-width: 1000px;
   margin: 0 auto;
-}
-
-.testimonials-title {
-  font-family: 'Press Start 2P', monospace;
-  text-align: center;
-  font-size: 34px;
-  margin: 0 0 40px;
-  color: #ffffff;
-}
-
-.testimonials-grid {
-  display: flex;
-  gap: 24px;
-  justify-content: center;
-  align-items: stretch;
-  flex-wrap: nowrap;
-  width: 100%;
-  min-width: 0;
-}
-
-.testimonial-card {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 22px 18px 18px;
-  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: left;
-  width: 320px;
 }
 
-.testimonials-avatar {
-  width: 66px;
-  height: 66px;
-  border-radius: 14px;
-  object-fit: cover;
-  margin-bottom: 12px;
-}
-
-.testimonials-name {
-  font-weight: 700;
-  font-size: 16px;
-  text-align: left;
-  width: 100%;
-  margin-bottom: 2px;
+/* ── Header ── */
+.tc-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 30px;
+  text-align: center;
   color: #ffffff;
+  margin: 0 0 10px;
+  letter-spacing: 0.01em;
 }
 
-.testimonials-role {
-  font-size: 12px;
-  opacity: 0.75;
-  text-align: left;
-  width: 100%;
-  margin-bottom: 12px;
-  color: #ffffff;
+.tc-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin: 0 0 52px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
 }
 
-.testimonials-stars {
-  width: 100%;
+/* ── Stage (arrows + slide) ── */
+.tc-stage {
   display: flex;
-  gap: 3px;
-  margin-bottom: 12px;
-}
-
-.testimonials-star {
-  width: 16px;
-  height: 16px;
-  color: #f59e0b;
-}
-
-.testimonials-text {
-  font-size: 13px;
-  line-height: 1.45;
-  opacity: 0.9;
-  margin: 0;
+  align-items: center;
+  gap: 16px;
   width: 100%;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  color: #ffffff;
+  position: relative;
 }
 
-.testimonials-dots {
+/* ── Arrows ── */
+.tc-arrow {
+  flex-shrink: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-top: 34px;
-}
-
-.testimonials-dot {
-  width: 40px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: 0;
+  transition: background 0.18s, color 0.18s, transform 0.15s;
+  outline: none;
 }
 
-.testimonials-dot--active {
-  background: rgba(96, 165, 250, 0.95);
+.tc-arrow:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: scale(1.08);
 }
 
-@media (max-width: 1100px) {
-  .testimonials-grid {
-    align-items: center;
-  }
+.tc-arrow:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
 
-  .testimonial-card {
-    width: 280px;
-  }
+/* ── Slide container ── */
+.tc-slide-wrap {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+}
 
-  .testimonials-title {
-    font-size: 26px;
-  }
+/* ── Slide animation states ── */
+.tc-slide {
+  width: 100%;
+  will-change: opacity, transform;
+}
+
+.tc-slide--enter {
+  animation: tc-fadeIn 0.26s ease both;
+}
+
+.tc-slide--exit-left {
+  animation: tc-exitLeft 0.22s ease both;
+}
+
+.tc-slide--exit-right {
+  animation: tc-exitRight 0.22s ease both;
+}
+
+.tc-slide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
-  .testimonials-section {
-    padding: 32px 20px 28px;
+  .tc-slide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes tc-fadeIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+@keyframes tc-exitLeft {
+  from { opacity: 1; transform: translateY(0)    scale(1); }
+  to   { opacity: 0; transform: translateY(-12px) scale(0.98); }
+}
+
+@keyframes tc-exitRight {
+  from { opacity: 1; transform: translateY(0)    scale(1); }
+  to   { opacity: 0; transform: translateY(-12px) scale(0.98); }
+}
+
+/* ── Card ── */
+.tc-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+  padding: 36px 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+
+.tc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Pixel-art Avatar ── */
+.tc-avatar-frame {
+  position: relative;
+  margin-bottom: 20px;
+  /* Creates the stepped pixel-art border effect */
+  display: inline-block;
+}
+
+/* Accent-colored pixel border (4-step outline like pixel art) */
+.tc-avatar-pixel-border {
+  position: absolute;
+  inset: -4px;
+  border: 4px solid var(--tc-accent, #3b82f6);
+  /* No border-radius = pixel art square */
+  border-radius: 0;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.8),
+    0 0 16px var(--tc-accent, #3b82f6),
+    0 0 32px color-mix(in srgb, var(--tc-accent, #3b82f6) 40%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tc-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 0; /* crisp pixel art — no round corners */
+  display: block;
+  /* Preserve pixel crispness */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  position: relative;
+  z-index: 1;
+}
+
+/* Scanline overlay for CRT/pixel effect */
+.tc-avatar-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.12) 3px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Pixel quote badge — blocky, no border-radius */
+.tc-quote-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 0; /* pixel art — sharp corners */
+  background: var(--tc-accent, #3b82f6);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+  z-index: 4;
+}
+
+/* ── Name & Role ── */
+.tc-name {
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+  letter-spacing: 0.01em;
+}
+
+.tc-role {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--tc-accent, #3b82f6);
+  margin: 0 0 16px;
+  opacity: 0.9;
+}
+
+/* ── Stars ── */
+.tc-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.tc-star {
+  width: 17px;
+  height: 17px;
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+}
+
+/* ── Quote text ── */
+.tc-quote {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+  max-width: 560px;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* ── Dots ── */
+.tc-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.tc-dot {
+  width: 36px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, width 0.2s;
+}
+
+.tc-dot--active {
+  background: rgba(96, 165, 250, 0.9);
+  width: 52px;
+}
+
+/* ── Counter ── */
+.tc-counter {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 10px 0 0;
+  letter-spacing: 0.08em;
+}
+
+/* ═══════════════ Responsive ═══════════════ */
+
+@media (max-width: 640px) {
+  .tc-section {
+    padding: 64px 16px 56px;
   }
 
-  .testimonials-title {
-    margin-bottom: 22px;
+  .tc-title {
+    font-size: 20px;
   }
 
-  .testimonials-dots {
+  .tc-subtitle {
+    font-size: 13px;
+    margin-bottom: 36px;
+  }
+
+  .tc-card {
+    padding: 28px 22px 24px;
+    border-radius: 16px;
+  }
+
+  .tc-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tc-stage {
+    gap: 10px;
+  }
+
+  .tc-name {
+    font-size: 17px;
+  }
+
+  .tc-quote {
+    font-size: 13.5px;
+  }
+
+  .tc-dot {
+    width: 28px;
+    height: 4px;
+  }
+
+  .tc-dot--active {
+    width: 40px;
+  }
+
+  .tc-dots {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 400px) {
+  .tc-arrow {
     display: none;
   }
-}
 
-@media (max-width: 720px) {
-  .testimonials-grid {
-    flex-direction: column;
-    gap: 18px;
-    align-items: center;
-  }
-
-  .testimonial-card {
-    width: 100%;
-    max-width: min(380px, 100%);
-    margin-left: auto;
-    margin-right: auto;
-    flex-shrink: 0;
+  .tc-stage {
+    gap: 0;
   }
 }
-

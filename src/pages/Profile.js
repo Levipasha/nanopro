@@ -1776,7 +1776,7 @@ function Profile() {
       twitter: artist.twitter || '',
       linkedin: artist.linkedin || '',
       whatsapp: artist.whatsapp || '',
-      gallery: gallery.map((g) => (typeof g === 'string' ? { url: g, name: '' } : { url: g.url || '', name: g.name || '' })),
+      gallery: gallery.map((g) => (typeof g === 'string' ? { url: g, name: '', link: '' } : { url: g.url || '', name: g.name || '', link: g.link || '' })),
       instagramName: artist.instagramName || '',
       instagramCategory: artist.instagramCategory || '',
       instagramPosts: artist.instagramPosts || '',
@@ -2069,9 +2069,10 @@ function Profile() {
           // Use functional update to ensure we don't drop items in rapid succession
           setMyArtists(prev => {
             const currentArtist = prev[0];
-            const currentGallery = [...(currentArtist.gallery || [])];
+            // Spread each existing item to preserve the `link` field
+            const currentGallery = (currentArtist.gallery || []).map(g => ({ ...g }));
             const label = `Gallery image ${currentGallery.length + 1}`;
-            const updatedGallery = [...currentGallery, { url: uploadedUrl, name: label }];
+            const updatedGallery = [...currentGallery, { url: uploadedUrl, name: label, link: '' }];
             
             // Background sync with API
             landingArtistAPI.updateMyProfile(currentArtist._id || currentArtist.artistId, { gallery: updatedGallery }, () => getIdToken(), getFirebaseUser)
@@ -2092,7 +2093,8 @@ function Profile() {
     const artist = myArtists[0];
     if (!artist) return;
     try {
-      const newGallery = (artist.gallery || []).filter((_, i) => i !== idx);
+      // Spread each item to preserve all fields (including `link`)
+      const newGallery = (artist.gallery || []).filter((_, i) => i !== idx).map(g => ({ ...g }));
       const payload = { gallery: newGallery };
       await landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGallery } : a));
@@ -2245,9 +2247,10 @@ function Profile() {
   const setupLoader = (
     <span className="onboarding-inline-loader" aria-hidden="true">
       <DotLottieReact
-        src="https://lottie.host/de82363b-b18e-4bef-9661-ec050f25006c/2wfqQErbPL.lottie"
+        src="https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
         loop
         autoplay
+        style={{ width: 40, height: 40 }}
       />
     </span>
   );
@@ -2260,8 +2263,24 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="profile-page profile-loading">
-        <p>Loading...</p>
+      <div className="profile-page profile-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <DotLottieReact
+          src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
+        <p style={{ 
+          fontFamily: "'Press Start 2P', cursive", 
+          fontSize: '10px', 
+          color: '#fff', 
+          marginTop: '1.5rem', 
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          nano is here
+        </p>
+        <p style={{ marginTop: '2rem', color: '#94a3b8' }}>Loading dashboard...</p>
       </div>
     );
   }
@@ -2270,8 +2289,24 @@ function Profile() {
 
   if (isLoggedIn && isArtistMode && onboardingStep === 0 && !artistListReady) {
     return (
-      <div className="profile-page profile-loading">
-        <p>Loading your artist profile…</p>
+      <div className="profile-page profile-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <DotLottieReact
+          src="https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
+          loop
+          autoplay
+          style={{ width: 250, height: 250 }}
+        />
+        <p style={{ 
+          fontFamily: "'Press Start 2P', cursive", 
+          fontSize: '10px', 
+          color: '#fff', 
+          marginTop: '1.5rem', 
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          nano is here
+        </p>
+        <p style={{ marginTop: '2rem', color: '#94a3b8' }}>Loading your artist profile…</p>
       </div>
     );
   }
@@ -2321,8 +2356,14 @@ function Profile() {
   // Avoid flashing the choice UI while artist / general profiles are still loading from the API
   if (isLoggedIn && profileMode === 'choice' && (artistsLoading || generalProfileLoading)) {
     return (
-      <div className="profile-page profile-loading">
-        <p>Loading your account…</p>
+      <div className="profile-page profile-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <DotLottieReact
+          src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
+        <p style={{ marginTop: '2rem', color: '#94a3b8' }}>Loading your account…</p>
       </div>
     );
   }
@@ -6232,18 +6273,20 @@ function Profile() {
                                 <div className="dash-gallery-item-overlay">
                                   <input
                                     className="dash-gallery-item-name-input"
-                                    value={item.name}
+                                    value={item.name || ''}
                                     placeholder="Gallery title"
                                     onChange={(e) => {
-                                      const newGal = [...artist.gallery];
-                                      newGal[idx].name = e.target.value;
+                                      // Immutable spread — preserve all fields including `link`
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, name: e.target.value } : { ...g }
+                                      );
                                       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
                                     }}
                                     onBlur={(e) => {
-                                      const newGal = [...artist.gallery];
-                                      newGal[idx].name = e.target.value;
-                                      const payload = { gallery: newGal };
-                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, name: e.target.value } : { ...g }
+                                      );
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { gallery: newGal }, () => getIdToken(), getFirebaseUser);
                                     }}
                                   />
                                   <input
@@ -6252,15 +6295,19 @@ function Profile() {
                                     value={item.link || ''}
                                     placeholder="https://external-link.com"
                                     onChange={(e) => {
-                                      const newGal = [...artist.gallery];
-                                      newGal[idx].link = e.target.value;
+                                      // Immutable spread — preserve all fields including `name`
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, link: e.target.value } : { ...g }
+                                      );
                                       setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
                                     }}
                                     onBlur={(e) => {
-                                      const newGal = [...artist.gallery];
-                                      newGal[idx].link = e.target.value;
-                                      const payload = { gallery: newGal };
-                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, link: e.target.value } : { ...g }
+                                      );
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { gallery: newGal }, () => getIdToken(), getFirebaseUser)
+                                        .then(() => setPreviewKey(prev => prev + 1))
+                                        .catch(err => console.error('Gallery link save failed:', err));
                                     }}
                                   />
                                   <button

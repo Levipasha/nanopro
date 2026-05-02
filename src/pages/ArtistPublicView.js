@@ -163,17 +163,30 @@ function ArtistPublicView() {
 
   if (loading) {
     return (
-      <div className="gp-view gp-loading">
+      <div className="gp-view gp-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
         <DotLottieReact
-          src="https://lottie.host/72ff4b3f-6efc-49ce-bd25-60eb84e7f56a/uuieaKgy8O.lottie"
+          src="https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
           loop
           autoplay
-          style={{ width: 200, height: 200 }}
+          style={{ width: 250, height: 250 }}
         />
-        <p>Loading artist profile...</p>
+        <p style={{ 
+          fontFamily: "'Press Start 2P', cursive", 
+          fontSize: '10px', 
+          color: '#fff', 
+          marginTop: '1.5rem', 
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          nano is here
+        </p>
+        <p style={{ marginTop: '2rem', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '300', letterSpacing: '0.05em' }}>
+          Loading artist profile...
+        </p>
       </div>
     );
   }
+
 
   if (error || !artist) {
     return (
@@ -438,7 +451,6 @@ function ArtistPublicView() {
           {(artist.bio || artist.specialization || artist.experience) && (
             <div className="gp-section gp-about-section" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '0' }}>
               <div className="gp-about-header">
-                <h2 className="gp-section-title" style={{ margin: 0 }}>About</h2>
                 {(artist.specialization || artist.experience) && (
                   <div className="gp-about-meta">
                     {artist.specialization && <span>{artist.specialization}</span>}
@@ -459,25 +471,57 @@ function ArtistPublicView() {
               <div className="gp-gallery-grid-artist">
                 {eventSlides.map((item, i) => {
                   const rotation = (i % 2 === 0 ? -1.5 : 1.5) + (i % 3 === 0 ? 0.5 : -0.5);
+                  const hasLink = item.link && item.link.trim();
                   return (
                     <div
                       key={`${item.url}-${i}`}
                       className="gp-gallery-polaroid-item"
-                      style={{ transform: `rotate(${rotation}deg)` }}
+                      style={{ transform: `rotate(${rotation}deg)`, cursor: hasLink ? 'pointer' : 'zoom-in' }}
                       onClick={() => {
-                        setActiveEventPreview({
-                          url: item.url,
-                          name: item.name || 'Gallery Item'
-                        });
-                        setShowEventPreview(true);
+                        if (hasLink) {
+                          // Redirect to the configured external link
+                          let href = item.link.trim();
+                          if (!/^https?:\/\//i.test(href)) href = 'https://' + href;
+                          window.open(href, '_blank', 'noopener,noreferrer');
+                        } else {
+                          setActiveEventPreview({
+                            url: item.url,
+                            name: item.name || 'Gallery Item'
+                          });
+                          setShowEventPreview(true);
+                        }
                       }}
                     >
-                      <div className="gp-gallery-polaroid-frame">
+                      <div className="gp-gallery-polaroid-frame" style={{ position: 'relative' }}>
                         <img
                           src={fixImageUrl(item.url) || item.url}
                           alt={item.name || ''}
                           loading="lazy"
                         />
+                        {hasLink && (
+                          <span
+                            title="Visit link"
+                            style={{
+                              position: 'absolute',
+                              top: '6px',
+                              right: '6px',
+                              background: 'rgba(0,0,0,0.55)',
+                              borderRadius: '50%',
+                              width: '26px',
+                              height: '26px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backdropFilter: 'blur(4px)'
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" width="13" height="13">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                          </span>
+                        )}
                       </div>
                       <div className="gp-gallery-polaroid-caption">
                         {item.name || 'Art Title'}

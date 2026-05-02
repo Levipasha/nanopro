@@ -8,6 +8,8 @@ import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 import { getLinkIcon } from '../components/LinkIcons';
 import { fixImageUrl } from '../utils/imageHelper';
 
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 function StudentPublicView() {
   const [searchParams] = useSearchParams();
   const studentId = searchParams.get('id');
@@ -81,11 +83,30 @@ function StudentPublicView() {
 
   if (loading) {
     return (
-      <div className="gp-view gp-loading">
-        <p>Loading student profile...</p>
+      <div className="gp-view gp-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+        <DotLottieReact
+          src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
+        <p style={{ 
+          fontFamily: "'Press Start 2P', cursive", 
+          fontSize: '10px', 
+          color: '#fff', 
+          marginTop: '1.5rem', 
+          opacity: 0.7,
+          letterSpacing: '2px'
+        }}>
+          nano is here
+        </p>
+        <p style={{ marginTop: '2rem', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '300', letterSpacing: '0.05em' }}>
+          Loading student profile...
+        </p>
       </div>
     );
   }
+
 
   if (!student) {
     return (

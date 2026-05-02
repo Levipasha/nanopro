@@ -74,9 +74,10 @@ export default function ProfileArtistOnboardingWizard({
   const setupLoader = (
     <span className="onboarding-inline-loader" aria-hidden="true">
       <DotLottieReact
-        src="https://lottie.host/de82363b-b18e-4bef-9661-ec050f25006c/2wfqQErbPL.lottie"
+        src="https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
         loop
         autoplay
+        style={{ width: 40, height: 40 }}
       />
     </span>
   );

@@ -1,4 +1,3 @@
-import React from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function ProfileChoiceScreen({
@@ -16,12 +15,12 @@ export default function ProfileChoiceScreen({
     <div className="profile-page profile-login-wrap">
       <div className="profile-login-card profile-choice-card">
         <div className="profile-login-header">
-          <div className="profile-icon">
+          <div className="profile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <DotLottieReact
-              src="https://lottie.host/8ee04dfa-c385-45ce-b652-6a37f232bbe5/aXjGCND8pC.lottie"
+              src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
               loop
               autoplay
-              style={{ width: '100%', height: '100%' }}
+              style={{ width: 60, height: 60 }}
             />
           </div>
           <h1>
