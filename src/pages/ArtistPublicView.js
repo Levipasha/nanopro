@@ -549,11 +549,7 @@ function ArtistPublicView() {
 
 
 
-          {artId && (
-            <p style={{ opacity: 0.75, marginTop: '12px' }}>
-              Viewing artwork: <strong>{artId}</strong>
-            </p>
-          )}
+
         </div>
 
         <div className="gp-footer">

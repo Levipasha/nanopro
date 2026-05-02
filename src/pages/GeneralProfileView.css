@@ -135,6 +135,12 @@
   transition: transform 0.3s ease;
 }
 
+.gp-banner-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .gp-banner-bg-fallback {
   width: 100%;
   height: 100%;
@@ -353,28 +359,9 @@
   border-bottom: none;
 }
 
-/* Subtle chevron arrow on the right */
-.gp-link::after {
-  content: '';
-  position: absolute;
-  right: 0.25rem;
-  width: 6px;
-  height: 6px;
-  border-top: 1.5px solid currentColor;
-  border-right: 1.5px solid currentColor;
-  transform: rotate(45deg);
-  opacity: 0.15;
-  transition: all 0.25s ease;
-}
-
 .gp-link:hover {
   opacity: 1;
   padding-left: 0.5rem;
-}
-
-.gp-link:hover::after {
-  opacity: 0.6;
-  right: 0;
 }
 
 .gp-link-menu {
@@ -1874,6 +1861,7 @@
   align-items: center;
   gap: 0.4rem;
   text-align: right;
+  font-variant-numeric: lining-nums;
 }
 
 .gp-meta-sep {

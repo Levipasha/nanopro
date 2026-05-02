@@ -11,13 +11,13 @@ import {
  * Project: nanoprofiles-54c87
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyDIXVLyo9jwQuYnTKlwDt9xcpRN25eQMSk",
-  authDomain: "nanoprofiles-54c87.firebaseapp.com",
-  projectId: "nanoprofiles-54c87",
-  storageBucket: "nanoprofiles-54c87.firebasestorage.app",
-  messagingSenderId: "978957020701",
-  appId: "1:978957020701:web:55c951f13b8d4c7b0ca0f4",
-  measurementId: "G-L5203LXSR5"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

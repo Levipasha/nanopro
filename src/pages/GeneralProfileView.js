@@ -235,13 +235,19 @@ function GeneralProfileView() {
 
         {/* Profile banner/header */}
         <div className="gp-photo-header" style={{ background: theme.headerBg || theme.linkBg || 'rgba(0,0,0,0.05)' }}>
-          {profile.photo && !imgError && (
+          {profile.banner ? (
+            <img 
+              src={fixImageUrl(profile.banner) || profile.banner} 
+              alt="" 
+              className="gp-banner-bg"
+            />
+          ) : profile.photo && !imgError ? (
             <img 
               src={fixImageUrl(profile.photo) || profile.photo} 
               alt="" 
               className="gp-banner-bg-fallback"
             />
-          )}
+          ) : null}
           <div className="gp-photo-overlay-minimal" />
         </div>
 

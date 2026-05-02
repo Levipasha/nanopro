@@ -35,6 +35,24 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
+.dash-single-profile section {
+  padding: 1.5rem !important;
+  border-radius: 14px !important;
+}
+@media (max-width: 768px) {
+  .dash-single-profile section {
+    padding: 1.25rem !important;
+  }
+}
+
+.dash-design-subnav {
+  display: flex !important;
+  width: fit-content !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+
 .dash-profile-hero-bg,
 .dash-profile-hero-overlay,
 .dash-profile-hero::before,
@@ -123,6 +141,7 @@
   background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
+  aspect-ratio: 25 / 7 !important;
 }
 
 .dash-profile-hero::before,
@@ -143,7 +162,7 @@
 
 /* Restaurant hero: 16:9 banner (matches public page + cropper); Edit Banner visible without hover (touch) */
 .dash-profile-hero--restaurant {
-  aspect-ratio: 16 / 9 !important;
+  aspect-ratio: 25 / 7 !important;
   min-height: 0 !important;
   max-height: min(360px, 42vh) !important;
   padding: 0 !important;
@@ -1599,6 +1618,14 @@ h3.dash-section-label {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
+/* Fix for invisible text in Bio textarea */
+.dash-profile-bio-section .dash-hero-inline-textarea,
+.dash-hero-inline-textarea {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: rgba(192, 132, 252, 0.6) !important;
+}
+
 .dash-link-card--inline .dash-link-icon-circle {
   width: 36px !important;
   height: 36px !important;
@@ -1801,6 +1828,7 @@ h3.dash-section-label {
   /* Ultimate clip fix for Chrome/Safari rounded corners with backdrop-filter */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
   mask-image: radial-gradient(white, black);
+  font-variant-numeric: lining-nums;
 }
 
 .leftContainer {
