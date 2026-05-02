@@ -153,14 +153,7 @@ function GeneralProfileView() {
 
   const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'twitter', 'whatsapp', 'tiktok', 'youtube', 'linkedin', 'snapchat', 'pinterest', 'spotify', 'telegram', 'discord'];
 
-  const socialLinks = links.filter(link => {
-    const p = (link.platform || '').toLowerCase();
-    const u = (link.url || '').toLowerCase();
-    const t = (link.title || '').toLowerCase();
-    return SOCIAL_PLATFORMS.some(s => p.includes(s) || u.includes(s) || t.includes(s)) || p === 'x' || u.includes('x.com');
-  });
 
-  const remainingLinks = links.filter(link => !socialLinks.includes(link));
 
 
 
