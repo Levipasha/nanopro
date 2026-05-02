@@ -177,6 +177,12 @@
   opacity: 0.5;
 }
 
+.gp-profile-restaurant .gp-banner-bg-fallback {
+  filter: none;
+  transform: none;
+  opacity: 1;
+}
+
 .gp-avatar-img:hover {
   transform: scale(1.02);
 }
