@@ -6219,6 +6219,21 @@ function Profile() {
                                       landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
                                     }}
                                   />
+                                  <input
+                                    className="dash-gallery-item-name-input"
+                                    style={{ marginTop: '4px', fontSize: '0.75rem', opacity: 0.8 }}
+                                    value={item.link || ''}
+                                    placeholder="https://external-link.com"
+                                    onChange={(e) => {
+                                      const newGal = [...artist.gallery];
+                                      newGal[idx].link = e.target.value;
+                                      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
+                                    }}
+                                    onBlur={() => {
+                                      const payload = { gallery: artist.gallery };
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser);
+                                    }}
+                                  />
                                   <button
                                     className="dash-gallery-remove-btn"
                                     onClick={() => handleRemoveGalleryItem(idx)}

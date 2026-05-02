@@ -292,17 +292,33 @@ function GeneralProfileView() {
             <div className="gp-restaurant-gallery" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <p className="gp-restaurant-gallery-heading">Gallery</p>
               <div className="gp-restaurant-gallery-grid">
-                {galleryItems.map((g, idx) => (
-                  <button
-                    key={`${g.url}-${idx}`}
-                    type="button"
-                    className="gp-restaurant-gallery-tile"
-                    onClick={() => setGalleryModalIndex(idx)}
-                    aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
-                  >
-                    <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
-                  </button>
-                ))}
+                {galleryItems.map((g, idx) => {
+                  const hasLink = g.link && g.link.trim() !== '';
+                  return hasLink ? (
+                    <a
+                      key={`${g.url}-${idx}`}
+                      href={g.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="gp-restaurant-gallery-tile"
+                      aria-label={g.name ? `Visit ${g.name}` : 'Visit link'}
+                    >
+                      <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
+                      {g.name && <div className="gp-gallery-caption" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', fontSize: '0.7rem', textAlign: 'center', backdropFilter: 'blur(4px)' }}>{g.name}</div>}
+                    </a>
+                  ) : (
+                    <button
+                      key={`${g.url}-${idx}`}
+                      type="button"
+                      className="gp-restaurant-gallery-tile"
+                      onClick={() => setGalleryModalIndex(idx)}
+                      aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
+                    >
+                      <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
+                      {g.name && <div className="gp-gallery-caption" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', fontSize: '0.7rem', textAlign: 'center', backdropFilter: 'blur(4px)' }}>{g.name}</div>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -399,6 +415,21 @@ function GeneralProfileView() {
               className="gp-modal-img"
               onClick={(e) => e.stopPropagation()}
             />
+            {(galleryItems[galleryModalIndex].name || galleryItems[galleryModalIndex].link) && (
+              <div className="gp-modal-footer" onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', color: '#fff', background: 'rgba(0,0,0,0.8)', padding: '12px 24px', borderRadius: '12px', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '90%' }}>
+                {galleryItems[galleryModalIndex].name && <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem' }}>{galleryItems[galleryModalIndex].name}</p>}
+                {galleryItems[galleryModalIndex].link && (
+                  <a 
+                    href={galleryItems[galleryModalIndex].link} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ display: 'inline-block', marginTop: '10px', color: '#6366f1', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', background: '#fff', padding: '6px 14px', borderRadius: '8px' }}
+                  >
+                    Visit Link
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         )}
 
