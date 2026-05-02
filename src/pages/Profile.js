@@ -2491,26 +2491,6 @@ function Profile() {
                             type="button"
                             className="dash-icon-pill upload-trigger-btn"
                             style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: '#000', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                            onClick={() => { if (restaurantPhotoInputRef.current) { restaurantPhotoInputRef.current.value = ''; restaurantPhotoInputRef.current.click(); } }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                              <circle cx="12" cy="13" r="4" />
-                            </svg>
-                            Change Photo
-                            <input
-                              ref={restaurantPhotoInputRef}
-                              type="file"
-                              style={{ display: 'none' }}
-                              onChange={e => handlePickAndCrop(e, 1, handleRestaurantPhotoChangeDashboard)}
-                              accept="image/*"
-                            />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="dash-icon-pill upload-trigger-btn"
-                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: '#000', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                             onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
@@ -3232,50 +3212,24 @@ function Profile() {
                   <label>Bio / Description</label>
                   <textarea className="onboarding-textarea" rows={3} value={restaurantForm.bio} onChange={e => setRestaurantForm(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell customers about your restaurant..." />
                 </div>
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                  <div className="onboarding-field" style={{ flex: 1, minWidth: '200px' }}>
-                    <label>Logo / Profile Photo</label>
-                    <button
-                      type="button"
-                      className="upload-trigger-btn"
-                      style={{ padding: 0, height: '120px', width: '120px', borderRadius: '50%', overflow: 'hidden' }}
-                      onClick={() => { if (restaurantPhotoInputRef.current) { restaurantPhotoInputRef.current.value = ''; restaurantPhotoInputRef.current.click(); } }}
-                    >
-                      <div className="upload-preview-avatar">
-                        {restaurantForm.photo ? <img src={restaurantForm.photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>+ Logo</span>}
-                      </div>
-                    </button>
-                    <input
-                      ref={restaurantPhotoInputRef}
-                      type="file"
-                      style={{ display: 'none' }}
-                      onChange={e => handlePickAndCrop(e, 1, (file) => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => setRestaurantForm(prev => ({ ...prev, photo: event.target.result }));
-                        reader.readAsDataURL(file);
-                      })}
-                      accept="image/*"
-                    />
-                  </div>
-                  <div className="onboarding-field" style={{ flex: 2, minWidth: '240px' }}>
-                    <label>Banner Image</label>
-                    <button
-                      type="button"
-                      className="upload-trigger-btn"
-                      onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
-                    >
-                      <div className="upload-preview-banner" style={{ height: '120px' }}>
-                        {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
-                      </div>
-                    </button>
-                    <input
-                      ref={restaurantBannerInputRef}
-                      type="file"
-                      style={{ display: 'none' }}
-                      onChange={e => handlePickAndCrop(e, 25 / 7, handleRestaurantBannerUpload)}
-                      accept="image/*"
-                    />
-                  </div>
+                <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
+                  <label>Banner Image</label>
+                  <button
+                    type="button"
+                    className="upload-trigger-btn"
+                    onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
+                  >
+                    <div className="upload-preview-banner" style={{ height: '140px' }}>
+                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
+                    </div>
+                  </button>
+                  <input
+                    ref={restaurantBannerInputRef}
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={e => handlePickAndCrop(e, 25 / 7, handleRestaurantBannerUpload)}
+                    accept="image/*"
+                  />
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>

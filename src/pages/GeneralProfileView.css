@@ -125,6 +125,33 @@
   height: auto !important;
 }
 
+/* Enlarge banner specifically for restaurants */
+.gp-profile-restaurant .gp-photo-header {
+  aspect-ratio: 16 / 9 !important;
+  height: auto !important;
+}
+
+.gp-restaurant-header-info {
+  padding: 1.5rem 1.5rem 0.5rem;
+  text-align: left;
+}
+
+.gp-restaurant-header-info .gp-name {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: inherit;
+  line-height: 1.1;
+}
+
+.gp-restaurant-header-info .gp-title-small {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.5rem 0 0;
+  opacity: 0.8;
+  color: inherit;
+}
+
 .gp-avatar-img {
   width: 100%;
   height: 100%;

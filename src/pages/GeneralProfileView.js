@@ -210,7 +210,7 @@ function GeneralProfileView() {
       </Helmet>
 
       <div
-        className={`gp-card gp-card-themed ${theme.isAnimated ? theme.className : ''}`}
+        className={`gp-card gp-card-themed ${theme.isAnimated ? theme.className : ''} ${profile.profileType === 'restaurant' ? 'gp-profile-restaurant' : ''}`}
         style={{
           background: theme.isAnimated ? undefined : theme.bg,
           color: theme.text,
@@ -245,29 +245,39 @@ function GeneralProfileView() {
         </div>
 
         <div className="gp-content-wrap">
-          {/* Profile Avatar Row (Left aligned like Artist Profile) */}
-          <div className="gp-avatar-row gp-avatar-row-left">
-            <div className="gp-avatar-circle" onClick={() => setShowEnlarged(true)} style={{ cursor: 'pointer' }}>
-              {profile.photo && !imgError ? (
-                <img
-                  src={fixImageUrl(profile.photo) || profile.photo}
-                  alt={profile.name}
-                  className="gp-avatar-img"
-                  onError={() => setImgError(true)}
-                />
-              ) : (
-                <div className="gp-avatar-circle-fallback">
-                  {profile.name?.charAt(0) || '?'}
-                </div>
-              )}
+          {/* Profile Avatar Row (Left aligned like Artist Profile) - Hidden for Restaurants */}
+          {profile.profileType !== 'restaurant' && (
+            <div className="gp-avatar-row gp-avatar-row-left">
+              <div className="gp-avatar-circle" onClick={() => setShowEnlarged(true)} style={{ cursor: 'pointer' }}>
+                {profile.photo && !imgError ? (
+                  <img
+                    src={fixImageUrl(profile.photo) || profile.photo}
+                    alt={profile.name}
+                    className="gp-avatar-img"
+                    onError={() => setImgError(true)}
+                  />
+                ) : (
+                  <div className="gp-avatar-circle-fallback">
+                    {profile.name?.charAt(0) || '?'}
+                  </div>
+                )}
+              </div>
+              <div className="gp-avatar-text">
+                {profile.name && <h1 className="gp-name">{profile.name}</h1>}
+                {profile.title && (
+                  <p className="gp-title-small">{profile.title}</p>
+                )}
+              </div>
             </div>
-            <div className="gp-avatar-text">
+          )}
+
+          {/* For Restaurants, show Name and Tagline without avatar */}
+          {profile.profileType === 'restaurant' && (
+            <div className="gp-restaurant-header-info">
               {profile.name && <h1 className="gp-name">{profile.name}</h1>}
-              {profile.title && (
-                <p className="gp-title-small">{profile.title}</p>
-              )}
+              {profile.title && <p className="gp-title-small">{profile.title}</p>}
             </div>
-          </div>
+          )}
 
           {/* Username - @username */}
           <p className="gp-username">@{profile.username}</p>
