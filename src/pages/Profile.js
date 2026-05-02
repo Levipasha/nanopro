@@ -2452,12 +2452,29 @@ function Profile() {
                                 style={{ 
                                   aspectRatio: '16/9', 
                                   height: 'auto',
-                                  backgroundImage: restaurantProfile.banner ? `url("${fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner}")` : 'linear-gradient(135deg,#fceabb,#f8b500)',
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center',
-                                  position: 'relative'
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  background: 'transparent'
                                 }}
                               >
+                                {restaurantProfile.banner ? (
+                                  <img 
+                                    src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner} 
+                                    alt="" 
+                                    style={{ 
+                                      position: 'absolute', 
+                                      top: 0, 
+                                      left: 0, 
+                                      width: '100%', 
+                                      height: '100%', 
+                                      objectFit: 'cover',
+                                      zIndex: 1
+                                    }} 
+                                  />
+                                ) : (
+                                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', z-index: 1 }} />
+                                )}
+                    
                     
                     <input
                       ref={restaurantBannerInputRef}
@@ -2467,7 +2484,7 @@ function Profile() {
                       onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
 
-                    <div className="dash-profile-hero-content" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '2rem' }}>
+                    <div className="dash-profile-hero-content" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '2rem', zIndex: 2, position: 'relative' }}>
                       <div className="dash-hero-text" style={{ background: 'transparent' }}>
                         {rHeroEditingField === 'name' ? (
                           <div className="dash-hero-editable-wrapper">
