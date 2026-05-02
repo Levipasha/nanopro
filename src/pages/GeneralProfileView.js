@@ -304,25 +304,23 @@ function GeneralProfileView() {
             </div>
           )}
 
-          {/* Social Marquee */}
+          {/* Social Links Row */}
           {socialLinks.length > 0 && (
-            <div className="gp-social-marquee-container">
-              <div className="gp-social-marquee-content">
-                {[...socialLinks, ...socialLinks, ...socialLinks, ...socialLinks].map((link, idx) => {
-                  const platform = (link.platform || '').toLowerCase() || (link.url.includes('instagram') ? 'instagram' : link.url.includes('facebook') ? 'facebook' : link.url.includes('whatsapp') ? 'whatsapp' : link.url.includes('twitter') || link.url.includes('x.com') ? 'twitter' : 'website');
-                  return (
-                    <a
-                      key={idx}
-                      href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`gp-social-icon-link platform-${platform}`}
-                    >
-                      {getLinkIcon(link)}
-                    </a>
-                  );
-                })}
-              </div>
+            <div className="gp-social-links-row">
+              {socialLinks.map((link, idx) => {
+                const platform = (link.platform || '').toLowerCase() || (link.url.includes('instagram') ? 'instagram' : link.url.includes('facebook') ? 'facebook' : link.url.includes('whatsapp') ? 'whatsapp' : link.url.includes('twitter') || link.url.includes('x.com') ? 'twitter' : 'website');
+                return (
+                  <a
+                    key={idx}
+                    href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`gp-social-icon-link platform-${platform}`}
+                  >
+                    {getLinkIcon(link)}
+                  </a>
+                );
+              })}
             </div>
           )}
 
