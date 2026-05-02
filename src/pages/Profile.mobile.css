@@ -194,29 +194,27 @@
   /* Fix for dashboard hero name panel overflowing on mobile */
   .dash-profile-hero {
     padding: 1.5rem !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
   }
 
   .dash-profile-hero-content {
-    flex-direction: column !important;
-    align-items: flex-start !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     gap: 1rem !important;
-    width: 100% !important;
   }
 
   .dash-profile-hero-info {
-    width: 100% !important;
+    flex: 1 !important;
+    min-width: 0 !important;
     max-width: 100% !important;
   }
 
   .dash-profile-hero-name {
-    font-size: 1.8rem !important;
-    padding: 8px 16px !important;
-    white-space: pre-wrap !important;
+    font-size: 1.6rem !important;
+    padding: 6px 14px !important;
+    white-space: normal !important;
     word-break: break-word !important;
     max-width: 100% !important;
-    display: block !important;
+    display: inline-block !important;
     box-sizing: border-box !important;
   }
 }
