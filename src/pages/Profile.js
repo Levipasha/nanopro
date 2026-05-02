@@ -2429,6 +2429,55 @@ function Profile() {
               <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: profile info */}
                 <div className="dash-single-profile" style={{ padding: '1.5rem 1.25rem', overflowY: 'auto' }}>
+                  {/* Copy Profile Link */}
+                  <div style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Profile Link</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${frontendBase}/link/${restaurantProfile.username || ''}`}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = restaurantProfile?.username ? `${frontendBase}/link/${restaurantProfile.username}` : frontendBase;
+                          navigator.clipboard.writeText(url);
+                          setLinkCopiedRest(true);
+                          setTimeout(() => setLinkCopiedRest(false), 2000);
+                        }}
+                        className="dash-icon-pill"
+                        aria-label={linkCopiedRest ? 'Copied' : 'Copy profile link'}
+                      >
+                        {linkCopiedRest ? (
+                          <>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <rect x="9" y="9" width="13" height="13" rx="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </button>
+                      <a
+                        href={restaurantProfile.username ? `${frontendBase}/link/${restaurantProfile.username}` : '#'}
+                        target={restaurantProfile.username ? "_blank" : undefined}
+                        rel="noreferrer"
+                        className="dash-icon-pill"
+                        aria-label="Open profile link"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                        </svg>
+                        <span>Go to Site</span>
+                      </a>
+                    </div>
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
+                      Link goes live automatically after creating your restaurant profile.
+                    </p>
+                  </div>
+
                               <div 
                                 className="dash-profile-hero dash-profile-hero--restaurant" 
                                 style={{ 
@@ -2521,54 +2570,7 @@ function Profile() {
                     <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
                   </div>
 
-                  {/* Copy Profile Link */}
-                  <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Profile Link</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${frontendBase}/link/${restaurantProfile.username || ''}`}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const url = restaurantProfile?.username ? `${frontendBase}/link/${restaurantProfile.username}` : frontendBase;
-                          navigator.clipboard.writeText(url);
-                          setLinkCopiedRest(true);
-                          setTimeout(() => setLinkCopiedRest(false), 2000);
-                        }}
-                        className="dash-icon-pill"
-                        aria-label={linkCopiedRest ? 'Copied' : 'Copy profile link'}
-                      >
-                        {linkCopiedRest ? (
-                          <>
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <rect x="9" y="9" width="13" height="13" rx="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                            <span>Copy Link</span>
-                          </>
-                        )}
-                      </button>
-                      <a
-                        href={restaurantProfile.username ? `${frontendBase}/link/${restaurantProfile.username}` : '#'}
-                        target={restaurantProfile.username ? "_blank" : undefined}
-                        rel="noreferrer"
-                        className="dash-icon-pill"
-                        aria-label="Open profile link"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                        </svg>
-                        <span>Go to Site</span>
-                      </a>
-                    </div>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
-                      Link goes live automatically after creating your restaurant profile.
-                    </p>
-                  </div>
+
 
                   {/* Bio — always editable inline */}
                   <div style={{ marginTop: '1.5rem' }}>
