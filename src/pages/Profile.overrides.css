@@ -150,8 +150,7 @@
 }
 
 .dash-profile-hero-bg {
-  background: #f1f5f9 !important;
-  background-image: none !important;
+  z-index: 1;
 }
 
 .dash-profile-hero-overlay {
@@ -162,11 +161,14 @@
 
 /* Restaurant hero: 16:9 banner (matches public page + cropper); Edit Banner visible without hover (touch) */
 .dash-profile-hero--restaurant {
-  aspect-ratio: 25 / 7 !important;
+  aspect-ratio: 16 / 9 !important;
   min-height: 0 !important;
-  max-height: min(360px, 42vh) !important;
+  max-height: min(420px, 50vh) !important;
   padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   align-items: stretch !important;
+  justify-content: flex-start !important;
 }
 
 .dash-profile-hero--restaurant .dash-profile-hero-content {
