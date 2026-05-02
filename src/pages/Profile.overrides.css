@@ -582,6 +582,190 @@
 }
 
 /* Icon visibility: some SVGs use stroke-only, some fill-only. Force both to white. */
+/* --- Link Editor Improvements --- */
+.dash-link-card--inline {
+  transition: all 0.3s ease !important;
+  overflow: visible !important;
+}
+
+.dash-link-card--inline:focus-within {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px);
+  z-index: 10;
+}
+
+.dash-link-content--inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.dash-link-title {
+  transition: all 0.3s ease !important;
+  flex-shrink: 0 !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+
+.dash-link-card--inline:focus-within .dash-link-title {
+  opacity: 0.4 !important;
+  font-size: 0.8rem !important;
+  max-width: 60px !important;
+}
+
+.dash-link-url {
+  flex: 1 !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: 0 !important;
+}
+
+.dash-link-card--inline:focus-within .dash-link-url {
+  flex: 5 !important;
+}
+
+.dash-link-inline-input {
+  width: 100% !important;
+  transition: all 0.3s ease !important;
+  background: #f8fafc !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+}
+
+.dash-link-inline-input:focus {
+  background: #ffffff !important;
+  border-color: #8b5cf6 !important;
+  padding: 10px 16px !important;
+  font-size: 1rem !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1) !important;
+}
+
+.dash-link-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-left: 0.5rem !important;
+}
+
+.clickable-link-field {
+  cursor: pointer !important;
+  caret-color: transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.clickable-link-field:hover {
+  background: rgba(139, 92, 246, 0.04) !important;
+  border-color: #8b5cf6 !important;
+}
+
+/* --- Glassmorphism for Mobile Edit Modal --- */
+.dash-mobile-edit-overlay {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 9999 !important;
+}
+
+.dash-mobile-edit-modal {
+  background: rgba(15, 23, 42, 0.85) !important; /* Elegant dark blue-gray glass */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border-radius: 28px !important;
+  padding: 1.75rem !important;
+  color: #ffffff !important;
+  width: 92% !important;
+  max-width: 420px !important;
+}
+
+.dash-mobile-edit-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.dash-mobile-edit-title {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 1.3rem !important;
+  font-family: 'Outfit', sans-serif !important;
+  letter-spacing: -0.02em !important;
+}
+
+.dash-mobile-edit-close {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+}
+
+.dash-mobile-edit-modal input {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  font-size: 1.05rem !important;
+  margin-bottom: 1.75rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.dash-mobile-edit-modal input:focus {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
+}
+
+.dash-mobile-edit-actions {
+  display: flex !important;
+  gap: 1rem !important;
+}
+
+.dash-mobile-edit-btn {
+  flex: 1 !important;
+  height: 52px !important;
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.dash-mobile-edit-btn.ghost {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dash-mobile-edit-btn.primary {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: none !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-mobile-edit-btn.primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
 .dash-link-icon-circle,
 .dash-selector-icon,
 .dash-selector-item,

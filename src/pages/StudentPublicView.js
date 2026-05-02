@@ -55,7 +55,7 @@ function StudentPublicView() {
 
   const theme = getThemeById(student?.theme || 'ocean');
   const sharePrimaryName = (student?.name || '').trim() || 'Student';
-  const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
+  const nanoProfilesPageTitle = `${sharePrimaryName} - ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`;
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => alert('Link copied!'));
@@ -63,8 +63,8 @@ function StudentPublicView() {
 
   const handleShare = async () => {
     const url = window.location.href;
-    const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
-    const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
+    const shareTitle = `Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`;
+    const shareText = `Discover ${sharePrimaryName}'s digital footprint on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}. Smart Digital Identity Solutions for modern creators and professionals. Create yours at ${process.env.REACT_APP_DOMAIN || 'nanoprofiles.com'}`;
 
     if (navigator.share) {
       try {
@@ -126,14 +126,14 @@ function StudentPublicView() {
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`} />
         <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
         <meta property="og:image" content={fixImageUrl(student?.photo) || student?.photo} />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={window.location.href} />
-        <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`} />
         <meta name="twitter:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions.`} />
         <meta name="twitter:image" content={fixImageUrl(student?.photo) || student?.photo} />
       </Helmet>

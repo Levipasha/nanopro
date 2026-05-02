@@ -30,7 +30,8 @@ export const fixImageUrl = (url) => {
   // Relative path - resolve against API/base
   // Guard: ensure the base always has a protocol so it isn't treated as a relative URL
   if (trimmed.startsWith('/')) {
-    let base = process.env.REACT_APP_API_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    let base = process.env.REACT_APP_API_URL || (isLocal ? process.env.REACT_APP_LOCAL_API_URL : process.env.REACT_APP_PRODUCTION_API_URL) || `${window.location.protocol}//${window.location.hostname}:5000`;
     if (base && !base.startsWith('http://') && !base.startsWith('https://')) {
       base = `https://${base}`;
     }

@@ -119,7 +119,7 @@ export default function ProfileArtistOnboardingWizard({
                         placeholder="Enter your nickname"
                       />
                     </div>
-                    <small className="onboarding-tip">Your profile URL will be: <b>nanoprofile.com/artist/{formData.artistId || 'username'}</b></small>
+                    <small className="onboarding-tip">Your profile URL will be: <b>{process.env.REACT_APP_DOMAIN || 'nanoprofile.com'}/artist/{formData.artistId || 'username'}</b></small>
                   </div>
                   <div className="onboarding-field">
                     <label>Art Form / Specialization <span className="onboarding-required-star">*</span></label>

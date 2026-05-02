@@ -314,6 +314,9 @@ function Profile() {
     };
   }, [isSelectorOpen]);
   const [mobileHeroEditField, setMobileHeroEditField] = useState(null); // 'name' | 'specialization'
+  const [mobileLinkEditPlatform, setMobileLinkEditPlatform] = useState(null); // platform ID
+  const [mobileLinkEditLabel, setMobileLinkEditLabel] = useState('');
+  const [mobileLinkEditValue, setMobileLinkEditValue] = useState('');
   const [mobileHeroDraft, setMobileHeroDraft] = useState('');
   const [isUploading, setIsUploading] = useState(null); // 'photo' | 'backgroundPhoto' | 'gallery_add'
   const [galleryUploading, setGalleryUploading] = useState(false);
@@ -1995,6 +1998,18 @@ function Profile() {
     if (!artist || !mobileHeroEditField) return;
     await handleUpdateHeroField(mobileHeroEditField, mobileHeroDraft);
     setMobileHeroEditField(null);
+  };
+
+  const openLinkPopup = (platform, label, value) => {
+    setMobileLinkEditPlatform(platform);
+    setMobileLinkEditLabel(label);
+    setMobileLinkEditValue(value || '');
+  };
+
+  const saveMobileLinkField = async () => {
+    if (!mobileLinkEditPlatform) return;
+    await handleUpdateLink(mobileLinkEditPlatform, mobileLinkEditValue);
+    setMobileLinkEditPlatform(null);
   };
 
   const handleUploadField = async (field, file) => {
@@ -3823,7 +3838,7 @@ function Profile() {
                   {usernameCheck.status === 'available' && (
                     <small style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
                   )}
-                  <small className="onboarding-tip">Your link: <b>nanoprofile.com/link/{generalForm.username || 'username'}</b></small>
+                  <small className="onboarding-tip">Your link: <b>{process.env.REACT_APP_DOMAIN || 'nanoprofile.com'}/link/{generalForm.username || 'username'}</b></small>
                 </div>
                 <div className="onboarding-field">
                   <label>Title / tagline (optional)</label>
@@ -6088,6 +6103,67 @@ function Profile() {
                           </div>
                         )}
 
+                        {isMobileViewport && mobileLinkEditPlatform && (
+                          <div
+                            className="dash-mobile-edit-overlay"
+                            onClick={() => setMobileLinkEditPlatform(null)}
+                          >
+                            <div
+                              className="dash-mobile-edit-modal"
+                              aria-label={`Edit ${mobileLinkEditLabel}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="dash-mobile-edit-header">
+                                <div className="dash-mobile-edit-title">
+                                  {`Edit ${mobileLinkEditLabel}`}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="dash-mobile-edit-close"
+                                  onClick={() => setMobileLinkEditPlatform(null)}
+                                  aria-label="Close"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <div className="dash-mobile-edit-body">
+                                <input
+                                  autoFocus
+                                  value={mobileLinkEditValue}
+                                  placeholder={
+                                    mobileLinkEditPlatform === 'instagram' ? '@handle' :
+                                    mobileLinkEditPlatform === 'whatsapp' ? 'Phone number' :
+                                    'Enter URL / handle'
+                                  }
+                                  onChange={(e) => setMobileLinkEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') setMobileLinkEditPlatform(null);
+                                    if (e.key === 'Enter') saveMobileLinkField();
+                                  }}
+                                />
+                                <div className="dash-mobile-edit-actions">
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn ghost"
+                                    onClick={() => setMobileLinkEditPlatform(null)}
+                                    disabled={savingLink === mobileLinkEditPlatform}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn primary"
+                                    onClick={saveMobileLinkField}
+                                    disabled={savingLink === mobileLinkEditPlatform}
+                                  >
+                                    {savingLink === mobileLinkEditPlatform ? 'Saving…' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Bio Section */}
                         <div className="dash-profile-bio-section">
                           <h3 className="dash-section-label">About</h3>
@@ -6159,17 +6235,15 @@ function Profile() {
                                     <span className="dash-link-title" title={platform.label}>{platform.label}</span>
                                     <div className="dash-link-url">
                                       <input
-                                        className="dash-link-inline-input"
+                                        className="dash-link-inline-input clickable-link-field"
+                                        readOnly
                                         placeholder={
                                           platform.id === 'instagram' ? '@handle' :
                                             platform.id === 'whatsapp' ? 'Phone number (e.g. 91834...)' :
                                               'Enter URL / handle'
                                         }
                                         value={currentValue}
-                                        onChange={(e) => {
-                                          const newVal = e.target.value;
-                                          setPendingLinks(prev => ({ ...prev, [platform.id]: newVal }));
-                                        }}
+                                        onClick={() => openLinkPopup(platform.id, platform.label, currentValue)}
                                       />
                                       {savingLink === platform.id && <span className="dash-link-saving">Saving…</span>}
                                     </div>

@@ -18,7 +18,7 @@ root.render(
 );
 
 // Unregister any legacy service workers (e.g. old Workbox/CRA SW that blocked
-// cross-origin API calls to Railway with "no-response" errors).
+// cross-origin API calls with "no-response" errors).
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((reg) => reg.unregister());

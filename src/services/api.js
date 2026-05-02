@@ -16,11 +16,16 @@ function resolveApiUrl() {
     }
     return envUrl;
   }
-  if (typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://127.0.0.1:5000';
+
+  const isLocal = typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  if (isLocal) {
+    return process.env.REACT_APP_LOCAL_API_URL || 'http://127.0.0.1:5000';
   }
-  return 'https://nfcschoolbe-production-4da5.up.railway.app';
+
+  // Production fallback
+  return process.env.REACT_APP_PRODUCTION_API_URL || 'https://microidentity.nanoprofiles.com';
 }
 export const API_URL = resolveApiUrl();
 

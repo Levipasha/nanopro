@@ -183,12 +183,12 @@ function GeneralProfileView() {
   const handleShare = async () => {
     let url = window.location.href;
     if (isEmbed && profile?.username) {
-      const base = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+      const base = (process.env.REACT_APP_FRONTEND_URL || process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
       url = `${base}/link/${profile.username}`;
     }
 
-    const shareTitle = `Check out ${sharePrimaryName} Profile on Nano Profiles`;
-    const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles. Smart Digital Identity Solutions for modern creators and professionals. Create yours at nanoprofiles.com`;
+    const shareTitle = `Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`;
+    const shareText = `Discover ${sharePrimaryName}'s digital footprint on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}. Smart Digital Identity Solutions for modern creators and professionals. Create yours at ${process.env.REACT_APP_DOMAIN || 'nanoprofiles.com'}`;
 
     if (navigator.share) {
       try {
@@ -214,7 +214,7 @@ function GeneralProfileView() {
         {/* Open Graph / Facebook / WhatsApp */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
+        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`} />
         <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
         <meta property="og:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
 
@@ -406,7 +406,7 @@ function GeneralProfileView() {
         </div>
 
         <div className="gp-footer">
-          <span>Powered by <a href="https://nanoprofiles.com" target="_blank" rel="noopener noreferrer">NanoProfiles</a></span>
+          <span>Powered by <a href={`https://${process.env.REACT_APP_DOMAIN || 'nanoprofiles.com'}`} target="_blank" rel="noopener noreferrer">{process.env.REACT_APP_SITE_NAME || 'NanoProfiles'}</a></span>
         </div>
 
         {/* Photo Enlarge Modal */}
