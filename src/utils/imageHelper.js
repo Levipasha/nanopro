@@ -11,6 +11,9 @@ export const fixImageUrl = (url) => {
   // Handle data URLs - return as-is
   if (trimmed.startsWith('data:')) return trimmed;
 
+  // Handle double slash URLs
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+
   // Already a full URL - force https for Cloudinary to avoid mixed content
   if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
     if (trimmed.includes('cloudinary.com') && trimmed.startsWith('http://')) {
