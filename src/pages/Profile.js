@@ -1306,14 +1306,22 @@ function Profile() {
     if (profileMode !== 'restaurant' || !generalProfile) return;
     const serverGallery = Array.isArray(generalProfile.gallery) ? generalProfile.gallery : [];
     const normalized = serverGallery
-      .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+      .map((g) => ({ 
+        url: (g && g.url) ? String(g.url).trim() : '', 
+        name: (g && g.name) ? String(g.name).trim() : '',
+        link: (g && g.link) ? String(g.link).trim() : ''
+      }))
       .filter((g) => g.url)
       .slice(0, 3);
     setRestaurantProfile((prev) => {
       if (!prev) return prev;
       if ((prev.gallery || []).some((g) => g.url && String(g.url).startsWith('data:'))) return prev;
       const prevNorm = (prev.gallery || [])
-        .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+        .map((g) => ({ 
+          url: (g && g.url) ? String(g.url).trim() : '', 
+          name: (g && g.name) ? String(g.name).trim() : '',
+          link: (g && g.link) ? String(g.link).trim() : ''
+        }))
         .filter((g) => g.url);
       if (JSON.stringify(normalized) === JSON.stringify(prevNorm)) return prev;
       const next = { ...prev, gallery: normalized };

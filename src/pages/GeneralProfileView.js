@@ -148,7 +148,11 @@ function GeneralProfileView() {
   const restaurantEmail = (extractedEmailFromBio.replace(/^✉\s*/, '') || '').trim();
 
   const galleryItems = (Array.isArray(profile.gallery) ? profile.gallery : [])
-    .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
+    .map((g) => ({ 
+      url: (g && g.url) ? String(g.url).trim() : '', 
+      name: (g && g.name) ? String(g.name).trim() : '',
+      link: (g && g.link) ? String(g.link).trim() : ''
+    }))
     .filter((g) => g.url);
 
 
