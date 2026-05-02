@@ -43,7 +43,7 @@ export default function HomeHero() {
             <div className="hero-content">
                 <div className="hero-left">
                     <div className="hero-tagline">
-                        <span className="tagline-line"></span>
+
                         <span className="tagline-text">ONE TAP IDENTITY</span>
                     </div>
 
