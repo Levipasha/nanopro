@@ -533,6 +533,7 @@ function Profile() {
   const restaurantBannerInputRef = useRef(null);
   const restaurantGalleryInputRef = useRef(null);
   const restaurantMenuInputRef = useRef(null);
+  const restaurantPhotoInputRef = useRef(null);
 
   // Refs for Artist dashboard inputs
   const artistGalleryInputRef = useRef(null);
@@ -551,6 +552,7 @@ function Profile() {
   // Restaurant profile state (localStorage until backend exists)
   const [restaurantForm, setRestaurantForm] = useState({
     name: '',
+    photo: null,
     tagline: '',
     bio: '',
     phone: '',
@@ -707,8 +709,6 @@ function Profile() {
           return prev;
         }
         const updated = { ...prev, banner: dataUrl };
-        // Do not persist data URLs here — large crops get stripped and wipe the saved https banner.
-        // persistRestaurant runs inside handleRestaurantPublish after upload + save.
         Promise.resolve().then(async () => {
           try {
             const ok = await handleRestaurantPublish(updated, { silent: true });
@@ -728,6 +728,38 @@ function Profile() {
     reader.onerror = () => {
       setRestaurantBannerUploading(false);
       alert('Could not read the image file. Please try another file.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Restaurant dashboard "Change photo"
+  const handleRestaurantPhotoChangeDashboard = (file) => {
+    if (!file || !restaurantProfile) return;
+    setRestaurantBannerUploading(true); // Re-use the same spinner state for simplicity
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      setRestaurantProfile((prev) => {
+        if (!prev) {
+          queueMicrotask(() => setRestaurantBannerUploading(false));
+          return prev;
+        }
+        const updated = { ...prev, photo: dataUrl };
+        Promise.resolve().then(async () => {
+          try {
+            const ok = await handleRestaurantPublish(updated, { silent: true });
+            if (!ok) {
+              alert('Photo could not be saved to your public profile.');
+            }
+          } catch (e) {
+            console.warn('Restaurant photo publish failed:', e);
+            alert('Photo could not be saved.');
+          } finally {
+            setRestaurantBannerUploading(false);
+          }
+        });
+        return updated;
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -798,7 +830,7 @@ function Profile() {
       }
       const previousPhoto = (existing?.data?.photo && String(existing.data.photo).trim()) || '';
 
-      let photoUrl =
+      let bannerUrl =
         profileInput.banner && String(profileInput.banner).startsWith('http')
           ? String(profileInput.banner).trim()
           : '';
@@ -811,14 +843,28 @@ function Profile() {
           for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
           const file = new File([u8arr], 'banner.png', { type: mime });
           const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
-          photoUrl = extractUploadUrl(up);
+          bannerUrl = extractUploadUrl(up);
         } catch (e) {
           console.warn('Banner upload failed:', e);
         }
-        if (!photoUrl) {
-          const msg = 'Banner could not be uploaded. Try a smaller image or check your connection.';
-          if (!silent) alert(msg);
-          return false;
+      }
+
+      let photoUrl =
+        profileInput.photo && String(profileInput.photo).startsWith('http')
+          ? String(profileInput.photo).trim()
+          : '';
+      if (profileInput.photo && String(profileInput.photo).startsWith('data:')) {
+        try {
+          const arr = profileInput.photo.split(',');
+          const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/png';
+          const bstr = atob(arr[1]);
+          const u8arr = new Uint8Array(bstr.length);
+          for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+          const file = new File([u8arr], 'photo.png', { type: mime });
+          const up = await generalProfileAPI.uploadPhoto(file, getIdTokenFn);
+          photoUrl = extractUploadUrl(up);
+        } catch (e) {
+          console.warn('Photo upload failed:', e);
         }
       }
 
@@ -888,6 +934,7 @@ function Profile() {
         bio: bioParts.filter(Boolean).join('\n'),
         // Avoid sending empty strings; some backends treat '' as invalid.
         photo: photoUrl || undefined,
+        banner: bannerUrl || undefined,
         menuPdf: menuPdfUrl || undefined,
         theme: profileInput.theme || 'mint',
         font: profileInput.titleFont || profileInput.font || 'outfit',
@@ -2438,8 +2485,45 @@ function Profile() {
                           </h2>
                         )}
                         <p className="dash-hero-spec">@{restaurantProfile.username}</p>
+                        
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '1rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: '#000', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                            onClick={() => { if (restaurantPhotoInputRef.current) { restaurantPhotoInputRef.current.value = ''; restaurantPhotoInputRef.current.click(); } }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                              <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            Change Photo
+                            <input
+                              ref={restaurantPhotoInputRef}
+                              type="file"
+                              style={{ display: 'none' }}
+                              onChange={e => handlePickAndCrop(e, 1, handleRestaurantPhotoChangeDashboard)}
+                              accept="image/*"
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: '#000', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                            onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Banner
+                          </button>
+                        </div>
+
                         {rHeroEditingField === 'tagline' ? (
-                          <div className="dash-hero-editable-wrapper">
+                          <div className="dash-hero-editable-wrapper" style={{ marginTop: '1rem' }}>
                             <div className="dash-hero-edit-row">
                               <input
                                 className="dash-hero-inline-input"
@@ -2459,7 +2543,7 @@ function Profile() {
                           <p
                             className="dash-hero-bio"
                             onClick={() => startRestaurantHeroEdit('tagline')}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'pointer', marginTop: '1rem' }}
                           >
                             {restaurantProfile.tagline || 'Add tagline...'}
                           </p>
@@ -3148,25 +3232,50 @@ function Profile() {
                   <label>Bio / Description</label>
                   <textarea className="onboarding-textarea" rows={3} value={restaurantForm.bio} onChange={e => setRestaurantForm(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell customers about your restaurant..." />
                 </div>
-                <div className="onboarding-field" style={{ marginTop: '1.5rem' }}>
-                  <label>Banner Image</label>
-                  <button
-                    type="button"
-                    className="upload-trigger-btn"
-                    onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
-                    aria-label="Upload restaurant banner"
-                  >
-                    <div className="upload-preview-banner">
-                      {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
-                    </div>
-                  </button>
-                  <input
-                    ref={restaurantBannerInputRef}
-                    type="file"
-                    style={{ display: 'none' }}
-                    onChange={e => handlePickAndCrop(e, 25 / 7, handleRestaurantBannerUpload)}
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                  />
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                  <div className="onboarding-field" style={{ flex: 1, minWidth: '200px' }}>
+                    <label>Logo / Profile Photo</label>
+                    <button
+                      type="button"
+                      className="upload-trigger-btn"
+                      style={{ padding: 0, height: '120px', width: '120px', borderRadius: '50%', overflow: 'hidden' }}
+                      onClick={() => { if (restaurantPhotoInputRef.current) { restaurantPhotoInputRef.current.value = ''; restaurantPhotoInputRef.current.click(); } }}
+                    >
+                      <div className="upload-preview-avatar">
+                        {restaurantForm.photo ? <img src={restaurantForm.photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>+ Logo</span>}
+                      </div>
+                    </button>
+                    <input
+                      ref={restaurantPhotoInputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={e => handlePickAndCrop(e, 1, (file) => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => setRestaurantForm(prev => ({ ...prev, photo: event.target.result }));
+                        reader.readAsDataURL(file);
+                      })}
+                      accept="image/*"
+                    />
+                  </div>
+                  <div className="onboarding-field" style={{ flex: 2, minWidth: '240px' }}>
+                    <label>Banner Image</label>
+                    <button
+                      type="button"
+                      className="upload-trigger-btn"
+                      onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
+                    >
+                      <div className="upload-preview-banner" style={{ height: '120px' }}>
+                        {restaurantForm.banner ? <img src={restaurantForm.banner} alt="Preview" /> : <span>+ Tap to upload banner</span>}
+                      </div>
+                    </button>
+                    <input
+                      ref={restaurantBannerInputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={e => handlePickAndCrop(e, 25 / 7, handleRestaurantBannerUpload)}
+                      accept="image/*"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
@@ -4266,16 +4375,14 @@ function Profile() {
                           </button>
                         </div>
                         <div className="dash-profile-hero-info">
-                          <h2 
-                            className="dash-profile-hero-name"
-                            style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}
-                          >
+                          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
                             {generalProfile.name || 'Unnamed'}
                           </h2>
                           <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
                             @{generalProfile.username}
                           </p>
-                          <div className="dash-hero-actions-row">
+                          
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
                             <button
                               type="button"
                               className="dash-icon-pill upload-trigger-btn"
