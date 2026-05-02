@@ -4266,7 +4266,10 @@ function Profile() {
                           </button>
                         </div>
                         <div className="dash-profile-hero-info">
-                          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                          <h2 
+                            className="dash-profile-hero-name"
+                            style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}
+                          >
                             {generalProfile.name || 'Unnamed'}
                           </h2>
                           <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
