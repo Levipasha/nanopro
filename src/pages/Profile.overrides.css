@@ -188,6 +188,17 @@
   pointer-events: none !important;
 }
 
+.dash-restaurant-hero-name {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  color: #fff !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+}
+
 /* Redesigned Sidebar and Navigation for Light Mode */
 .dash-sidebar {
   background: #ffffff !important;

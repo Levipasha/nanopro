@@ -2429,11 +2429,17 @@ function Profile() {
               <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Left: profile info */}
                 <div className="dash-single-profile" style={{ padding: '1.5rem 1.25rem', overflowY: 'auto' }}>
-                              <div className="dash-profile-hero dash-profile-hero--restaurant" style={{ aspectRatio: '16/9', height: 'auto' }}>
-                    {restaurantProfile.banner
-                      ? <img src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner} alt="" className="dash-profile-hero-bg" />
-                      : <div className="dash-profile-hero-bg" style={{ background: 'linear-gradient(135deg,#fceabb,#f8b500)' }} />
-                    }
+                              <div 
+                                className="dash-profile-hero dash-profile-hero--restaurant" 
+                                style={{ 
+                                  aspectRatio: '16/9', 
+                                  height: 'auto',
+                                  backgroundImage: restaurantProfile.banner ? `url(${fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner})` : 'linear-gradient(135deg,#fceabb,#f8b500)',
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  position: 'relative'
+                                }}
+                              >
                     
                     <input
                       ref={restaurantBannerInputRef}
@@ -2462,8 +2468,9 @@ function Profile() {
                           </div>
                         ) : (
                           <h2
+                            className="dash-restaurant-hero-name"
                             onClick={() => startRestaurantHeroEdit('name')}
-                            style={{ cursor: 'pointer', fontSize: '2.5rem', fontWeight: 800, color: '#fff', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+                            style={{ cursor: 'pointer', fontSize: '2.5rem', fontWeight: 800, color: '#fff', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.5)', background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
                           >
                             <span>{restaurantProfile.name || 'Add restaurant name'}</span>
                           </h2>
