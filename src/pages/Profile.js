@@ -534,7 +534,7 @@ function Profile() {
   const restaurantBannerInputRef = useRef(null);
   const restaurantGalleryInputRef = useRef(null);
   const restaurantMenuInputRef = useRef(null);
-  const restaurantPhotoInputRef = useRef(null);
+
 
   // Refs for Artist dashboard inputs
   const artistGalleryInputRef = useRef(null);
@@ -659,9 +659,7 @@ function Profile() {
     if (field === 'tagline') setRHeroDraftTagline(restaurantProfile.tagline || '');
   };
 
-  const cancelRestaurantHeroEdit = () => {
-    setRHeroEditingField(null);
-  };
+
 
   const saveRestaurantHeroEdit = () => {
     if (!restaurantProfile || !rHeroEditingField) return;
@@ -734,36 +732,7 @@ function Profile() {
   };
 
   // Restaurant dashboard "Change photo"
-  const handleRestaurantPhotoChangeDashboard = (file) => {
-    if (!file || !restaurantProfile) return;
-    setRestaurantBannerUploading(true); // Re-use the same spinner state for simplicity
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target.result;
-      setRestaurantProfile((prev) => {
-        if (!prev) {
-          queueMicrotask(() => setRestaurantBannerUploading(false));
-          return prev;
-        }
-        const updated = { ...prev, photo: dataUrl };
-        Promise.resolve().then(async () => {
-          try {
-            const ok = await handleRestaurantPublish(updated, { silent: true });
-            if (!ok) {
-              alert('Photo could not be saved to your public profile.');
-            }
-          } catch (e) {
-            console.warn('Restaurant photo publish failed:', e);
-            alert('Photo could not be saved.');
-          } finally {
-            setRestaurantBannerUploading(false);
-          }
-        });
-        return updated;
-      });
-    };
-    reader.readAsDataURL(file);
-  };
+
 
   const removePdf = () => {
     setRestaurantForm(prev => ({ ...prev, menuPdf: null }));
