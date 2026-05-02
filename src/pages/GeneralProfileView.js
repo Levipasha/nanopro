@@ -151,7 +151,7 @@ function GeneralProfileView() {
     .map((g) => ({ url: (g && g.url) ? String(g.url).trim() : '', name: (g && g.name) ? String(g.name).trim() : '' }))
     .filter((g) => g.url);
 
-  const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'twitter', 'whatsapp', 'tiktok', 'youtube', 'linkedin', 'snapchat', 'pinterest', 'spotify', 'telegram', 'discord'];
+
 
 
 
