@@ -122,13 +122,25 @@
 }
 
 @media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    position: relative;
+    width: 100%;
+  }
+
   /* Prevent accidental horizontal drift in artist dashboard */
+  .dash-root * {
+    box-sizing: border-box !important;
+  }
+
   .dash-root,
   .dash-content,
   .dash-main,
   .dash-mobile-preview-page,
   .dash-mobile-preview-frame-wrap {
     max-width: 100vw;
+    width: 100%;
     overflow-x: hidden !important;
   }
 
