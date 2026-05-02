@@ -2472,7 +2472,7 @@ function Profile() {
                                     }} 
                                   />
                                 ) : (
-                                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', z-index: 1 }} />
+                                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', zIndex: 1 }} />
                                 )}
                     
                     
