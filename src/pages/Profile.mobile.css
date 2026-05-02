@@ -342,3 +342,30 @@ body.dash-platform-selector-open .dash-selector-modal {
 .dash-mobile-bottom-btn-active {
   color: #fff !important;
 }
+
+/* Hero Action Buttons - Side by Side */
+.dash-hero-actions-row {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin-top: 1rem !important;
+}
+
+.dash-hero-actions-row .dash-icon-pill {
+  padding: 6px 12px !important;
+  font-size: 0.75rem !important;
+  gap: 6px !important;
+  border-radius: 8px !important;
+  flex: 1 !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+.dash-hero-actions-row .dash-icon-pill svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+}

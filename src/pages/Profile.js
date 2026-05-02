@@ -4275,83 +4275,83 @@ function Profile() {
                           <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
                             @{generalProfile.username}
                           </p>
-                          
-                          <button
-                            type="button"
-                            className="dash-icon-pill upload-trigger-btn"
-                            style={{
-                              padding: '10px 20px',
-                              borderRadius: '12px',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              fontSize: '0.9rem',
-                              fontWeight: 700,
-                              color: '#fff',
-                              background: '#000',
-                              transition: 'all 0.2s ease',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              lineHeight: 1,
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                            }}
-                            onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="17 8 12 3 7 8" />
-                              <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Change Photo
-                            <input
-                              ref={genDashChangePhotoInputRef}
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handlePickAndCrop(e, 1, (file) => {
-                                setGeneralPhotoFile(file);
-                                handleGeneralPhotoSave(file);
-                              })}
-                            />
-                          </button>
+                          <div className="dash-hero-actions-row">
+                            <button
+                              type="button"
+                              className="dash-icon-pill upload-trigger-btn"
+                              style={{
+                                padding: '10px 20px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                color: '#fff',
+                                background: '#000',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                lineHeight: 1,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                              }}
+                              onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                              Change Photo
+                              <input
+                                ref={genDashChangePhotoInputRef}
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                                  setGeneralPhotoFile(file);
+                                  handleGeneralPhotoSave(file);
+                                })}
+                              />
+                            </button>
 
-                          <button
-                            type="button"
-                            className="dash-icon-pill upload-trigger-btn"
-                            style={{
-                              padding: '10px 20px',
-                              borderRadius: '12px',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              fontSize: '0.9rem',
-                              fontWeight: 700,
-                              color: '#fff',
-                              background: '#000',
-                              transition: 'all 0.2s ease',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              lineHeight: 1,
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                              marginLeft: '10px'
-                            }}
-                            onClick={() => { if (genDashBannerInputRef.current) { genDashBannerInputRef.current.value = ''; genDashBannerInputRef.current.click(); } }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="17 8 12 3 7 8" />
-                              <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Change Banner
-                            <input
-                              ref={genDashBannerInputRef}
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handlePickAndCrop(e, 25 / 7, (file) => {
-                                setGeneralBannerFile(file);
-                                handleGeneralBannerSave(file);
-                              })}
-                            />
-                          </button>
+                            <button
+                              type="button"
+                              className="dash-icon-pill upload-trigger-btn"
+                              style={{
+                                padding: '10px 20px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                color: '#fff',
+                                background: '#000',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                lineHeight: 1,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                              }}
+                              onClick={() => { if (genDashBannerInputRef.current) { genDashBannerInputRef.current.value = ''; genDashBannerInputRef.current.click(); } }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                              Change Banner
+                              <input
+                                ref={genDashBannerInputRef}
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handlePickAndCrop(e, 25 / 7, (file) => {
+                                  setGeneralBannerFile(file);
+                                  handleGeneralBannerSave(file);
+                                })}
+                              />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
