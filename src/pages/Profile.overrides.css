@@ -661,15 +661,22 @@
   border-color: #8b5cf6 !important;
 }
 
-/* --- Glassmorphism for Mobile Edit Modal --- */
+/* --- Glassmorphism for Mobile Edit Modal (Global) --- */
 .dash-mobile-edit-overlay {
+  position: fixed !important;
+  inset: 0 !important;
   background: rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  z-index: 9999 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
 }
 
 .dash-mobile-edit-modal {
+  position: relative !important;
   background: rgba(15, 23, 42, 0.85) !important; /* Elegant dark blue-gray glass */
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -680,8 +687,9 @@
   border-radius: 28px !important;
   padding: 1.75rem !important;
   color: #ffffff !important;
-  width: 92% !important;
+  width: 100% !important;
   max-width: 420px !important;
+  margin: auto !important;
 }
 
 .dash-mobile-edit-header {
@@ -882,6 +890,8 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
   padding-bottom: 1rem !important;
   margin-bottom: 1rem !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
 }
 
 .dash-add-platform-btn {

@@ -54,18 +54,19 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  border: none;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  transition: background 0.18s, color 0.18s, transform 0.15s;
+  transition: color 0.18s, transform 0.15s;
   outline: none;
+  font-size: 32px;
+  font-weight: 700;
 }
 
 .tc-arrow:hover {
-  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  transform: scale(1.08);
+  transform: scale(1.15);
 }
 
 .tc-arrow:focus-visible {
@@ -352,15 +353,11 @@
   }
 
   .tc-dots {
-    margin-top: 24px;
+    display: none;
   }
 }
 
 @media (max-width: 400px) {
-  .tc-arrow {
-    display: none;
-  }
-
   .tc-stage {
     gap: 0;
   }

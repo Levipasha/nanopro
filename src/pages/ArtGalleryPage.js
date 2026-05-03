@@ -59,12 +59,12 @@ export default function ArtGalleryPage() {
         style={{
           position: 'fixed',
           inset: 0,
-          background: '#000',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           overflow: 'hidden',
-          paddingTop: '2rem',
+          paddingTop: '3.5rem',
           boxSizing: 'border-box'
         }}
       >
@@ -87,7 +87,7 @@ export default function ArtGalleryPage() {
             lineHeight: 1.6,
             fontFamily: "'Outfit', sans-serif"
           }}>
-            Exploring the unique vision and artistic depth through a curated collection of recent works.
+            Tap any bubble to view • Drag to spin
           </p>
         </div>
 

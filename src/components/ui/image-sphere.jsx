@@ -281,6 +281,21 @@ const SphereImageGrid = ({
             animation: 'sphereFadeIn 0.25s ease-out'
           }}
         >
+          {/* X button — position:absolute relative to this fixed overlay (full-screen), avoids backdrop-filter breaking position:fixed */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+            style={{
+              position: 'absolute', top: 16, right: 16, zIndex: 10000,
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.7)', border: 'none',
+              color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.8)'
+            }}
+          >
+            <X size={22} />
+          </button>
+
           <div
             onClick={e => e.stopPropagation()}
             style={{
@@ -292,18 +307,6 @@ const SphereImageGrid = ({
           >
             <div style={{ position: 'relative', aspectRatio: '1/1' }}>
               <img src={selectedImage.src || selectedImage.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <button
-                onClick={() => setSelectedImage(null)}
-                style={{
-                  position: 'absolute', top: 12, right: 12,
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.65)', border: 'none',
-                  color: '#fff', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-              >
-                <X size={18} />
-              </button>
             </div>
             {(selectedImage.title || selectedImage.description) && (
               <div style={{ padding: '20px' }}>

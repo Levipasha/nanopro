@@ -1984,7 +1984,8 @@ function Profile() {
   };
 
   const openHeroEditor = (field, artist) => {
-    if (isMobileViewport && (field === 'name' || field === 'specialization')) {
+    // Force modal-style editor for name/specialization/experience on all viewports for consistency
+    if (field === 'name' || field === 'specialization' || field === 'experience') {
       const current = heroUpdates[field] !== undefined ? heroUpdates[field] : (artist?.[field] || '');
       setMobileHeroEditField(field);
       setMobileHeroDraft(current);
@@ -6035,7 +6036,7 @@ function Profile() {
                           <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
                         </div>
 
-                        {isMobileViewport && mobileHeroEditField && (
+                        {mobileHeroEditField && (
                           <div
                             className="dash-mobile-edit-overlay"
                             onClick={() => setMobileHeroEditField(null)}
@@ -6103,7 +6104,7 @@ function Profile() {
                           </div>
                         )}
 
-                        {isMobileViewport && mobileLinkEditPlatform && (
+                        {mobileLinkEditPlatform && (
                           <div
                             className="dash-mobile-edit-overlay"
                             onClick={() => setMobileLinkEditPlatform(null)}

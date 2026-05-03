@@ -270,6 +270,27 @@ function ArtistPublicView() {
     });
   }
 
+  const getPlatformColor = (id) => {
+    const colors = {
+      instagram: '#E4405F',
+      facebook: '#1877F2',
+      twitter: '#000000',
+      tiktok: '#000000',
+      youtube: '#FF0000',
+      whatsapp: '#25D366',
+      snapchat: '#FFFC00',
+      threads: '#000000',
+      linkedin: '#0077B5',
+      spotify: '#1DB954',
+      pinterest: '#BD081C',
+      telegram: '#0088CC',
+      discord: '#5865F2',
+      github: '#181717',
+      twitch: '#9146FF',
+    };
+    return colors[id] || '#6366f1';
+  };
+
 
   const linkedArtItems = artist?.artLinks
     ? (Array.isArray(artist.artLinks) ? artist.artLinks : Object.values(artist.artLinks))
@@ -442,11 +463,53 @@ function ArtistPublicView() {
             </div>
             <p className="gp-artist-hero-username">@{artist.username || artist.artistId}</p>
 
-            {/* Quick social links overlay removed per user request for vertical list format */}
+            {/* Horizontal Social Links Row */}
+            {primaryLinks.length > 0 && (
+              <div className="gp-artist-hero-links-wrap">
+                <div className={`gp-artist-hero-links ${primaryLinks.length > 10 ? 'gp-links-loop' : 'gp-links-fixed'}`}>
+                  <div className="gp-artist-hero-links-inner">
+                    {primaryLinks.map((link, idx) => (
+                      <a
+                        key={idx}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gp-link-circle"
+                        aria-label={link.title}
+                      >
+                        <span className="gp-link-circle-icon" style={{ color: getPlatformColor(link.id) }}>
+                          {getLinkIcon({ platform: link.id })}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                  {/* Duplicate for infinite marquee loop */}
+                  {primaryLinks.length > 10 && (
+                    <div className="gp-artist-hero-links-inner">
+                      {primaryLinks.map((link, idx) => (
+                        <a
+                          key={`loop-${idx}`}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="gp-link-circle"
+                        >
+                          <span className="gp-link-circle-icon" style={{ color: getPlatformColor(link.id) }}>
+                            {getLinkIcon({ platform: link.id })}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="gp-content-wrap">
+          {/* Vertical links section removed from top, now horizontal in hero */}
+
           {/* About section moved to top and enriched with meta header */}
           {(artist.bio || artist.specialization || artist.experience) && (
             <div className="gp-section gp-about-section" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '0' }}>
@@ -584,28 +647,6 @@ function ArtistPublicView() {
             </div>
           )}
 
-          {/* 4. Social Links List */}
-          {primaryLinks.length > 0 && (
-            <div className="gp-section gp-links-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
-              <h2 className="gp-section-title">Links</h2>
-              <div className="gp-links">
-                {primaryLinks.map((link, idx) => (
-                  <a
-                    key={idx}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="gp-link"
-                    style={{ color: themeText, background: themeLinkBg }}
-                  >
-                    <span className="gp-link-icon">{getLinkIcon({ platform: link.id })}</span>
-                    <span className="gp-link-text">{link.title}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
 
         </div>
 
@@ -624,36 +665,42 @@ function ArtistPublicView() {
         <div className="gp-photo-modal">
           <div
             className="gp-modal-overlay"
-            onClick={() => {
-              setShowEventPreview(false);
-              setActiveEventPreview(null);
-            }}
+            onClick={() => { setShowEventPreview(false); setActiveEventPreview(null); }}
           />
+          <button
+            type="button"
+            onClick={() => { setShowEventPreview(false); setActiveEventPreview(null); }}
+            style={{
+              position: 'absolute', top: 16, right: 16, zIndex: 9999,
+              background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
+              color: '#fff', width: 44, height: 44, fontSize: 24, fontWeight: 300,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1, padding: 0
+            }}
+          >×</button>
           <img
             className="gp-modal-img"
             src={fixImageUrl(activeEventPreview.url) || activeEventPreview.url}
             alt={activeEventPreview.name || 'Event image'}
           />
-          <button
-            type="button"
-            className="gp-modal-close"
-            onClick={() => {
-              setShowEventPreview(false);
-              setActiveEventPreview(null);
-            }}
-          >
-            ×
-          </button>
         </div>
       )}
 
       {/* Profile photo preview card */}
       {showProfilePreview && artist?.photo && (
         <div className="gp-photo-modal">
-          <div
-            className="gp-modal-overlay"
+          <div className="gp-modal-overlay" onClick={() => setShowProfilePreview(false)} />
+          <button
+            type="button"
             onClick={() => setShowProfilePreview(false)}
-          />
+            style={{
+              position: 'absolute', top: 16, right: 16, zIndex: 9999,
+              background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
+              color: '#fff', width: 44, height: 44, fontSize: 24, fontWeight: 300,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1, padding: 0
+            }}
+          >×</button>
           <div className="gp-profile-preview-card">
             <img
               src={fixImageUrl(artist.photo) || artist.photo}
@@ -681,18 +728,11 @@ function ArtistPublicView() {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="gp-modal-close"
-            onClick={() => setShowProfilePreview(false)}
-          >
-            ×
-          </button>
         </div>
       )}
 
-      {/* Art / Image modal (reuse same UI) */}
-      {showArtGallery && (artItems.length > 0 || (selectedArtItem && (selectedArtItem.images || []).length > 0)) && (
+      {/* Art card grid modal */}
+      {showArtGallery && artItems.length > 0 && (
         <div
           className="gp-art-modal-overlay"
           onClick={() => {
@@ -702,59 +742,79 @@ function ArtistPublicView() {
         >
           <div className="gp-art-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gp-art-modal-header">
-              <h2>{selectedArtItem?.title ? selectedArtItem.title : 'Art Collection'}</h2>
-              {artItems.length > 0 && <span className="gp-art-modal-count">{artItems.length} pieces</span>}
+              <div className="gp-art-modal-title-wrap">
+                <h2>Art Collection</h2>
+                {artItems.length > 0 && <span className="gp-art-modal-count">{artItems.length} pieces</span>}
+              </div>
+              <button
+                type="button"
+                className="gp-art-modal-close"
+                onClick={() => {
+                  setShowArtGallery(false);
+                  setSelectedArtItem(null);
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
-            {artItems.length > 0 ? (
-              <div className="gp-art-modal-grid">
-                {artItems.map((item) => {
-                  const firstImage =
-                    item.images && item.images[0]
-                      ? item.images[0]
-                      : null;
-                  return (
-                    <button
-                      key={item.id || item.title}
-                      type="button"
-                      className="gp-art-card"
-                      onClick={() => setSelectedArtItem(item)}
-                    >
-                      {firstImage ? (
-                        <img src={fixImageUrl(firstImage) || firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
-                      ) : (
-                        <div className="gp-art-card-empty">🎨</div>
-                      )}
-                      <div className="gp-art-card-info">
-                        <h3>{item.title || 'Untitled'}</h3>
-                        {item.description && <p>{item.description}</p>}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="gp-art-lightbox-inner" style={{ background: 'transparent', padding: 0, maxHeight: 'unset' }}>
-                <div className="gp-art-lightbox-images" style={{ marginTop: 0 }}>
-                  {(selectedArtItem?.images || []).map((imgUrl, i) => (
-                    <img key={i} src={imgUrl} alt={`${selectedArtItem?.title || 'Image'} ${i + 1}`} />
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="gp-art-modal-grid">
+              {artItems.map((item) => {
+                const firstImage =
+                  item.images && item.images[0]
+                    ? item.images[0]
+                    : null;
+                return (
+                  <button
+                    key={item.id || item.title}
+                    type="button"
+                    className="gp-art-card"
+                    onClick={() => setSelectedArtItem(item)}
+                  >
+                    {firstImage ? (
+                      <img src={fixImageUrl(firstImage) || firstImage} alt={item.title || 'Artwork'} className="gp-art-card-img" />
+                    ) : (
+                      <div className="gp-art-card-empty">🎨</div>
+                    )}
+                    <div className="gp-art-card-info">
+                      <h3>{item.title || 'Untitled'}</h3>
+                      {item.description && <p>{item.description}</p>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
-            {selectedArtItem && (
-              <div className="gp-art-lightbox" onClick={() => setSelectedArtItem(null)}>
-                <div className="gp-art-lightbox-inner" onClick={(e) => e.stopPropagation()}>
-                  <h2>{selectedArtItem.title || 'Artwork'}</h2>
-                  <div className="gp-art-lightbox-images">
-                    {(selectedArtItem.images || []).map((imgUrl, i) => (
-                      <img key={i} src={imgUrl} alt={`${selectedArtItem.title || 'Artwork'} ${i + 1}`} />
-                    ))}
-                  </div>
-                  {selectedArtItem.description && <p>{selectedArtItem.description}</p>}
-                </div>
-              </div>
-            )}
+      {/* Art image lightbox — rendered OUTSIDE any backdrop-filter parent so position:fixed works */}
+      {selectedArtItem && (
+        <div
+          className="gp-art-lightbox"
+          onClick={() => setSelectedArtItem(null)}
+        >
+          <button
+            type="button"
+            className="gp-art-lightbox-close"
+            onClick={(e) => { e.stopPropagation(); setSelectedArtItem(null); }}
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="24" height="24">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <div className="gp-art-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <h2>{selectedArtItem.title || 'Artwork'}</h2>
+            <div className="gp-art-lightbox-images">
+              {(selectedArtItem.images || []).map((imgUrl, i) => (
+                <img key={i} src={fixImageUrl(imgUrl) || imgUrl} alt={`${selectedArtItem.title || 'Artwork'} ${i + 1}`} />
+              ))}
+            </div>
+            {selectedArtItem.description && <p>{selectedArtItem.description}</p>}
           </div>
         </div>
       )}

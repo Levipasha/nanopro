@@ -17,15 +17,12 @@ function resolveApiUrl() {
     return envUrl;
   }
 
-  const isLocal = typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-  if (isLocal) {
-    return process.env.REACT_APP_LOCAL_API_URL || 'http://127.0.0.1:5000';
+  // Always use the current origin if running in a browser
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
   }
 
-  // Production fallback
-  return process.env.REACT_APP_PRODUCTION_API_URL || 'https://microidentity.nanoprofiles.com';
+  return 'http://localhost:5000';
 }
 export const API_URL = resolveApiUrl();
 
