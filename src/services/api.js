@@ -22,7 +22,7 @@ function resolveApiUrl() {
     return window.location.origin;
   }
 
-  return 'http://localhost:5000';
+  return 'https://microidentity.nanoprofiles.com';
 }
 export const API_URL = resolveApiUrl();
 
