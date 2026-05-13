@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DotLottieReact as BrandLoader } from '@lottiefiles/dotlottie-react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
@@ -33,8 +33,8 @@ function GeneralProfileView() {
   // const [imgError, setImgError] = useState(false);
   // const [showEnlarged, setShowEnlarged] = useState(false);
   // const [showMenuViewer, setShowMenuViewer] = useState(false);
-  const [menuPage, setMenuPage] = useState(1);
-  const [menuTotalPages, setMenuTotalPages] = useState(0);
+  // const [menuPage, setMenuPage] = useState(1);
+  // const [menuTotalPages, setMenuTotalPages] = useState(0);
   // const [touchStartX, setTouchStartX] = useState(null);
   // const [pageTurnDir, setPageTurnDir] = useState('');
   const [galleryModalIndex, setGalleryModalIndex] = useState(null);
