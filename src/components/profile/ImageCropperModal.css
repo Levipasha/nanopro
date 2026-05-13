@@ -135,8 +135,8 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 10px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
@@ -148,6 +148,7 @@
   transition: background 0.18s, border-color 0.18s, transform 0.12s;
   touch-action: manipulation;
   white-space: nowrap;
+  min-width: 0; /* Allow shrinking */
 }
 
 .crop-rotate-btn:hover {
@@ -164,9 +165,24 @@
   font-size: 0.82rem;
   font-weight: 700;
   color: #64748b;
-  min-width: 36px;
+  min-width: 40px;
   text-align: center;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+/* Hide rotate button text on very narrow screens to prevent overflow */
+@media (max-width: 380px) {
+  .crop-rotate-btn span {
+    display: none;
+  }
+  .crop-rotate-btn {
+    padding: 12px;
+  }
+  .crop-rotate-row {
+    gap: 12px;
+    justify-content: center;
+  }
 }
 
 /* ── Footer ── */

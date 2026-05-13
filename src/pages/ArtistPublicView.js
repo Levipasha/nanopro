@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import './GeneralProfileView.css';
 import { landingArtistAPI } from '../services/api';
 import { getLinkIcon } from '../components/LinkIcons';
@@ -12,12 +12,13 @@ import SkyToggle from '../components/ui/SkyToggle';
 
 /**
  * Public artist profile route used for share links.
- * URL shape: /artist?id=<artistId>&art=<optionalArtId>
+ * URL shape: /artist/:artistId or /artist?id=<artistId>
  */
 function ArtistPublicView() {
   const navigate = useNavigate();
+  const { artistId: routeArtistId } = useParams();
   const [searchParams] = useSearchParams();
-  const artistId = searchParams.get('id');
+  const artistId = routeArtistId || searchParams.get('id');
   const artId = searchParams.get('art');
   const isMock = searchParams.get('mock') === '1' || artistId === 'mock-artist';
   const isEmbed = searchParams.get('embed') === '1';
@@ -66,6 +67,24 @@ function ArtistPublicView() {
       window.scrollTo(0, scrollY);
     };
   }, [showArtGallery]);
+
+  useEffect(() => {
+    if (artist && artId) {
+      const artItems = artist?.artLinks
+        ? (Array.isArray(artist.artLinks) ? artist.artLinks : Object.values(artist.artLinks))
+        : [];
+      
+      const targetArt = artItems.find(item => String(item.id) === String(artId));
+      if (targetArt) {
+        navigate('/show-my-art', { 
+          state: { 
+            artItems: [targetArt],
+            artistName: artist.name 
+          } 
+        });
+      }
+    }
+  }, [artist, artId, navigate]);
 
   useEffect(() => {
     if (!artistId) {
@@ -170,11 +189,11 @@ function ArtistPublicView() {
           autoplay
           style={{ width: 250, height: 250 }}
         />
-        <p style={{ 
-          fontFamily: "'Press Start 2P', cursive", 
-          fontSize: '10px', 
-          color: '#fff', 
-          marginTop: '1.5rem', 
+        <p style={{
+          fontFamily: "'Press Start 2P', cursive",
+          fontSize: '10px',
+          color: '#fff',
+          marginTop: '1.5rem',
           opacity: 0.7,
           letterSpacing: '2px'
         }}>
@@ -602,11 +621,11 @@ function ArtistPublicView() {
               <button
                 className="gp-art-button"
                 onClick={() => {
-                  navigate('/show-my-art', { 
-                    state: { 
+                  navigate('/show-my-art', {
+                    state: {
                       artItems: artItems,
-                      artistName: artist.name 
-                    } 
+                      artistName: artist.name
+                    }
                   });
                 }}
               >
@@ -823,4 +842,3 @@ function ArtistPublicView() {
 }
 
 export default ArtistPublicView;
-

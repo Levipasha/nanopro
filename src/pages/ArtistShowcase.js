@@ -8,7 +8,7 @@ import './ShowcaseHero.overrides.css';
 
 export default function ArtistShowcase() {
     // Hard-coded mock preview (always renders inside this landing page)
-    const iframeSrc = `${window.location.origin}/artist?id=mock-artist&mock=1`;
+    const iframeSrc = `${window.location.origin}/artist/mock-artist?mock=1`;
 
     return (
         <>

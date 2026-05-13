@@ -1,0 +1,805 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+.resume-container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    display: flex;
+    min-height: 1100px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    font-family: 'Montserrat', sans-serif;
+    color: #333333;
+}
+
+/* LEFT COLUMN */
+.resume-sidebar {
+    width: 34%;
+    background-color: #D9E3D8;
+    padding: 60px 35px;
+}
+
+.profile-photo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 50px;
+}
+
+.profile-photo {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: none;
+}
+
+.sidebar-section {
+    margin-bottom: 40px;
+}
+
+.sidebar-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #444;
+}
+
+.contact-list {
+    list-style: none;
+    padding: 0;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    margin-bottom: 20px;
+    font-weight: 400;
+}
+
+.contact-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.skills-list {
+    list-style: none;
+    padding: 0;
+    font-size: 12px;
+    line-height: 2.2;
+}
+
+.skills-list li::before {
+    content: "•";
+    margin-right: 10px;
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.education-item {
+    margin-bottom: 25px;
+}
+
+.edu-degree {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.edu-school {
+    font-size: 12px;
+    font-weight: 400;
+    margin-bottom: 3px;
+}
+
+.edu-year {
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* RIGHT COLUMN */
+.resume-main {
+    width: 66%;
+    padding: 75px 55px;
+}
+
+.resume-header {
+    margin-bottom: 55px;
+}
+
+.resume-name {
+    font-size: 44px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: #444;
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+
+.resume-title {
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: #555;
+}
+
+.main-section {
+    margin-bottom: 45px;
+}
+
+.main-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.summary-text {
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #444;
+    font-weight: 400;
+}
+
+.main-divider {
+    height: 1px;
+    background-color: #444;
+    margin: 40px 0;
+    width: 100%;
+}
+
+.experience-item {
+    margin-bottom: 40px;
+}
+
+.exp-role-year {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.exp-company {
+    font-size: 12.5px;
+    font-weight: 400;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.exp-list {
+    list-style: none;
+    padding: 0;
+    font-size: 12.5px;
+    line-height: 1.8;
+}
+
+.exp-list li {
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 20px;
+}
+
+.exp-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+
+[contenteditable]:focus {
+    outline: none;
+    background-color: rgba(217, 227, 216, 0.3);
+    border-radius: 2px;
+}
+
+/* TEMPLATE 2 - SALMON & TAUPE */
+.t2-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    min-height: 1200px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    font-family: 'Montserrat', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+.t2-header {
+    background-color: #4B3E37; /* Exact Dark Taupe */
+    color: #fff;
+    padding: 90px 60px 70px 300px;
+    position: relative;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.t2-frame {
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    width: 250px;
+    height: 220px;
+    border: 10px solid #D68C8C; /* Thicker Salmon Border */
+    background: transparent;
+    z-index: 10;
+}
+
+.t2-name {
+    font-size: 58px;
+    letter-spacing: -1px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    line-height: 1;
+    position: relative;
+    z-index: 20;
+    display: flex;
+    gap: 15px;
+}
+
+.t2-first-name {
+    font-weight: 800;
+    color: #fff;
+}
+
+.t2-last-name {
+    font-weight: 400;
+    color: #D6C8C1; /* Light Taupe */
+}
+
+.t2-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 8px; /* Extreme spacing */
+    text-transform: uppercase;
+    color: #fff;
+    position: relative;
+    z-index: 20;
+}
+
+
+.t2-body {
+    display: flex;
+}
+
+/* Sidebar T2 */
+.t2-sidebar {
+    width: 38%;
+    padding: 80px 45px;
+    background: #fff;
+    border-right: 2.5px solid #D68C8C;
+}
+
+.t2-sidebar-title {
+    color: #5D3FD3; /* Exact Deep Indigo Purple */
+    font-size: 19px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+}
+
+.t2-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;
+    margin-bottom: 22px;
+    color: #333;
+}
+
+.t2-icon-circle {
+    width: 28px;
+    height: 28px;
+    background-color: #D68C8C;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.t2-skill-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 25px;
+}
+
+.t2-skill-list li {
+    font-size: 14px;
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 20px;
+    color: #333;
+}
+
+.t2-skill-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #333;
+    font-weight: bold;
+}
+
+.t2-sub-header {
+    color: #5D3FD3;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 30px 0 15px;
+}
+
+.t2-edu-item {
+    margin-bottom: 35px;
+}
+
+.t2-edu-degree {
+    color: #5D3FD3;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.t2-edu-info {
+    font-style: italic;
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+/* Main T2 */
+.t2-main {
+    width: 62%;
+}
+
+.t2-summary-block {
+    background-color: #D68C8C;
+    color: white;
+    padding: 55px 60px;
+}
+
+.t2-summary-title {
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+.t2-summary-text {
+    font-size: 14px;
+    line-height: 1.9;
+    font-weight: 400;
+}
+
+.t2-content-block {
+    padding: 60px;
+}
+
+.t2-content-title {
+    color: #5D3FD3;
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 35px;
+}
+
+.t2-exp-item {
+    margin-bottom: 50px;
+}
+
+.t2-exp-role {
+    color: #5D3FD3;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.t2-exp-company {
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 800;
+    color: #000;
+    margin-bottom: 6px;
+}
+
+.t2-exp-year {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.t2-exp-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.t2-exp-list {
+    list-style: none;
+    padding: 0;
+}
+
+.t2-exp-list li {
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 20px;
+    color: #333;
+}
+
+.t2-exp-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.t2-footer {
+    background-color: #4B3E37;
+    color: white;
+    padding: 50px 80px;
+}
+
+.t2-footer-title {
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 35px;
+}
+
+.t2-ref-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.t2-ref-item {
+    flex: 1;
+}
+
+.t2-ref-name {
+    font-weight: 800;
+    font-size: 15px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.t2-ref-company {
+    font-style: italic;
+    font-size: 14px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.t2-ref-phone {
+    font-size: 14px;
+}
+
+
+.template-selector {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+.sel-btn {
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.sel-btn.active {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.sel-btn.inactive {
+    background: #334155;
+    color: #94a3b8;
+}
+
+/* GALLERY STYLES */
+.resume-gallery {
+    padding: 60px 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 40px;
+}
+
+.template-card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #334155;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.template-card:hover {
+    transform: translateY(-10px);
+    border-color: #10b981;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.card-preview-container {
+    width: 100%;
+    height: 400px;
+    background: #0f172a;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* Scaled-down preview */
+.mini-preview {
+    transform: scale(0.32);
+    transform-origin: top left;
+    width: 900px; /* Original width */
+    height: 1100px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    pointer-events: none; /* No editing in card view */
+}
+
+.template-card h3 {
+    color: white;
+    font-size: 18px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.template-card p {
+    color: #94a3b8;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.view-btn {
+    background: #10b981;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    width: 100%;
+    border: none;
+}
+
+.back-to-gallery {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #10b981;
+    cursor: pointer;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.back-to-gallery:hover {
+    text-decoration: underline;
+}
+
+/* TEMPLATE 3 - JR DEVELOPER (KYLE J SHANKS STYLE) */
+.t3-page {
+    width: 90%;
+    max-width: 1100px;
+    margin: 40px auto;
+    background-color: white;
+    box-shadow: 6px 10px 28px 0px rgba(0,0,0,0.4);
+    font-family: 'Open Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+    min-height: 1200px;
+}
+
+.t3-top-bar {
+    height: 220px;
+    background-color: #848484;
+    color: white;
+    position: relative;
+}
+
+.t3-name {
+    position: absolute;
+    bottom: 0;
+    left: calc(350px + 5%);
+    height: 120px;
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+    font-size: 58px;
+    letter-spacing: 8px;
+    font-weight: 100;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.t3-side-bar {
+    position: absolute;
+    top: 60px;
+    left: 5%;
+    width: 350px;
+    background-color: #F7E0C1; /* Signature Tan */
+    padding: 320px 30px 50px;
+    z-index: 5;
+}
+
+.t3-mugshot {
+    position: absolute;
+    top: 50px;
+    left: 70px;
+    height: 210px;
+    width: 210px;
+}
+
+.t3-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 210px;
+    height: 210px;
+    color: black;
+}
+
+.t3-logo-svg {
+    width: 100%;
+    height: 100%;
+    stroke: black;
+    stroke-width: 2.5;
+    fill: none;
+}
+
+.t3-logo-text {
+    position: absolute;
+    top: 58%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 45px;
+    font-weight: 400;
+}
+
+.t3-sidebar-text {
+    font-size: 14px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.t3-side-header {
+    font-size: 18px;
+    letter-spacing: 4px;
+    font-weight: 600;
+    margin: 60px auto 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #888;
+    text-transform: uppercase;
+}
+
+.t3-list-thing {
+    padding-left: 25px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.t3-content-container {
+    margin-left: calc(350px + 5%);
+    padding: 25px 40px 50px;
+}
+
+.t3-main-title {
+    font-size: 30px;
+    letter-spacing: 5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 40px 0 20px;
+}
+
+.t3-separator {
+    width: 240px;
+    height: 2px;
+    background-color: #999;
+    margin: 0 auto 25px;
+}
+
+.t3-greyed {
+    background-color: #DDD;
+    width: 100%;
+    padding: 8px;
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+}
+
+.t3-summary {
+    text-align: justify;
+    line-height: 1.8;
+    margin-bottom: 50px;
+    font-size: 15px;
+    color: #444;
+}
+
+.t3-job-item {
+    margin-bottom: 35px;
+}
+
+.t3-job-title {
+    font-size: 21px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.t3-job-desc-light {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.t3-job-justified {
+    text-align: justify;
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+.t3-social {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 20px;
+    min-height: 35px;
+    display: flex;
+    align-items: center;
+}
+
+.t3-social::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    height: 30px;
+    width: 30px;
+    background-size: contain !important;
+}
+
+.t3-twitter::before { background: url('https://cdn3.iconfinder.com/data/icons/social-media-2026/60/Socialmedia_icons_Twitter-07-128.png') center no-repeat; }
+.t3-linkedin::before { background: url('https://cdn3.iconfinder.com/data/icons/social-media-2026/60/Socialmedia_icons_LinkedIn-128.png') center no-repeat; }
+.t3-pinterest::before { background: url('https://cdn3.iconfinder.com/data/icons/social-media-2026/60/Socialmedia_icons_Pinterest-23-128.png') center no-repeat; }
+
+
+

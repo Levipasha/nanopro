@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
       : `${baseUrl}/api/artist/public/${encodeURIComponent(id)}`;
     
     // Fallback for local development if apiBase is not set
-    const finalApiUrl = apiUrl.startsWith('http') ? apiUrl : `http://localhost:5000/api/artist/public/${encodeURIComponent(id)}`;
+    const finalApiUrl = apiUrl;
     
     const r = await fetch(finalApiUrl, { headers: { Accept: 'application/json' } });
     const data = await r.json().catch(() => ({}));

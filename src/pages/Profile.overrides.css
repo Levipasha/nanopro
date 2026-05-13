@@ -885,7 +885,8 @@
   color: #0f172a !important;
 }
 
-.dash-section-header {
+.dash-section-header,
+.dash-art-header {
   background: transparent !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
   padding-bottom: 1rem !important;
@@ -2466,3 +2467,78 @@ h3.dash-section-label {
 .dash-full-preview-container { width: 100% !important; height: 100% !important; max-height: 100% !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; }
 .dash-preview-iframe { min-height: 100% !important; border-radius: 0 !important; background: #ffffff !important; }
 .dash-preview-panel { display: flex !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; }
+
+.onboarding-field-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  font-weight: 500;
+  display: block;
+}
+
+.onboarding-suggestions {
+  margin-top: 0.2rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.onboarding-suggestions span {
+  color: #6b7280;
+  margin-right: 2px;
+}
+
+.onboarding-suggestion-btn {
+  width: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 3px 10px !important;
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block !important;
+  line-height: 1.4 !important;
+}
+
+.onboarding-suggestion-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #9ca3af !important;
+}
+@media (max-width: 768px) {
+  .dash-section-header,
+  .dash-art-header {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Art Showcase Layout Fixes */
+.dash-art-add-card,
+.dash-art-grid {
+  margin-left: 2rem !important;
+  margin-right: 2rem !important;
+}
+
+.dash-art-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+  gap: 1.25rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-art-add-card,
+  .dash-art-grid {
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+    grid-template-columns: 1fr !important;
+  }
+}
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DotLottieReact as BrandLoader } from '@lottiefiles/dotlottie-react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
@@ -9,6 +9,7 @@ import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
+import SkyToggle from '../components/ui/SkyToggle';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -22,6 +23,7 @@ function displayGeneralLinkLabel(link) {
 
 function GeneralProfileView() {
   const { username } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMock = searchParams.get('mock') === '1';
   const isEmbed = searchParams.get('embed') === '1';
@@ -36,6 +38,7 @@ function GeneralProfileView() {
   const [touchStartX, setTouchStartX] = useState(null);
   const [pageTurnDir, setPageTurnDir] = useState('');
   const [galleryModalIndex, setGalleryModalIndex] = useState(null);
+  const [themeOverride, setThemeOverride] = useState(null);
 
   useShowcaseEmbedHeight(isEmbed);
 
@@ -137,7 +140,6 @@ function GeneralProfileView() {
     );
   }
 
-
   if (error || !profile) {
     return (
       <div className="gp-view gp-error">
@@ -149,16 +151,12 @@ function GeneralProfileView() {
   }
 
   const links = (profile.links || []).filter(l => l.url).sort((a, b) => (a.order || 0) - (b.order || 0));
-  const theme = getThemeById(profile.theme || 'mint');
+  const theme = getThemeById(themeOverride || profile.theme || 'midnight');
   const bioLines = String(profile.bio || '').split('\n').map((line) => line.trim()).filter(Boolean);
-  const extractedPhoneFromBio = bioLines.find((line) => line.startsWith('📞')) || '';
-  const extractedEmailFromBio = bioLines.find((line) => line.startsWith('✉')) || '';
   const cleanBio = bioLines
     .filter((line) => !line.startsWith('📞') && !line.startsWith('✉'))
     .join('\n')
     .trim();
-  const restaurantPhone = (extractedPhoneFromBio.replace(/^📞\s*/, '') || '').trim();
-  const restaurantEmail = (extractedEmailFromBio.replace(/^✉\s*/, '') || '').trim();
 
   const galleryItems = (Array.isArray(profile.gallery) ? profile.gallery : [])
     .map((g) => ({ 
@@ -168,35 +166,23 @@ function GeneralProfileView() {
     }))
     .filter((g) => g.url);
 
-
-
-
-
-
-
   const activeHeadingFont = profile.font || 'outfit';
   const activeBodyFont = profile.bioFont || activeHeadingFont;
-
   const sharePrimaryName = (profile?.name || '').trim() || 'Profile';
   const nanoProfilesPageTitle = `${sharePrimaryName} - Nano Profiles`;
 
   const handleShare = async () => {
     let url = window.location.href;
     if (isEmbed && profile?.username) {
-      const base = (process.env.REACT_APP_FRONTEND_URL || process.env.REACT_APP_NFC_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+      const base = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
       url = `${base}/link/${profile.username}`;
     }
-
-    const shareTitle = `Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`;
-    const shareText = `Discover ${sharePrimaryName}'s digital footprint on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}. Smart Digital Identity Solutions for modern creators and professionals. Create yours at ${process.env.REACT_APP_DOMAIN || 'nanoprofiles.com'}`;
+    const shareTitle = `Check out ${sharePrimaryName} Profile`;
+    const shareText = `Discover ${sharePrimaryName}'s digital footprint on Nano Profiles.`;
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url
-        });
+        await navigator.share({ title: shareTitle, text: shareText, url });
       } catch (err) {
         if (err.name !== 'AbortError') copyToClipboard(url);
       }
@@ -206,35 +192,22 @@ function GeneralProfileView() {
   };
 
   return (
-    <div className={`gp-view gp-layout${isEmbed ? ' gp-embed-showcase' : ''}`}>
+    <div className={`gp-view gp-layout gp-artist-themed${isEmbed ? ' gp-embed-showcase' : ''}`}>
       <Helmet>
         <title>{nanoProfilesPageTitle}</title>
-        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles. Smart Digital Identity Solutions.`} />
-
-        {/* Open Graph / Facebook / WhatsApp */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content={`Check out ${sharePrimaryName} Profile on ${process.env.REACT_APP_SITE_NAME || 'Nano Profiles'}`} />
-        <meta property="og:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions for modern creators and professionals.`} />
-        <meta property="og:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content={window.location.href} />
-        <meta name="twitter:title" content={`Check out ${sharePrimaryName} Profile on Nano Profiles`} />
-        <meta name="twitter:description" content={`Discover ${sharePrimaryName}'s digital footprint. Smart Digital Identity Solutions.`} />
-        <meta name="twitter:image" content={fixImageUrl(profile?.photo) || profile?.photo} />
+        <meta name="description" content={`Check out ${sharePrimaryName} Profile on Nano Profiles.`} />
       </Helmet>
 
       <div
-        className={`gp-card gp-card-themed ${theme.isAnimated ? theme.className : ''} ${profile.profileType === 'restaurant' ? 'gp-profile-restaurant' : ''}`}
+        className={`gp-card gp-card-themed gp-artist-themed-card ${theme.isAnimated ? theme.className : ''}`}
         style={{
           background: theme.isAnimated ? undefined : theme.bg,
           color: theme.text,
           '--font-heading': resolveFontFamily(activeHeadingFont),
           '--font-body': resolveFontFamily(activeBodyFont)
         }}>
-        {/* Share button - top right */}
+        
+        {/* Share button */}
         <button type="button" onClick={handleShare} className="gp-share-btn" aria-label="Share">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -243,261 +216,113 @@ function GeneralProfileView() {
           </svg>
         </button>
 
-        {/* Profile banner/header */}
-        <div className="gp-photo-header" style={{ background: theme.headerBg || theme.linkBg || 'rgba(0,0,0,0.05)' }}>
-          {profile.banner ? (
+        {/* Hero Section - Matches Artist Profile Style */}
+        <div className="gp-artist-hero">
+          <div className="gp-artist-hero-overlay-wrap">
+            <div className="gp-artist-hero-toggle-wrap">
+              <SkyToggle
+                checked={theme.id !== 'light'}
+                onChange={(e) => {
+                  setThemeOverride(e.target.checked ? 'midnight' : 'light');
+                }}
+              />
+            </div>
             <img 
-              src={fixImageUrl(profile.banner) || profile.banner} 
+              src={fixImageUrl(profile.banner || profile.photo) || profile.banner || profile.photo} 
               alt="" 
-              className="gp-banner-bg"
+              className="gp-artist-hero-bg"
+              style={{
+                WebkitMaskImage: 'linear-gradient(to bottom, black 45%, transparent 100%)',
+                maskImage: 'linear-gradient(to bottom, black 45%, transparent 100%)'
+              }}
             />
-          ) : profile.photo && !imgError ? (
-            <img 
-              src={fixImageUrl(profile.photo) || profile.photo} 
-              alt="" 
-              className="gp-banner-bg-fallback"
-            />
-          ) : null}
-          <div className="gp-photo-overlay-minimal" />
+            <div className="gp-artist-hero-fade" />
+          </div>
+
+          <div className="gp-artist-hero-content">
+            <div className="gp-artist-hero-name-row">
+              <h1 className="gp-artist-hero-name">{profile.name}</h1>
+            </div>
+            <p className="gp-artist-hero-username">@{profile.username}</p>
+          </div>
         </div>
 
         <div className="gp-content-wrap">
-          {/* Profile Avatar Row (Left aligned like Artist Profile) - Hidden for Restaurants */}
-          {profile.profileType !== 'restaurant' && (
-            <div className="gp-avatar-row gp-avatar-row-left">
-              <div className="gp-avatar-circle" onClick={() => setShowEnlarged(true)} style={{ cursor: 'pointer' }}>
-                {profile.photo && !imgError ? (
-                  <img
-                    src={fixImageUrl(profile.photo) || profile.photo}
-                    alt={profile.name}
-                    className="gp-avatar-img"
-                    onError={() => setImgError(true)}
-                  />
-                ) : (
-                  <div className="gp-avatar-circle-fallback">
-                    {profile.name?.charAt(0) || '?'}
+          {/* About section */}
+          {(cleanBio || profile.title) && (
+            <div className="gp-section gp-about-section" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '0' }}>
+              <div className="gp-about-header">
+                <h2 className="gp-section-title">About</h2>
+                {profile.title && (
+                  <div className="gp-about-meta">
+                    <span>{profile.title}</span>
                   </div>
                 )}
               </div>
-              <div className="gp-avatar-text">
-                {profile.name && <h1 className="gp-name">{profile.name}</h1>}
-                {profile.title && (
-                  <p className="gp-title-small">{profile.title}</p>
-                )}
-              </div>
+              {cleanBio && <p className="gp-bio">{cleanBio}</p>}
             </div>
           )}
 
-          {/* For Restaurants, show Name and Tagline without avatar */}
-          {profile.profileType === 'restaurant' && (
-            <div className="gp-restaurant-header-info">
-              {profile.name && <h1 className="gp-name">{profile.name}</h1>}
-              {profile.title && <p className="gp-title-small">{profile.title}</p>}
-            </div>
-          )}
-
-          {/* Username - @username */}
-          <p className="gp-username">@{profile.username}</p>
-
-          {/* Bio */}
-          {cleanBio && (
-            <p className="gp-bio">{cleanBio}</p>
-          )}
-
-          {/* Restaurant / profile gallery (persisted via API) */}
+          {/* Gallery section - Polaroid Style */}
           {galleryItems.length > 0 && (
-            <div className="gp-restaurant-gallery" style={{ paddingLeft: 0, paddingRight: 0 }}>
-              <p className="gp-restaurant-gallery-heading">Gallery</p>
-              <div className="gp-restaurant-gallery-grid">
+            <div className="gp-section gp-gallery-section" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <h2 className="gp-section-title">Gallery</h2>
+              <div className="gp-gallery-grid-artist">
                 {galleryItems.map((g, idx) => {
-                  const hasLink = g.link && g.link.trim() !== '';
-                  const finalLink = hasLink ? (g.link.startsWith('http') ? g.link : `https://${g.link}`) : '';
-                  return hasLink ? (
-                    <a
+                  const rotation = (idx % 2 === 0 ? -1.5 : 1.5);
+                  return (
+                    <div
                       key={`${g.url}-${idx}`}
-                      href={finalLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gp-restaurant-gallery-tile"
-                      aria-label={g.name ? `Visit ${g.name}` : 'Visit link'}
-                    >
-                      <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
-                      {g.name && <div className="gp-gallery-caption" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', fontSize: '0.7rem', textAlign: 'center', backdropFilter: 'blur(4px)' }}>{g.name}</div>}
-                    </a>
-                  ) : (
-                    <button
-                      key={`${g.url}-${idx}`}
-                      type="button"
-                      className="gp-restaurant-gallery-tile"
+                      className="gp-gallery-polaroid-item"
+                      style={{ transform: `rotate(${rotation}deg)` }}
                       onClick={() => setGalleryModalIndex(idx)}
-                      aria-label={g.name ? `View ${g.name}` : 'View gallery image'}
                     >
-                      <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
-                      {g.name && <div className="gp-gallery-caption" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', fontSize: '0.7rem', textAlign: 'center', backdropFilter: 'blur(4px)' }}>{g.name}</div>}
-                    </button>
+                      <div className="gp-gallery-polaroid-frame">
+                        <img src={fixImageUrl(g.url) || g.url} alt={g.name || ''} loading="lazy" />
+                      </div>
+                      <div className="gp-gallery-polaroid-caption">
+                        {g.name || 'Art Title'}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* Contact + link buttons */}
-          {(restaurantPhone || restaurantEmail || profile.menuPdf || links.length > 0) && (
-          <div className="gp-links" style={{ paddingLeft: 0, paddingRight: 0 }}>
-            {profile.menuPdf && (
-              <a
-                role="button"
-                tabIndex={0}
-                href="#menu"
-                className="gp-link gp-link-menu gp-link-menu-cta"
-                aria-label="See my menu"
-                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  openMenuViewer();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    openMenuViewer();
-                  }
-                }}
-              >
-                <span className="gp-link-icon">{getMenuPdfIcon()}</span>
-                <span className="gp-link-text">See my menu</span>
-              </a>
-            )}
-            {restaurantPhone && (
-              <a
-                href={`tel:${restaurantPhone}`}
-                className="gp-link"
-                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
-              >
-                <span className="gp-link-icon" aria-hidden="true">📞</span>
-                <span className="gp-link-text">{restaurantPhone}</span>
-              </a>
-            )}
-            {restaurantEmail && (
-              <a
-                href={`mailto:${restaurantEmail}`}
-                className="gp-link"
-                title={restaurantEmail}
-                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
-              >
-                <span className="gp-link-icon" aria-hidden="true">✉</span>
-                <span className="gp-link-text">{restaurantEmail}</span>
-              </a>
-            )}
-            {links.map((link, idx) => (
-              <a
-                key={idx}
-                href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gp-link"
-                style={{ color: theme.text, background: theme.linkBg || theme.bg }}
-              >
-                <span className="gp-link-icon">{getLinkIcon(link)}</span>
-                <span className="gp-link-text">{displayGeneralLinkLabel(link)}</span>
-              </a>
-            ))}
-          </div>
+          {/* Links section */}
+          {links.length > 0 && (
+            <div className="gp-links" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '1.5rem' }}>
+              {links.map((link, idx) => (
+                <a
+                  key={idx}
+                  href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gp-link"
+                >
+                  <span className="gp-link-icon">{getLinkIcon(link)}</span>
+                  <span className="gp-link-text">{displayGeneralLinkLabel(link)}</span>
+                </a>
+              ))}
+            </div>
           )}
         </div>
 
         <div className="gp-footer">
-          <span>Powered by <a href={`https://${process.env.REACT_APP_DOMAIN || 'nanoprofiles.com'}`} target="_blank" rel="noopener noreferrer">{process.env.REACT_APP_SITE_NAME || 'NanoProfiles'}</a></span>
+          <span>Powered by <a href="/">Nano Profiles</a></span>
         </div>
 
-        {/* Photo Enlarge Modal */}
-        {showEnlarged && profile.photo && (
-          <div className="gp-photo-modal" onClick={() => setShowEnlarged(false)}>
-            <div className="gp-modal-overlay" />
-            <button className="gp-modal-close" onClick={() => setShowEnlarged(false)} aria-label="Close">×</button>
-            <img
-              src={fixImageUrl(profile.photo) || profile.photo}
-              alt={profile.name}
-              className="gp-modal-img"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
-
+        {/* Gallery Modal */}
         {galleryModalIndex !== null && galleryItems[galleryModalIndex] && (
-          <div className="gp-photo-modal" onClick={() => setGalleryModalIndex(null)} role="dialog" aria-modal="true" aria-label="Gallery image">
+          <div className="gp-photo-modal" onClick={() => setGalleryModalIndex(null)}>
             <div className="gp-modal-overlay" />
-            <button type="button" className="gp-modal-close" onClick={() => setGalleryModalIndex(null)} aria-label="Close">×</button>
+            <button type="button" className="gp-modal-close">×</button>
             <img
               src={fixImageUrl(galleryItems[galleryModalIndex].url) || galleryItems[galleryModalIndex].url}
-              alt={galleryItems[galleryModalIndex].name || ''}
+              alt=""
               className="gp-modal-img"
-              onClick={(e) => e.stopPropagation()}
             />
-            {(galleryItems[galleryModalIndex].name || galleryItems[galleryModalIndex].link) && (
-              <div className="gp-modal-footer" onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', color: '#fff', background: 'rgba(0,0,0,0.8)', padding: '12px 24px', borderRadius: '12px', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '90%' }}>
-                {galleryItems[galleryModalIndex].name && <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem' }}>{galleryItems[galleryModalIndex].name}</p>}
-                {galleryItems[galleryModalIndex].link && (
-                  <a 
-                    href={galleryItems[galleryModalIndex].link.startsWith('http') ? galleryItems[galleryModalIndex].link : `https://${galleryItems[galleryModalIndex].link}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{ display: 'inline-block', marginTop: '10px', color: '#6366f1', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', background: '#fff', padding: '6px 14px', borderRadius: '8px' }}
-                  >
-                    Visit Link
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Menu PDF Book Viewer */}
-        {showMenuViewer && profile.menuPdf && (
-          <div className="gp-menu-modal" onClick={closeMenuViewer}>
-            <div className="gp-modal-overlay" />
-            <div className="gp-menu-book" onClick={(e) => e.stopPropagation()}>
-              <div className="gp-menu-topbar">
-                <span className="gp-menu-title">Menu PDF</span>
-                <div className="gp-menu-topbar-right">
-                  <span className="gp-menu-page-indicator">
-                    Page {menuPage}{menuTotalPages ? ` / ${menuTotalPages}` : ''}
-                  </span>
-                  <button type="button" className="gp-menu-close" onClick={closeMenuViewer} aria-label="Close menu viewer">
-                    <span aria-hidden="true">×</span>
-                  </button>
-                </div>
-              </div>
-
-              <div
-                className={`gp-menu-page-shell ${pageTurnDir ? `turn-${pageTurnDir}` : ''}`}
-                onTouchStart={(e) => setTouchStartX(e.changedTouches[0].clientX)}
-                onTouchEnd={(e) => {
-                  if (touchStartX == null) return;
-                  const dx = e.changedTouches[0].clientX - touchStartX;
-                  if (dx < -40) turnPage('next');
-                  if (dx > 40) turnPage('prev');
-                  setTouchStartX(null);
-                }}
-              >
-                <Document
-                  file={profile.menuPdf}
-                  onLoadSuccess={({ numPages }) => {
-                    setMenuTotalPages(numPages || 0);
-                    if (menuPage > numPages) setMenuPage(1);
-                  }}
-                  loading={<div className="gp-menu-loading">Loading menu...</div>}
-                  error={<div className="gp-menu-error">Unable to load this menu PDF.</div>}
-                >
-                  <Page pageNumber={menuPage} width={Math.min(window.innerWidth * 0.82, 720)} />
-                </Document>
-              </div>
-
-              <div className="gp-menu-controls">
-                <button type="button" onClick={() => turnPage('prev')} disabled={menuPage <= 1}>◀ Prev</button>
-                <button type="button" onClick={() => turnPage('next')} disabled={menuTotalPages ? menuPage >= menuTotalPages : true}>Next ▶</button>
-              </div>
-              <p className="gp-menu-hint">Swipe left/right to flip pages like a book.</p>
-            </div>
           </div>
         )}
       </div>

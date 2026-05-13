@@ -11,6 +11,8 @@ import ArtistShowcase from './pages/ArtistShowcase';
 import StudentShowcase from './pages/StudentShowcase';
 import RestaurantShowcase from './pages/RestaurantShowcase';
 import ArtGalleryPage from './pages/ArtGalleryPage';
+import MasterArtRedirect from './pages/MasterArtRedirect';
+// import ResumePage from './pages/ResumePage';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 
@@ -79,12 +81,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Login />} />
         <Route path="/link/:username" element={<GeneralProfileView />} />
-        <Route path="/artist" element={<ArtistPublicView />} />
+        <Route path="/artist/:artistId" element={<ArtistPublicView />} />
+        <Route path="/a/:artistId/art" element={<MasterArtRedirect />} />
         <Route path="/student" element={<StudentPublicView />} />
         <Route path="/show-my-art" element={<ArtGalleryPage />} />
         <Route path="/artist-showcase" element={<ArtistShowcase />} />
         <Route path="/student-showcase" element={<StudentShowcase />} />
         <Route path="/restaurant-showcase" element={<RestaurantShowcase />} />
+{/* <Route path="/resume" element={<ResumePage />} /> */}
 
         <Route path="/*" element={<Home />} />
       </Routes>

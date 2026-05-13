@@ -16,6 +16,7 @@ import ImageCropperModal from '../components/profile/ImageCropperModal';
 import ProfileChoiceScreen from '../components/profile/ProfileChoiceScreen';
 import ProfileArtistOnboardingWizard from '../components/profile/ProfileArtistOnboardingWizard';
 import PhoneINInput from '../components/PhoneINInput';
+
 import {
   getINDisplayDigits,
   toINFullPhone,
@@ -338,6 +339,7 @@ function Profile() {
   /** True after GET /my-profiles finishes for this account (avoids one dashboard frame before onboarding). */
   const [artistListReady, setArtistListReady] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
+  const [artQrModal, setArtQrModal] = useState(null); // { url, title }
 
   /** GIFs skip crop; other images open cropper. Resolves with the file to upload. */
   const getFileAfterCropOrPassThrough = useCallback((file, aspect) => {
@@ -526,6 +528,9 @@ function Profile() {
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
+  const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]);
+  const [availabilityConflicts, setAvailabilityConflicts] = useState({ username: null, email: null });
+  const lastSuggestionsUsername = useRef("");
   const usernameCheckTimer = useRef(null);
 
   // Refs for General profile onboarding inputs
@@ -568,6 +573,7 @@ function Profile() {
     banner: null,
     menuPdf: null,
     gallery: [],
+    username: '',
     links: {}
   });
   const [restaurantOnboardingStep, setRestaurantOnboardingStep] = useState(() => {
@@ -1418,7 +1424,7 @@ function Profile() {
   useEffect(() => {
     if (artistsLoading || generalProfileLoading) return;
 
-    const hasSetupArtist = myArtists.length > 0 && myArtists[0].isSetup === true;
+    const hasSetupArtist = myArtists.length > 0 && (myArtists[0].isSetup === true || String(myArtists[0].isSetup) === 'true');
     const hasGeneral = !!generalProfile;
 
     // 1) Brand new user: no artist, no general, and still on choice screen
@@ -1459,6 +1465,12 @@ function Profile() {
       }
 
       // 3) No lock yet (fresh login): infer mode from backend saved profile.
+      // If they only have an Artist profile, go directly to it.
+      if (!lock && hasSetupArtist && !hasGeneral) {
+        handleSelectArtistMode();
+        return;
+      }
+
       // This prevents the "choice screen" from showing again when a restaurant profile already exists.
       if (!lock && hasGeneral) {
         const likelyRestaurant =
@@ -3246,6 +3258,91 @@ function Profile() {
                   <input type="text" className="onboarding-input" value={restaurantForm.name} onChange={e => setRestaurantForm(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g. My Cafe" required autoFocus />
                 </div>
                 <div className="onboarding-field">
+                  <label>Username (for your link)</label>
+                  <div className="artist-id-input-wrapper" style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="onboarding-input-id"
+                      style={{
+                        paddingLeft: '1.25rem',
+                        paddingRight: '2.5rem',
+                        borderColor: usernameCheck.status === 'available' ? '#10b981' : usernameCheck.status === 'taken' || usernameCheck.status === 'invalid' ? '#ef4444' : undefined
+                      }}
+                      autoComplete="off"
+                      value={restaurantForm.username || ""}
+                      onChange={e => {
+                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                        setRestaurantForm(prev => ({ ...prev, username: val }));
+                        clearTimeout(usernameCheckTimer.current);
+                        if (!val || val.length < 3) {
+                          setUsernameCheck(val ? { status: 'invalid', msg: 'At least 3 characters' } : { status: 'idle', msg: '' });
+                          setAvailabilitySuggestions([]);
+                          return;
+                        }
+                        setUsernameCheck({ status: 'checking', msg: '' });
+                        usernameCheckTimer.current = setTimeout(async () => {
+                          try {
+                            const res = await generalProfileAPI.checkAvailability({ username: val });
+                            if (res.conflicts?.username) {
+                              setUsernameCheck({ status: 'taken', msg: res.conflicts.username });
+                              if (res.suggestions) {
+                                setAvailabilitySuggestions(res.suggestions);
+                              }
+                            } else {
+                              setUsernameCheck({ status: 'available', msg: 'Available!' });
+                              setAvailabilitySuggestions([]);
+                            }
+                          } catch (err) {
+                            setUsernameCheck({ status: 'idle', msg: '' });
+                          }
+                        }, 500);
+                      }}
+                      placeholder="restaurant_name"
+                      required
+                    />
+                    {usernameCheck.status === 'checking' && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#94a3b8' }}>...</span>
+                    )}
+                    {usernameCheck.status === 'available' && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#10b981' }}>✓</span>
+                    )}
+                    {(usernameCheck.status === 'taken' || usernameCheck.status === 'invalid') && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#ef4444' }}>✕</span>
+                    )}
+                  </div>
+                  {usernameCheck.status === 'taken' && (
+                    <>
+                      <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                      {availabilitySuggestions.length > 0 && (
+                        <div className="onboarding-suggestions" style={{ paddingLeft: '0.5rem' }}>
+                          <span>Try:</span>
+                          {availabilitySuggestions.map(s => (
+                            <button 
+                              key={s} 
+                              type="button" 
+                              className="onboarding-suggestion-btn"
+                              onClick={() => {
+                                setRestaurantForm(p => ({ ...p, username: s }));
+                                setUsernameCheck({ status: 'available', msg: 'Available!' });
+                                setAvailabilitySuggestions([]);
+                              }}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {usernameCheck.status === 'invalid' && (
+                    <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                  )}
+                  {usernameCheck.status === 'available' && (
+                    <small style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                  )}
+                  <small className="onboarding-tip">Your link: <b>{process.env.REACT_APP_DOMAIN || 'nanoprofile.com'}/link/{restaurantForm.username || 'username'}</b></small>
+                </div>
+                <div className="onboarding-field">
                   <label>Tagline</label>
                   <input type="text" className="onboarding-input" value={restaurantForm.tagline} onChange={e => setRestaurantForm(prev => ({ ...prev, tagline: e.target.value }))} placeholder="e.g. Fresh food, fast" />
                 </div>
@@ -3277,7 +3374,7 @@ function Profile() {
                 <button type="button" className="onboarding-btn-primary" onClick={() => {
                   setRestaurantForm(prev => ({ ...prev, email: prev.email || displayEmail }));
                   updateRestaurantOnboardingStep(2);
-                }} disabled={!restaurantForm.name.trim()}>Next Step →</button>
+                }} disabled={!restaurantForm.name.trim() || !restaurantForm.username || usernameCheck.status !== 'available'}>Next Step →</button>
               </div>
             </div>
           )}
@@ -3805,15 +3902,24 @@ function Profile() {
                         clearTimeout(usernameCheckTimer.current);
                         if (!val || val.length < 3) {
                           setUsernameCheck(val ? { status: 'invalid', msg: 'At least 3 characters' } : { status: 'idle', msg: '' });
+                          setAvailabilitySuggestions([]);
                           return;
                         }
                         setUsernameCheck({ status: 'checking', msg: '' });
                         usernameCheckTimer.current = setTimeout(async () => {
                           try {
-                            await generalProfileAPI.getByUsername(val);
-                            setUsernameCheck({ status: 'taken', msg: 'Username already taken' });
-                          } catch {
-                            setUsernameCheck({ status: 'available', msg: 'Available!' });
+                            const res = await generalProfileAPI.checkAvailability({ username: val });
+                            if (res.conflicts?.username) {
+                              setUsernameCheck({ status: 'taken', msg: res.conflicts.username });
+                              if (res.suggestions) {
+                                setAvailabilitySuggestions(res.suggestions);
+                              }
+                            } else {
+                              setUsernameCheck({ status: 'available', msg: 'Available!' });
+                              setAvailabilitySuggestions([]);
+                            }
+                          } catch (err) {
+                            setUsernameCheck({ status: 'idle', msg: '' });
                           }
                         }, 500);
                       }}
@@ -3831,7 +3937,28 @@ function Profile() {
                     )}
                   </div>
                   {usernameCheck.status === 'taken' && (
-                    <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                    <>
+                      <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
+                      {availabilitySuggestions.length > 0 && (
+                        <div className="onboarding-suggestions" style={{ paddingLeft: '0.5rem' }}>
+                          <span>Try:</span>
+                          {availabilitySuggestions.map(s => (
+                            <button 
+                              key={s} 
+                              type="button" 
+                              className="onboarding-suggestion-btn"
+                              onClick={() => {
+                                setGeneralForm(p => ({ ...p, username: s }));
+                                setUsernameCheck({ status: 'available', msg: 'Available!' });
+                                setAvailabilitySuggestions([]);
+                              }}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                   {usernameCheck.status === 'invalid' && (
                     <small style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block', paddingLeft: '0.5rem' }}>{usernameCheck.msg}</small>
@@ -4232,16 +4359,14 @@ function Profile() {
           <header className="dash-main-header">
             <div>
               <h1 className="dash-main-title">
-                {generalActiveTab === 'profile' ? 'General Profile' : generalActiveTab === 'design' ? 'Profile Design' : generalActiveTab === 'links' ? 'Manage Links' : 'Preview'}
+                {generalActiveTab === 'profile' ? 'General Profile' : generalActiveTab === 'design' ? 'Profile Design' : 'Manage Links'}
               </h1>
               <p className="dash-main-subtitle">
                 {generalActiveTab === 'profile'
                   ? 'Edit your personal information and profile details'
                   : generalActiveTab === 'design'
                     ? 'Customize the visual theme and typography of your public page'
-                    : generalActiveTab === 'links'
-                      ? 'Add and manage your links, social media, and more'
-                      : 'See a live preview of your public profile page'}
+                    : 'Add and manage your links, social media, and more'}
               </p>
               {error && (
                 <div style={{ padding: '0.8rem 1.2rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '12px', marginTop: '1rem', fontSize: '0.9rem' }}>
@@ -4808,6 +4933,8 @@ function Profile() {
               </div>
             )}
 
+
+
             {/* Preview Tab */}
             {generalActiveTab === 'preview' && (
               <div className="dash-mobile-preview-page">
@@ -5288,7 +5415,7 @@ function Profile() {
             </div>
 
             {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
-              const profileUrl = `${frontendBase}/artist?id=${myArtists[0].artistId}`;
+              const profileUrl = `${frontendBase}/artist/${myArtists[0].artistId}`;
               return (
                 <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
                   <button
@@ -5342,7 +5469,7 @@ function Profile() {
                 <iframe
                   key={previewKey}
                   title="Artist Preview"
-                  src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
+                  src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                   className="dash-mobile-preview-iframe"
                   
                 />
@@ -5379,7 +5506,7 @@ function Profile() {
                   <iframe
                     key={previewKey}
                     title="Profile Design Preview"
-                    src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
+                    src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                     className="dash-design-mobile-preview-iframe"
                     
                   />
@@ -5637,7 +5764,7 @@ function Profile() {
                     <iframe
                       key={previewKey}
                       title="Profile Design Preview"
-                      src={`${frontendBase}/artist?id=${myArtists[0].artistId}`}
+                      src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                       className="dash-preview-iframe"
                       
                     />
@@ -5666,7 +5793,7 @@ function Profile() {
               const artShowcase = myArtists[0].artLinks || [];
               const items = Array.isArray(artShowcase) ? artShowcase : [];
               const artistToken = myArtists[0].artistId || myArtists[0]._id;
-              const getArtUrl = (artId) => `${frontendBase}/artist?id=${artistToken}&art=${artId}`;
+              const getArtUrl = (artId) => `${frontendBase}/artist/${artistToken}?art=${artId}`;
               const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
 
               const handleArtImagePick = (e) => {
@@ -5714,11 +5841,19 @@ function Profile() {
                 await handleUpdateHeroField('artLinks', items.filter(i => i.id !== itemId));
               };
 
+              const handleSetPrimaryArt = async (itemId) => {
+                const updatedItems = items.map(item => ({
+                  ...item,
+                  isPrimary: item.id === itemId
+                }));
+                await handleUpdateHeroField('artLinks', updatedItems);
+              };
+
               // Pick first item for preview by default
               const previewArtId = artPreviewId || (items[0]?.id ?? null);
               const artPreviewSrc = previewArtId
-                ? `${frontendBase}/artist?id=${artistToken}&art=${previewArtId}`
-                : `${frontendBase}/artist?id=${artistToken}`;
+                ? `${frontendBase}/artist/${artistToken}?art=${previewArtId}`
+                : `${frontendBase}/artist/${artistToken}`;
 
               return (
                 <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
@@ -5799,17 +5934,53 @@ function Profile() {
                           <h3 className="dash-art-title">Your Art Showcase ({items.length})</h3>
                           <span className="dash-art-subtitle">Each card has its own unique URL + QR</span>
                         </div>
-                        <div className="dash-art-grid">
+                        <div className="dash-art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem' }}>
+
                           {items.map(item => {
                             const theme = ART_THEMES.find(t => t.id === item.theme) || ART_THEMES[ART_THEMES.length - 1];
                             const artUrl = getArtUrl(item.id);
                             const qrUrl = getQrUrl(artUrl);
                             const coverImage = item.image || (Array.isArray(item.images) ? item.images[0] : '');
                             return (
-                              <div key={item.id} className="dash-art-card">
+                              <div key={item.id} className="dash-art-card" style={{ position: 'relative' }}>
+                                <button 
+                                  onClick={() => handleRemoveArt(item.id)} 
+                                  style={{ position: 'absolute', top: '0', right: '0', background: '#000', color: '#fff', border: 'none', borderRadius: '0 20px 0 12px', width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, transition: 'all 0.2s', padding: 0, lineHeight: 1 }}
+                                  title="Remove artwork"
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = '#000'; }}
+                                >
+                                  ✕
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleSetPrimaryArt(item.id)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    left: '0',
+                                    background: item.isPrimary ? '#22c55e' : 'rgba(0,0,0,0.5)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '20px 0 12px 0',
+                                    padding: '6px 12px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    zIndex: 10,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    backdropFilter: 'blur(4px)',
+                                    boxShadow: item.isPrimary ? '0 4px 12px rgba(34, 197, 94, 0.3)' : 'none'
+                                  }}
+                                >
+                                  {item.isPrimary ? '✦ Primary' : 'Set Primary'}
+                                </button>
+
                                 {/* Artwork image */}
                                 {coverImage ? (
-                                  <div style={{ width: '100%', height: '180px', overflow: 'hidden' }}>
+                                  <div style={{ width: '100%', height: '140px', overflow: 'hidden' }}>
                                     <img src={coverImage} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                   </div>
                                 ) : (
@@ -5819,41 +5990,33 @@ function Profile() {
                                 <div style={{ padding: '1.25rem' }}>
                                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                                     <h4 style={{ margin: '0 0 0.4rem', fontSize: '1rem', fontWeight: 700, color: 'var(--dash-text)', lineHeight: 1.3 }}>{item.title}</h4>
-                                    <button onClick={() => handleRemoveArt(item.id)} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>Remove</button>
                                   </div>
                                   {item.description && <p style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)', lineHeight: 1.55, margin: '0 0 1rem' }}>{item.description}</p>}
 
-                                  {/* QR + URL Section */}
-                                  <div className="dash-art-qr-section">
-                                    <div style={{ flexShrink: 0 }}>
-                                      <img src={qrUrl} alt="QR Code" width={80} height={80} style={{ borderRadius: '8px', display: 'block' }} />
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div className="dash-art-qr-actions">
-                                        <button
-                                          onClick={() => { navigator.clipboard.writeText(artUrl); }}
-                                          className="dash-art-btn-copy"
-                                        >
-                                          Copy URL
-                                        </button>
-                                        <a
-                                          href={qrUrl}
-                                          download={`qr-${item.title}.png`}
-                                          className="dash-art-btn-secondary"
-                                        >
-                                          ⬇ QR
-                                        </a>
-                                        <a
-                                          href={artUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="dash-art-btn-secondary"
-                                        >
-                                          ↗ Preview
-                                        </a>
-                                      </div>
-                                    </div>
+                                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                    <button
+                                      onClick={() => { 
+                                        navigator.clipboard.writeText(artUrl);
+                                      }}
+                                      className="dash-art-btn-copy"
+                                      style={{ width: '85%', maxWidth: '220px', padding: '10px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', margin: 0 }}
+                                    >
+                                      <span>🔗</span> Copy URL
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setArtQrModal({ url: qrUrl, title: item.title })}
+                                      className="dash-art-btn-secondary"
+                                      style={{ width: '85%', maxWidth: '220px', padding: '10px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', margin: 0 }}
+                                    >
+                                      <span>⬇</span> QR Code
+                                    </button>
                                   </div>
+
+
+
+
+
                                 </div>
                               </div>
                             );
@@ -5989,14 +6152,44 @@ function Profile() {
                                 )}
                               </div>
 
-                            <div className="gp-artist-badge-wrapper" style={{ cursor: 'pointer' }}>
-                              <div className="Btn" onClick={() => openHeroEditor('specialization', artist)}>
-                                <div className="leftContainer">
-                                  <span className="like">{artist.specialization || 'Add specialization'}</span>
-                                </div>
-                                <div className="likeCount" onClick={(e) => { e.stopPropagation(); openHeroEditor('experience', artist); }}>
-                                  {artist.experience || '+ XP'}
-                                </div>
+                            <div className="dash-hero-tags-simple" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                              <div 
+                                className="dash-hero-tag-item" 
+                                onClick={() => openHeroEditor('specialization', artist)}
+                                style={{ 
+                                  background: 'rgba(0,0,0,0.06)', 
+                                  padding: '6px 14px', 
+                                  borderRadius: '100px', 
+                                  fontSize: '0.85rem', 
+                                  fontWeight: 600, 
+                                  color: 'var(--dash-text)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'baseline',
+                                  gap: '6px'
+                                }}
+                              >
+                                <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Art:</span>
+                                <span>{artist.specialization || 'Add tag'}</span>
+                              </div>
+                              <div 
+                                className="dash-hero-tag-item" 
+                                onClick={() => openHeroEditor('experience', artist)}
+                                style={{ 
+                                  background: 'rgba(0,0,0,0.06)', 
+                                  padding: '6px 14px', 
+                                  borderRadius: '100px', 
+                                  fontSize: '0.85rem', 
+                                  fontWeight: 600, 
+                                  color: 'var(--dash-text)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'baseline',
+                                  gap: '6px'
+                                }}
+                              >
+                                <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Exp:</span>
+                                <span>{artist.experience || 'Add XP'}</span>
                               </div>
                             </div>
 
@@ -6069,6 +6262,7 @@ function Profile() {
                               </div>
                               <div className="dash-mobile-edit-body">
                                 <input
+                                  className="dash-mobile-edit-input"
                                   value={mobileHeroDraft}
                                   placeholder={
                                     mobileHeroEditField === 'name' ? 'Enter your name' : 
@@ -6130,6 +6324,7 @@ function Profile() {
                               <div className="dash-mobile-edit-body">
                                 <input
                                   autoFocus
+                                  className="dash-mobile-edit-input"
                                   value={mobileLinkEditValue}
                                   placeholder={
                                     mobileLinkEditPlatform === 'instagram' ? '@handle' :
@@ -6224,54 +6419,98 @@ function Profile() {
 
                             const localValue = pendingLinks[platform.id];
                             const currentValue = localValue !== undefined ? localValue : serverValue;
-                            const isModified = localValue !== undefined && localValue !== serverValue;
 
                             return (
-                              <div className="dash-link-card dash-link-card--inline" key={platform.id}>
-                                <div className="dash-link-card-main">
-                                  <div className="dash-link-icon-circle">
+                              <div className="dash-link-card" key={platform.id} style={{ 
+                                border: '1px solid rgba(0,0,0,0.06)', 
+                                borderRadius: '20px', 
+                                padding: '14px 16px', 
+                                background: '#fff',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                                marginBottom: '12px',
+                                position: 'relative'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                  {/* Platform Icon Box */}
+                                  <div style={{ 
+                                    width: '46px', 
+                                    height: '46px', 
+                                    borderRadius: '14px', 
+                                    background: 'rgba(0,0,0,0.04)', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                  }}>
                                     {getLinkIcon({ platform: platform.id })}
                                   </div>
-                                  <div className="dash-link-content dash-link-content--inline">
-                                    <span className="dash-link-title" title={platform.label}>{platform.label}</span>
-                                    <div className="dash-link-url">
-                                      <input
-                                        className="dash-link-inline-input clickable-link-field"
-                                        readOnly
-                                        placeholder={
-                                          platform.id === 'instagram' ? '@handle' :
-                                            platform.id === 'whatsapp' ? 'Phone number (e.g. 91834...)' :
-                                              'Enter URL / handle'
-                                        }
-                                        value={currentValue}
-                                        onClick={() => openLinkPopup(platform.id, platform.label, currentValue)}
-                                      />
-                                      {savingLink === platform.id && <span className="dash-link-saving">Saving…</span>}
-                                    </div>
+
+                                  {/* Platform Label */}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#000', letterSpacing: '-0.01em' }}>{platform.label}</span>
                                   </div>
-                                  <div className="dash-link-controls">
+
+                                  {/* Right Actions */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* Edit Button */}
                                     <button
-                                      className="dash-link-remove-icon-btn"
+                                      type="button"
+                                      onClick={() => openLinkPopup(platform.id, platform.label, currentValue)}
+                                      style={{ 
+                                        background: 'rgba(0,0,0,0.05)', 
+                                        border: 'none', 
+                                        borderRadius: '10px', 
+                                        padding: '8px', 
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#444',
+                                        transition: 'all 0.2s'
+                                      }}
+                                    >
+                                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                                      </svg>
+                                    </button>
+
+                                    {/* Remove Button */}
+                                    <button
+                                      type="button"
                                       onClick={() => handleUpdateLink(platform.id, null)}
-                                      title="Remove this platform"
+                                      style={{ 
+                                        background: 'rgba(255, 59, 48, 0.08)', 
+                                        border: 'none', 
+                                        borderRadius: '10px', 
+                                        padding: '8px 14px', 
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#FF3B30',
+                                        transition: 'all 0.2s'
+                                      }}
                                     >
-                                      ✕
+                                      Remove
                                     </button>
-
-                                    <button
-                                      className={`dash-link-save-btn ${isModified ? 'active' : ''}`}
-                                      disabled={!isModified || savingLink === platform.id}
-                                      onClick={() => handleUpdateLink(platform.id, currentValue)}
-                                    >
-                                      {savingLink === platform.id ? '...' : 'Save'}
-                                    </button>
-
-                                    <label className="dash-link-toggle">
-                                      <input type="checkbox" defaultChecked />
-                                      <span className="dash-link-toggle-slider"></span>
-                                    </label>
                                   </div>
                                 </div>
+                                
+                                {/* Saving Overlay */}
+                                {savingLink === platform.id && (
+                                  <div style={{ 
+                                    position: 'absolute', 
+                                    inset: 0, 
+                                    background: 'rgba(255,255,255,0.7)', 
+                                    backdropFilter: 'blur(3px)',
+                                    borderRadius: '20px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    zIndex: 5 
+                                  }}>
+                                    <div className="dash-loading-spinner" style={{ width: '20px', height: '20px', border: '2.5px solid #000', borderTopColor: 'transparent' }} />
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -6417,7 +6656,7 @@ function Profile() {
                             <iframe
                               key={previewKey}
                               title="Profile Preview"
-                              src={`${frontendBase}/artist?id=${artist.artistId}`}
+                              src={`${frontendBase}/artist/${artist.artistId}`}
                               className="dash-preview-iframe"
                               
                             />
@@ -6432,7 +6671,38 @@ function Profile() {
               </>
             )
           }
-        </div >
+          {artQrModal && (
+         <div 
+           className="dash-qr-modal-overlay" 
+           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000000, padding: '1.5rem', backdropFilter: 'blur(4px)' }}
+           onClick={() => setArtQrModal(null)}
+         >
+           <div 
+             className="dash-qr-modal-card" 
+             style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '380px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center' }}
+             onClick={(e) => e.stopPropagation()}
+           >
+             <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000' }}>{artQrModal.title}</h3>
+               <button onClick={() => setArtQrModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#666' }}>✕</button>
+             </div>
+             <div style={{ padding: '2rem' }}>
+               <img src={artQrModal.url} alt="QR" style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto', borderRadius: '12px' }} />
+               <p style={{ marginTop: '1.25rem', fontSize: '0.9rem', color: '#666', lineHeight: 1.5 }}>Scan this code to visit the public page for this specific artwork.</p>
+             </div>
+             <div style={{ padding: '1.25rem', background: '#f9f9f9' }}>
+               <a 
+                 href={artQrModal.url} 
+                 download={`qr-${artQrModal.title}.png`}
+                 style={{ display: 'block', background: '#000', color: '#fff', textDecoration: 'none', padding: '0.85rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.95rem' }}
+               >
+                 Download QR Code
+               </a>
+             </div>
+           </div>
+         </div>
+       )}
+     </div >
       </main >
 
 

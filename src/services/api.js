@@ -22,7 +22,7 @@ function resolveApiUrl() {
     return window.location.origin;
   }
 
-  return 'https://microidentity.nanoprofiles.com';
+  return '';
 }
 export const API_URL = resolveApiUrl();
 
@@ -106,6 +106,13 @@ export const generalProfileAPI = {
     request('PUT', '/api/general-profile/me', { body, getIdToken, getFirebaseUser }),
   getByUsername: (username) =>
     request('GET', `/api/general-profile/u/${encodeURIComponent(username)}`, { cache: 'no-store' }),
+  checkAvailability: ({ username, email, excludeId }) => {
+    const params = new URLSearchParams();
+    if (username) params.append('username', username);
+    if (email) params.append('email', email);
+    if (excludeId) params.append('excludeId', excludeId);
+    return request('GET', `/api/general-profile/check-availability?${params.toString()}`);
+  },
   uploadPhoto: async (file, getIdToken) => {
     const token = typeof getIdToken === 'function' ? await getIdToken() : getIdToken;
     return uploadPhoto(file, token);

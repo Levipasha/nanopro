@@ -95,6 +95,13 @@ export default function HomeNavbar() {
                         >
                             RESTAURANT
                         </Link>
+{/* <Link
+                            to="/resume"
+                            className={`nav-link${pathname === '/resume' ? ' nav-link--active' : ''}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            RESUME
+                        </Link> */}
                     </div>
                 </div>
 

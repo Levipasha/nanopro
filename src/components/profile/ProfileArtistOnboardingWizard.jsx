@@ -3,6 +3,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { getLinkIcon } from '../LinkIcons';
 import PhoneINInput from '../PhoneINInput';
 import { buildWhatsAppUrlFromFullINPhone } from '../../utils/indianPhone';
+import { generalProfileAPI } from '../../services/api';
 
 function OnboardingGalleryTilePreview({ file }) {
   // Create/revoke in an effect only. useMemo + revoke cleanup breaks under React Strict Mode
@@ -57,6 +58,43 @@ export default function ProfileArtistOnboardingWizard({
   handlePickAndCrop,
   handlePickAndCropBatch,
 }) {
+  const [availabilityConflicts, setAvailabilityConflicts] = React.useState({ username: null, email: null });
+  const [availabilitySuggestions, setAvailabilitySuggestions] = React.useState([]);
+  const lastChecked = React.useRef({ username: "", email: "" });
+  const lastSuggestionsUsername = React.useRef("");
+
+  React.useEffect(() => {
+    const u = formData.artistId || "";
+    const e = formData.email || "";
+
+    if (u === lastChecked.current.username && e === lastChecked.current.email) return;
+
+    const timer = setTimeout(async () => {
+      if (u !== lastSuggestionsUsername.current) {
+        setAvailabilitySuggestions([]);
+      }
+      
+      lastChecked.current = { username: u, email: e };
+
+      if (!u && !e) {
+        setAvailabilityConflicts({ username: null, email: null });
+        return;
+      }
+
+      try {
+        const res = await generalProfileAPI.checkAvailability({ username: u, email: e });
+        setAvailabilityConflicts(res.conflicts || { username: null, email: null });
+        if (res.suggestions && u !== lastSuggestionsUsername.current) {
+          setAvailabilitySuggestions(res.suggestions);
+          lastSuggestionsUsername.current = u;
+        }
+      } catch (err) {
+        console.warn("Availability check failed", err);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData.artistId, formData.email]);
+
   const photoPreviewUrl = useBlobUrl(photoFile);
 
   // Refs for file inputs — iOS Safari requires direct .click() on the input element;
@@ -66,9 +104,9 @@ export default function ProfileArtistOnboardingWizard({
 
   const isArtistStep1Valid =
     String(formData.name || '').trim() &&
-    String(formData.artistId || '').trim() &&
+    String(formData.artistId || '').trim() && !availabilityConflicts.username &&
     String(formData.specialization || '').trim() &&
-    String(formData.email || '').trim() &&
+    String(formData.email || '').trim() && !availabilityConflicts.email &&
     String(formData.phone || '').trim();
 
   const setupLoader = (
@@ -119,7 +157,28 @@ export default function ProfileArtistOnboardingWizard({
                         placeholder="Enter your nickname"
                       />
                     </div>
+                    {availabilityConflicts.username && (
+                      <>
+                        <p className="onboarding-field-error">{availabilityConflicts.username}</p>
+                        {availabilitySuggestions.length > 0 && (
+                          <div className="onboarding-suggestions">
+                            <span>Try:</span>
+                            {availabilitySuggestions.map(s => (
+                              <button 
+                                key={s} 
+                                type="button" 
+                                className="onboarding-suggestion-btn"
+                                onClick={() => setFormData(p => ({ ...p, artistId: s }))}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
                     <small className="onboarding-tip">Your profile URL will be: <b>{process.env.REACT_APP_DOMAIN || 'nanoprofile.com'}/artist/{formData.artistId || 'username'}</b></small>
+
                   </div>
                   <div className="onboarding-field">
                     <label>Art Form / Specialization <span className="onboarding-required-star">*</span></label>
@@ -150,7 +209,9 @@ export default function ProfileArtistOnboardingWizard({
                       onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="e.g. hello@example.com"
                     />
+                    {availabilityConflicts.email && <p className="onboarding-field-error">{availabilityConflicts.email}</p>}
                   </div>
+
                   <div className="onboarding-field">
                     <label>Mobile Number <span className="onboarding-required-star">*</span></label>
                     <PhoneINInput
