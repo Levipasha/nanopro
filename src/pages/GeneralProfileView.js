@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { DotLottieReact as BrandLoader } from '@lottiefiles/dotlottie-react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { pdfjs } from 'react-pdf';
 import { generalProfileAPI } from '../services/api';
 import { fixImageUrl } from '../utils/imageHelper';
-import { getLinkIcon, getMenuPdfIcon } from '../components/LinkIcons';
+import { getLinkIcon } from '../components/LinkIcons';
 import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
@@ -23,20 +23,20 @@ function displayGeneralLinkLabel(link) {
 
 function GeneralProfileView() {
   const { username } = useParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMock = searchParams.get('mock') === '1';
   const isEmbed = searchParams.get('embed') === '1';
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [imgError, setImgError] = useState(false);
-  const [showEnlarged, setShowEnlarged] = useState(false);
-  const [showMenuViewer, setShowMenuViewer] = useState(false);
+  // const [imgError, setImgError] = useState(false);
+  // const [showEnlarged, setShowEnlarged] = useState(false);
+  // const [showMenuViewer, setShowMenuViewer] = useState(false);
   const [menuPage, setMenuPage] = useState(1);
   const [menuTotalPages, setMenuTotalPages] = useState(0);
-  const [touchStartX, setTouchStartX] = useState(null);
-  const [pageTurnDir, setPageTurnDir] = useState('');
+  // const [touchStartX, setTouchStartX] = useState(null);
+  // const [pageTurnDir, setPageTurnDir] = useState('');
   const [galleryModalIndex, setGalleryModalIndex] = useState(null);
   const [themeOverride, setThemeOverride] = useState(null);
 
@@ -93,26 +93,26 @@ function GeneralProfileView() {
     navigator.clipboard.writeText(text).then(() => alert('Link copied!'));
   };
 
-  const openMenuViewer = () => {
-    setMenuPage(1);
-    setShowMenuViewer(true);
-  };
+  // const openMenuViewer = () => {
+  //   setMenuPage(1);
+  //   setShowMenuViewer(true);
+  // };
 
-  const closeMenuViewer = () => {
-    setShowMenuViewer(false);
-    setPageTurnDir('');
-  };
+  // const closeMenuViewer = () => {
+  //   setShowMenuViewer(false);
+  //   setPageTurnDir('');
+  // };
 
-  const turnPage = (direction) => {
-    if (!menuTotalPages) return;
-    const nextPage = direction === 'next'
-      ? Math.min(menuPage + 1, menuTotalPages)
-      : Math.max(menuPage - 1, 1);
-    if (nextPage === menuPage) return;
-    setPageTurnDir(direction);
-    setMenuPage(nextPage);
-    window.setTimeout(() => setPageTurnDir(''), 220);
-  };
+  // const turnPage = (direction) => {
+  //   if (!menuTotalPages) return;
+  //   const nextPage = direction === 'next'
+  //     ? Math.min(menuPage + 1, menuTotalPages)
+  //     : Math.max(menuPage - 1, 1);
+  //   if (nextPage === menuPage) return;
+  //   setPageTurnDir(direction);
+  //   setMenuPage(nextPage);
+  //   window.setTimeout(() => setPageTurnDir(''), 220);
+  // };
 
   if (loading) {
     return (

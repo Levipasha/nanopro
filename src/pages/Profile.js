@@ -528,9 +528,9 @@ function Profile() {
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
-  const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]);
-  const [availabilityConflicts, setAvailabilityConflicts] = useState({ username: null, email: null });
-  const lastSuggestionsUsername = useRef("");
+  // const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]);
+  // const [availabilityConflicts, setAvailabilityConflicts] = useState({ username: null, email: null });
+  // const lastSuggestionsUsername = useRef("");
   const usernameCheckTimer = useRef(null);
 
   // Refs for General profile onboarding inputs
