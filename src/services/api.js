@@ -135,7 +135,9 @@ export const generalProfileAPI = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Upload failed');
     return data;
-  }
+  },
+  fetchMetadata: (url) => 
+    request('GET', `/api/general-profile/fetch-metadata?url=${encodeURIComponent(url)}`)
 };
 
 export default landingArtistAPI;

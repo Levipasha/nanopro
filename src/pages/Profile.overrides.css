@@ -447,11 +447,14 @@
 }
 
 /* Dashboard header: gap between subtitle (e.g. “Manage your artist profiles…”) and copy/open pill bar; center the pill */
+/* Removed column override to allow side-by-side buttons */
 .dash-main-header>div:first-child {
   display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   min-width: 0 !important;
+  width: 100% !important;
 }
 
 .dash-main-header .dash-main-subtitle+.dash-profile-link-iconbar {

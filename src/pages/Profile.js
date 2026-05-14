@@ -189,20 +189,15 @@ function stripPhoneEmailLinesFromBioString(bioString) {
 }
 
 function mergeGeneralBioForSave(form) {
-  const cleanedBio = stripPhoneEmailLinesFromBioString(form.bio || '');
-  const parts = [cleanedBio];
-  const p = (form.phone || '').trim();
-  const em = (form.email || '').trim();
-  if (p) parts.push(`📞 ${p}`);
-  if (em) parts.push(`✉ ${em}`);
-  return parts.filter(Boolean).join('\n');
+  // We no longer need to append phone/email to bio as they have dedicated fields now.
+  return stripPhoneEmailLinesFromBioString(form.bio || '');
 }
 
 function buildGeneralFormFromProfileData(data) {
   const rawBio = data.bio || '';
   const cleanedBio = stripPhoneEmailLinesFromBioString(rawBio);
-  const phone = extractPhoneFromBioString(rawBio);
-  const email = extractEmailFromBioString(rawBio);
+  const phone = data.phone || extractPhoneFromBioString(rawBio);
+  const email = data.email || extractEmailFromBioString(rawBio);
   return {
     username: data.username || '',
     name: data.name || '',
@@ -215,7 +210,9 @@ function buildGeneralFormFromProfileData(data) {
     theme: data.theme || 'mint',
     font: data.font || 'outfit',
     links: (data.links && data.links.length) ? data.links.map(parseLinkFromUrl) : [],
-    gallery: data.gallery || []
+    gallery: data.gallery || [],
+    suggestionsTitle: data.suggestionsTitle || 'Suggestions',
+    suggestions: data.suggestions || []
   };
 }
 
@@ -264,7 +261,7 @@ function RestaurantPublicPreviewIframe({ username, previewKey, bannerSyncing }) 
         title="Live restaurant profile preview"
         src={`${origin}/link/${encodeURIComponent(u)}?v=${previewKey}`}
         className="dash-preview-iframe"
-        
+
       />
       <LivePreviewSyncOverlay show={!!bannerSyncing} message="Uploading banner…" />
     </div>
@@ -355,9 +352,9 @@ function Profile() {
         image: blobUrl,
         aspect,
         onComplete: async (pixelCrop, rotation) => {
-            try {
-              const croppedDataUrl = await getCroppedImg(blobUrl, pixelCrop, rotation);
-              URL.revokeObjectURL(blobUrl);
+          try {
+            const croppedDataUrl = await getCroppedImg(blobUrl, pixelCrop, rotation);
+            URL.revokeObjectURL(blobUrl);
             const res = await fetch(croppedDataUrl);
             const blob = await res.blob();
             const croppedFile = new File([blob], file.name || 'cropped.jpg', { type: 'image/jpeg' });
@@ -403,7 +400,7 @@ function Profile() {
       }
       // Check MIME type
       if (file.type && !RENDERABLE_IMAGE_TYPES.has(file.type.toLowerCase())) {
-        continue; 
+        continue;
       }
 
       try {
@@ -504,7 +501,9 @@ function Profile() {
     theme: 'mint',
     font: 'outfit',
     links: [],
-    gallery: []
+    gallery: [],
+    suggestionsTitle: 'Suggestions',
+    suggestions: []
   });
   const [generalPhotoFile, setGeneralPhotoFile] = useState(null);
   const [generalPhotoPreviewUrl, setGeneralPhotoPreviewUrl] = useState(null);
@@ -527,6 +526,11 @@ function Profile() {
   const [restaurantSaving, setRestaurantSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [generalActiveTab, setGeneralActiveTab] = useState('profile');
+  const [suggestionsChanged, setSuggestionsChanged] = useState(false);
+  const [profileChanged, setProfileChanged] = useState(false);
+  const [linksChanged, setLinksChanged] = useState(false);
+  const [artistChanged, setArtistChanged] = useState(false);
+  const [restaurantChanged, setRestaurantChanged] = useState(false);
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', msg: '' }); // idle | checking | available | taken | invalid
   const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]);
   // const [availabilityConflicts, setAvailabilityConflicts] = useState({ username: null, email: null });
@@ -759,18 +763,18 @@ function Profile() {
       updateRestaurantOnboardingStep(1);
       return;
     }
-    
+
     // Auto-generate username from name if not provided
     let usernameToSave = restaurantForm.username;
     if (!usernameToSave || !usernameToSave.trim()) {
-       usernameToSave = restaurantForm.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      usernameToSave = restaurantForm.name.toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
     const payload = {
       ...restaurantForm,
       username: usernameToSave
     };
-    
+
     setRestaurantSaving(true);
     try {
       // Keep local form immediately, but persist banner/menuPdf only after upload succeeds.
@@ -1105,17 +1109,17 @@ function Profile() {
       setGeneralProfile(null);
       setRestaurantProfile(null);
       setArtistListReady(false);
-      
+
       // Clear all stateful onboarding steps
       setGeneralStep('choice');
       setGeneralOnboardingStep(1);
       setRestaurantOnboardingStep(1);
-      
+
       if (!uid) {
         setGeneralProfileLoading(false);
         return;
       }
-      
+
       // Clear potentially stale localStorage from previous sessions
       try {
         localStorage.removeItem('general_step');
@@ -1156,9 +1160,9 @@ function Profile() {
 
     // Include platforms that have data in legacy fields, pending local edits, explicit session visibility, or the modern links array
     const active = ALL_PLATFORMS
-      .filter((p) => 
-        isNonEmpty(artist[p.id]) || 
-        isNonEmpty(pendingLinks[p.id]) || 
+      .filter((p) =>
+        isNonEmpty(artist[p.id]) ||
+        isNonEmpty(pendingLinks[p.id]) ||
         (visiblePlatforms && visiblePlatforms.includes(p.id)) ||
         (Array.isArray(artist.links) && artist.links.some(l => (l.platform || '').toLowerCase() === p.id.toLowerCase()))
       )
@@ -1298,14 +1302,14 @@ function Profile() {
     setRestaurantProfile(hydratedRestaurant);
     persistRestaurant(hydratedRestaurant);
     try { lastRestaurantSyncSigRef.current = JSON.stringify(hydratedRestaurant); } catch (e) { }
-    
+
     // Only mark onboarding as complete if the server data actually confirms it's a restaurant.
     // If it was just 'preferredGeneralMode', let them go through onboarding to create the record properly.
     if (likelyRestaurant) {
       setRestaurantOnboardingStep(0);
       try { localStorage.setItem(RESTAURANT_ONBOARDING_KEY, '0'); } catch (e) { }
     }
-    
+
     setProfileMode('restaurant');
     try { localStorage.setItem(PROFILE_MODE_KEY, 'restaurant'); } catch (e) { }
   }, [generalProfile, restaurantProfile, profileLock, profileMode, user]);
@@ -1315,8 +1319,8 @@ function Profile() {
     if (profileMode !== 'restaurant' || !generalProfile) return;
     const serverGallery = Array.isArray(generalProfile.gallery) ? generalProfile.gallery : [];
     const normalized = serverGallery
-      .map((g) => ({ 
-        url: (g && g.url) ? String(g.url).trim() : '', 
+      .map((g) => ({
+        url: (g && g.url) ? String(g.url).trim() : '',
         name: (g && g.name) ? String(g.name).trim() : '',
         link: (g && g.link) ? String(g.link).trim() : ''
       }))
@@ -1326,8 +1330,8 @@ function Profile() {
       if (!prev) return prev;
       if ((prev.gallery || []).some((g) => g.url && String(g.url).startsWith('data:'))) return prev;
       const prevNorm = (prev.gallery || [])
-        .map((g) => ({ 
-          url: (g && g.url) ? String(g.url).trim() : '', 
+        .map((g) => ({
+          url: (g && g.url) ? String(g.url).trim() : '',
           name: (g && g.name) ? String(g.name).trim() : '',
           link: (g && g.link) ? String(g.link).trim() : ''
         }))
@@ -1366,7 +1370,7 @@ function Profile() {
       }
       return next;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileMode, generalProfile?.banner, generalProfile?.photo]);
 
   useEffect(() => {
@@ -1542,7 +1546,7 @@ function Profile() {
         }
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      
+
       const gallery = [];
       for (let i = 0; i < generalForm.gallery.length; i++) {
         const item = generalForm.gallery[i];
@@ -1597,24 +1601,145 @@ function Profile() {
   };
 
   const addLink = (platform = 'custom') => {
+    setLinksChanged(true);
     setGeneralForm(prev => ({
       ...prev,
       links: [...prev.links, { title: '', url: '', platform: platform, order: prev.links.length }]
     }));
   };
 
+  const getPlatformNameFromUrl = (url) => {
+    if (!url) return '';
+    const clean = url.toLowerCase().replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    const domains = [
+      { d: 'instagram.com', name: 'Instagram' },
+      { d: 'facebook.com', name: 'Facebook' },
+      { d: 'twitter.com', name: 'Twitter' },
+      { d: 'x.com', name: 'X' },
+      { d: 'linkedin.com', name: 'LinkedIn' },
+      { d: 'youtube.com', name: 'YouTube' },
+      { d: 'tiktok.com', name: 'TikTok' },
+      { d: 'spotify.com', name: 'Spotify' },
+      { d: 'pinterest.com', name: 'Pinterest' },
+      { d: 'threads.net', name: 'Threads' },
+      { d: 'snapchat.com', name: 'Snapchat' },
+      { d: 'github.com', name: 'GitHub' },
+      { d: 'wa.me', name: 'WhatsApp' },
+      { d: 'whatsapp.com', name: 'WhatsApp' },
+      { d: 't.me', name: 'Telegram' },
+      { d: 'telegram.org', name: 'Telegram' },
+      { d: 'discord.gg', name: 'Discord' },
+      { d: 'reddit.com', name: 'Reddit' }
+    ];
+    for (const domain of domains) {
+      if (clean.startsWith(domain.d)) return domain.name;
+    }
+    return '';
+  };
+
+  const fetchLinkMetadata = async (url, idx) => {
+    try {
+      const res = await generalProfileAPI.fetchMetadata(url);
+      if (res.success && res.title) {
+        setGeneralForm(prev => {
+          const currentLink = prev.links[idx];
+          if (currentLink && !currentLink.title) {
+            return {
+              ...prev,
+              links: prev.links.map((l, i) => i === idx ? { ...l, title: res.title } : l)
+            };
+          }
+          return prev;
+        });
+      }
+    } catch (err) {
+      console.error('Meta fetch failed:', err);
+    }
+  };
+
   const updateLink = (idx, field, value) => {
-    setGeneralForm(prev => ({
-      ...prev,
-      links: prev.links.map((l, i) => i === idx ? { ...l, [field]: value } : l)
-    }));
+    setGeneralForm(prev => {
+      const newLinks = [...prev.links];
+      const link = { ...newLinks[idx], [field]: value };
+
+      // Auto-set title if currently empty
+      if (!link.title) {
+        if (field === 'platform' && value && value !== 'website' && value !== 'custom') {
+          const p = ALL_PLATFORMS.find(ap => ap.id === value);
+          if (p) link.title = p.label;
+        } else if (field === 'url' && value && value.length > 5) {
+          const pName = getPlatformNameFromUrl(value);
+          if (pName) link.title = pName;
+        }
+      }
+
+      setLinksChanged(true);
+      newLinks[idx] = link;
+      return { ...prev, links: newLinks };
+    });
+
+    // If URL changed and still no title, try fetching metadata (debounced-ish)
+    if (field === 'url' && value && value.includes('.') && value.length > 8) {
+      const timerKey = `metaTimer_${idx}`;
+      clearTimeout(window[timerKey]);
+      window[timerKey] = setTimeout(() => {
+        // Fetch if title is still empty
+        setGeneralForm(current => {
+          const link = current.links[idx];
+          if (link && !link.title && link.url === value) {
+            fetchLinkMetadata(value, idx);
+          }
+          return current;
+        });
+      }, 2000);
+    }
   };
 
   const removeLink = (idx) => {
+    setLinksChanged(true);
     setGeneralForm(prev => ({
       ...prev,
       links: prev.links.filter((_, i) => i !== idx)
     }));
+  };
+
+  const addSuggestion = () => {
+    if (generalForm.suggestions.length >= 4) return;
+    setSuggestionsChanged(true);
+    setGeneralForm(prev => ({
+      ...prev,
+      suggestions: [...prev.suggestions, { url: '', caption: '', link: '' }]
+    }));
+  };
+
+  const updateSuggestion = (idx, field, value) => {
+    setSuggestionsChanged(true);
+    setGeneralForm(prev => {
+      const newsug = [...prev.suggestions];
+      newsug[idx] = { ...newsug[idx], [field]: value };
+      return { ...prev, suggestions: newsug };
+    });
+  };
+
+  const removeSuggestion = (idx) => {
+    setSuggestionsChanged(true);
+    setGeneralForm(prev => ({
+      ...prev,
+      suggestions: prev.suggestions.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleSuggestionImageUpload = async (idx, file) => {
+    setGeneralSaving(true);
+    try {
+      const up = await generalProfileAPI.uploadPhoto(file, () => getIdToken());
+      const url = extractUploadUrl(up);
+      if (url) updateSuggestion(idx, 'url', url);
+    } catch (err) {
+      alert('Failed to upload image');
+    } finally {
+      setGeneralSaving(false);
+    }
   };
 
   const frontendBase = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
@@ -1719,15 +1844,26 @@ function Profile() {
         }
       }
       const links = generalForm.links.map(l => ({ ...l, url: buildLinkUrl(l.platform, l) || l.url || '' })).filter(l => (l.url || '').trim());
-      const { phone: _gp2, email: _ge2, ...generalRestSave } = generalForm;
       const res = await generalProfileAPI.update(
-        { ...generalRestSave, bio: mergeGeneralBioForSave(generalForm), photo: photoUrl, banner: bannerUrl, links },
+        {
+          ...generalForm,
+          bio: mergeGeneralBioForSave(generalForm),
+          phone: generalForm.phone,
+          email: generalForm.email,
+          photo: photoUrl,
+          banner: bannerUrl,
+          links,
+          suggestions: generalForm.suggestions
+        },
         getIdTokenFn,
         getFirebaseUserFn
       );
       setGeneralProfile(res.data);
       if (res.data) setGeneralForm(buildGeneralFormFromProfileData(res.data));
       setGeneralPhotoFile(null);
+      setSuggestionsChanged(false);
+      setProfileChanged(false);
+      setLinksChanged(false);
       setGeneralBannerFile(null);
       setGeneralSuccess('Profile saved!');
       setTimeout(() => setGeneralSuccess(''), 2500);
@@ -2101,7 +2237,7 @@ function Profile() {
             const currentGallery = (currentArtist.gallery || []).map(g => ({ ...g }));
             const label = `Gallery image ${currentGallery.length + 1}`;
             const updatedGallery = [...currentGallery, { url: uploadedUrl, name: label, link: '' }];
-            
+
             // Background sync with API
             landingArtistAPI.updateMyProfile(currentArtist._id || currentArtist.artistId, { gallery: updatedGallery }, () => getIdToken(), getFirebaseUser)
               .catch(err => console.error('Gallery sync failed:', err));
@@ -2190,20 +2326,20 @@ function Profile() {
     try {
       setSaving(true);
       setError('');
-      
+
       let artist = myArtists[0];
-      
+
       // If we don't have an artist profile yet, we need to create one first
       if (!artist) {
         try {
           // If no artist profile, create a barebones one first
-          const createPayload = { 
+          const createPayload = {
             artistId: formData.artistId || `user-${Date.now()}`,
             name: formData.name || 'New Artist'
           };
-          
+
           const createRes = await landingArtistAPI.createMyProfile(createPayload, () => getIdToken(), getFirebaseUser);
-          
+
           if (!createRes.success) {
             throw new Error(createRes.message || 'Failed to initialize profile');
           }
@@ -2298,11 +2434,11 @@ function Profile() {
           autoplay
           style={{ width: 200, height: 200 }}
         />
-        <p style={{ 
-          fontFamily: "'Press Start 2P', cursive", 
-          fontSize: '10px', 
-          color: '#fff', 
-          marginTop: '1.5rem', 
+        <p style={{
+          fontFamily: "'Press Start 2P', cursive",
+          fontSize: '10px',
+          color: '#fff',
+          marginTop: '1.5rem',
           opacity: 0.7,
           letterSpacing: '2px'
         }}>
@@ -2324,11 +2460,11 @@ function Profile() {
           autoplay
           style={{ width: 250, height: 250 }}
         />
-        <p style={{ 
-          fontFamily: "'Press Start 2P', cursive", 
-          fontSize: '10px', 
-          color: '#fff', 
-          marginTop: '1.5rem', 
+        <p style={{
+          fontFamily: "'Press Start 2P', cursive",
+          fontSize: '10px',
+          color: '#fff',
+          marginTop: '1.5rem',
           opacity: 0.7,
           letterSpacing: '2px'
         }}>
@@ -2368,15 +2504,15 @@ function Profile() {
           handlePickAndCropBatch={handlePickAndCropBatch}
         />
         {cropper.open && (
-         <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-             <ImageCropperModal
-               image={cropper.image}
-               aspect={cropper.aspect}
-               onSave={cropper.onComplete}
-               onCancel={cropper.onCancel}
-             />
-           </div>
-         )}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </>
     );
   }
@@ -2449,7 +2585,7 @@ function Profile() {
                 className={`dash-nav-item ${restaurantActiveTab === 'menu' ? 'dash-nav-active' : ''}`}
                 onClick={() => setRestaurantActiveTab('menu')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
                 Menu
               </button>
             </div>
@@ -2462,11 +2598,39 @@ function Profile() {
 
         {/* Main */}
         <main className="dash-main">
-          <header className="dash-main-header">
-            <div>
-              <h1 className="dash-main-title">{restaurantActiveTab === 'design' ? 'Design' : restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}</h1>
-              <p className="dash-main-subtitle">{restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact information'}</p>
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
+              <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
+                {restaurantActiveTab === 'design' ? 'Design' : restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}
+              </h1>
+
+              <button
+                onClick={() => {
+                  persistRestaurant(restaurantProfile);
+                  setRestaurantChanged(false);
+                }}
+                disabled={restaurantSaving}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  background: restaurantChanged ? '#0070f3' : '#ffffff',
+                  color: restaurantChanged ? '#ffffff' : '#000000',
+                  border: restaurantChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                  cursor: restaurantSaving ? 'wait' : 'pointer',
+                  opacity: restaurantSaving ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  boxShadow: restaurantChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {restaurantSaving ? '...' : 'Save Changes'}
+              </button>
             </div>
+            <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
+              {restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact information'}
+            </p>
           </header>
 
           <div className="dash-content">
@@ -2516,7 +2680,7 @@ function Profile() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                         </svg>
-                        <span>Go to Site</span>
+                        <span>Go to Profile</span>
                       </a>
                     </div>
                     <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
@@ -2524,35 +2688,35 @@ function Profile() {
                     </p>
                   </div>
 
-                              <div 
-                                className="dash-profile-hero dash-profile-hero--restaurant" 
-                                style={{ 
-                                  aspectRatio: '16/9', 
-                                  height: 'auto',
-                                  position: 'relative',
-                                  overflow: 'hidden',
-                                  background: 'transparent'
-                                }}
-                              >
-                                {restaurantProfile.banner ? (
-                                  <img 
-                                    src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner} 
-                                    alt="" 
-                                    style={{ 
-                                      position: 'absolute', 
-                                      top: 0, 
-                                      left: 0, 
-                                      width: '100%', 
-                                      height: '100%', 
-                                      objectFit: 'cover',
-                                      zIndex: 1
-                                    }} 
-                                  />
-                                ) : (
-                                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', zIndex: 1 }} />
-                                )}
-                    
-                    
+                  <div
+                    className="dash-profile-hero dash-profile-hero--restaurant"
+                    style={{
+                      aspectRatio: '16/9',
+                      height: 'auto',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      background: 'transparent'
+                    }}
+                  >
+                    {restaurantProfile.banner ? (
+                      <img
+                        src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner}
+                        alt=""
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          zIndex: 1
+                        }}
+                      />
+                    ) : (
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', zIndex: 1 }} />
+                    )}
+
+
                     <input
                       ref={restaurantBannerInputRef}
                       type="file"
@@ -2588,7 +2752,7 @@ function Profile() {
                           </h2>
                         )}
                         <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: 700, marginTop: '0.5rem', textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{restaurantProfile.username}</p>
-                        
+
                         <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', flexWrap: 'wrap' }}>
                           <button
                             type="button"
@@ -2646,14 +2810,16 @@ function Profile() {
                         <textarea
                           rows={3}
                           value={rBioDraft}
-                          onChange={e => setRBioDraft(e.target.value)}
+                          onChange={e => {
+                            setRBioDraft(e.target.value);
+                            setRestaurantChanged(true);
+                          }}
                           placeholder="Tell customers about your restaurant..."
                           style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--dash-accent)', background: 'var(--dash-bg-card)', color: 'var(--dash-text)', fontSize: '0.95rem', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
                           autoFocus
                         />
                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <button type="button" onClick={() => { const updated = { ...restaurantProfile, bio: rBioDraft }; setRestaurantProfile(updated); persistRestaurant(updated); setRBioEditing(false); }} style={{ padding: '0.5rem 1.2rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Save</button>
-                          <button type="button" onClick={() => setRBioEditing(false)} style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+                          <button type="button" onClick={() => setRBioEditing(false)} style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--dash-subtext)', border: '1px solid var(--dash-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>Done</button>
                         </div>
                       </div>
                     ) : (
@@ -2681,7 +2847,7 @@ function Profile() {
                   {/* Contact — always editable; server sync debounces via restaurantProfile */}
                   <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '1.35rem' }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16z"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '1.35rem' }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16z" /></svg>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Phone</div>
                         <PhoneINInput
@@ -2690,13 +2856,14 @@ function Profile() {
                           onChange={(full) => {
                             const updated = { ...restaurantProfile, phone: full };
                             setRestaurantProfile(updated);
+                            setRestaurantChanged(true);
                             persistRestaurant(updated);
                           }}
                         />
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem 1rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '0.35rem' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--dash-subtext)', flexShrink: 0, marginTop: '0.35rem' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Email</div>
                         <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600, wordBreak: 'break-word' }}>
@@ -2712,60 +2879,60 @@ function Profile() {
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--dash-text)', margin: 0 }}>Gallery Images</h3>
                       {(restaurantProfile.gallery || []).length < 4 && (
                         <>
-                        <button
-                          type="button"
-                          className="upload-trigger-btn"
-                          style={{ width: 'auto', background: 'none', border: 'none', padding: 0 }}
-                          onClick={() => { if (restaurantGalleryInputRef.current) { restaurantGalleryInputRef.current.value = ''; restaurantGalleryInputRef.current.click(); } }}
-                          disabled={restaurantGalleryUploading}
-                        >
-                          <input
-                            ref={restaurantGalleryInputRef}
-                            type="file"
-                            accept="image/*,image/gif"
-                            multiple
-                            style={{ display: 'none' }}
-                            onChange={async (e) => {
-                              const pickedCount = e.target.files?.length || 0;
-                              if (pickedCount === 0) return;
+                          <button
+                            type="button"
+                            className="upload-trigger-btn"
+                            style={{ width: 'auto', background: 'none', border: 'none', padding: 0 }}
+                            onClick={() => { if (restaurantGalleryInputRef.current) { restaurantGalleryInputRef.current.value = ''; restaurantGalleryInputRef.current.click(); } }}
+                            disabled={restaurantGalleryUploading}
+                          >
+                            <input
+                              ref={restaurantGalleryInputRef}
+                              type="file"
+                              accept="image/*,image/gif"
+                              multiple
+                              style={{ display: 'none' }}
+                              onChange={async (e) => {
+                                const pickedCount = e.target.files?.length || 0;
+                                if (pickedCount === 0) return;
 
-                              const currentLimit = 4;
-                              const existingCount = (restaurantProfile.gallery || []).length;
-                              if (existingCount >= currentLimit) {
-                                alert(`Only ${currentLimit} images are allowed.`);
-                                e.target.value = '';
-                                return;
-                              }
-
-                              handlePickAndCropBatch(e, 1, async (croppedFile) => {
-                                setRestaurantGalleryUploading(true);
-                                try {
-                                  // Refresh restaurantProfile within the callback to get latest state
-                                  const latest = restaurantProfileRef.current || restaurantProfile;
-                                  if ((latest.gallery || []).length >= currentLimit) return;
-
-                                  assertGalleryFileKind(croppedFile);
-                                  const up = await generalProfileAPI.uploadPhoto(croppedFile, () => getIdToken());
-                                  const url = extractUploadUrl(up);
-                                  if (!url) return;
-
-                                  const existing = latest.gallery || [];
-                                  const base = (croppedFile.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
-                                  const updated = { ...latest, gallery: [...existing, { url, name: base }] };
-                                  
-                                  setRestaurantProfile(updated);
-                                  persistRestaurant(updated);
-                                  await handleRestaurantPublish(updated, { silent: true });
-                                } catch (err) {
-                                  console.error('Restaurant gallery item upload:', err);
-                                } finally {
-                                  setRestaurantGalleryUploading(false);
+                                const currentLimit = 4;
+                                const existingCount = (restaurantProfile.gallery || []).length;
+                                if (existingCount >= currentLimit) {
+                                  alert(`Only ${currentLimit} images are allowed.`);
+                                  e.target.value = '';
+                                  return;
                                 }
-                              });
-                            }}
-                          />
-                          <span style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</span>
-                        </button>
+
+                                handlePickAndCropBatch(e, 1, async (croppedFile) => {
+                                  setRestaurantGalleryUploading(true);
+                                  try {
+                                    // Refresh restaurantProfile within the callback to get latest state
+                                    const latest = restaurantProfileRef.current || restaurantProfile;
+                                    if ((latest.gallery || []).length >= currentLimit) return;
+
+                                    assertGalleryFileKind(croppedFile);
+                                    const up = await generalProfileAPI.uploadPhoto(croppedFile, () => getIdToken());
+                                    const url = extractUploadUrl(up);
+                                    if (!url) return;
+
+                                    const existing = latest.gallery || [];
+                                    const base = (croppedFile.name || '').replace(/\.[^.]+$/, '') || `Gallery ${existing.length + 1}`;
+                                    const updated = { ...latest, gallery: [...existing, { url, name: base }] };
+
+                                    setRestaurantProfile(updated);
+                                    persistRestaurant(updated);
+                                    await handleRestaurantPublish(updated, { silent: true });
+                                  } catch (err) {
+                                    console.error('Restaurant gallery item upload:', err);
+                                  } finally {
+                                    setRestaurantGalleryUploading(false);
+                                  }
+                                });
+                              }}
+                            />
+                            <span style={{ cursor: restaurantGalleryUploading ? 'wait' : 'pointer', color: '#6366f1', fontWeight: 600, fontSize: '0.85rem', opacity: restaurantGalleryUploading ? 0.7 : 1 }}>{restaurantGalleryUploading ? 'Uploading…' : '+ Add images or GIFs'}</span>
+                          </button>
                         </>
                       )}
                     </div>
@@ -3056,7 +3223,7 @@ function Profile() {
                   ) : (
                     <div style={{ padding: '4rem 2rem', border: '2px dashed var(--dash-border)', borderRadius: '20px', textAlign: 'center', color: 'var(--dash-subtext)' }}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ marginBottom: '1rem', opacity: 0.4 }}>
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
                       </svg>
                       <p style={{ margin: '0 0 1.5rem', fontSize: '0.95rem' }}>No menu uploaded yet</p>
                       <button
@@ -3106,7 +3273,7 @@ function Profile() {
                     title="Restaurant Profile Preview"
                     src={`${window.location.origin}/link/${encodeURIComponent((restaurantProfile.username || '').trim())}?v=${previewKey}`}
                     className="dash-mobile-preview-iframe"
-                    
+
                   />
                   <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
                 </div>
@@ -3181,7 +3348,7 @@ function Profile() {
         )}
 
         {/* Restaurant Platform Selector Modal — same as artist */}
-      {rLinkSelectorOpen && (
+        {rLinkSelectorOpen && (
           <div className="dash-selector-overlay">
             <div className="dash-selector-modal">
               <div className="dash-selector-header">
@@ -3317,9 +3484,9 @@ function Profile() {
                         <div className="onboarding-suggestions" style={{ paddingLeft: '0.5rem' }}>
                           <span>Try:</span>
                           {availabilitySuggestions.map(s => (
-                            <button 
-                              key={s} 
-                              type="button" 
+                            <button
+                              key={s}
+                              type="button"
                               className="onboarding-suggestion-btn"
                               onClick={() => {
                                 setRestaurantForm(p => ({ ...p, username: s }));
@@ -3414,10 +3581,10 @@ function Profile() {
                   <div className="onboarding-theme-selector-wrap">
                     <div className="onboarding-theme-selector onboarding-theme-grid">
                       {GENERAL_THEMES.map((t) => (
-                        <button 
-                          key={t.id} 
-                          type="button" 
-                          className={`theme-pick-btn ${restaurantForm.theme === t.id ? 'active' : ''}`} 
+                        <button
+                          key={t.id}
+                          type="button"
+                          className={`theme-pick-btn ${restaurantForm.theme === t.id ? 'active' : ''}`}
                           onClick={() => setRestaurantForm(prev => ({ ...prev, theme: t.id }))}
                           style={{
                             background: t.bg,
@@ -3508,8 +3675,8 @@ function Profile() {
                         >
                           {pdfNumPages && Array.from(new Array(pdfNumPages), (el, index) => (
                             <div key={`page_${index + 1}`} style={{ marginBottom: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
-                              <Page 
-                                pageNumber={index + 1} 
+                              <Page
+                                pageNumber={index + 1}
                                 renderTextLayer={false}
                                 renderAnnotationLayer={false}
                                 width={280}
@@ -3840,15 +4007,15 @@ function Profile() {
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
         {cropper.open && (
-           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-             <ImageCropperModal
-               image={cropper.image}
-               aspect={cropper.aspect}
-               onSave={cropper.onComplete}
-               onCancel={cropper.onCancel}
-             />
-           </div>
-         )}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -3943,9 +4110,9 @@ function Profile() {
                         <div className="onboarding-suggestions" style={{ paddingLeft: '0.5rem' }}>
                           <span>Try:</span>
                           {availabilitySuggestions.map(s => (
-                            <button 
-                              key={s} 
-                              type="button" 
+                            <button
+                              key={s}
+                              type="button"
                               className="onboarding-suggestion-btn"
                               onClick={() => {
                                 setGeneralForm(p => ({ ...p, username: s }));
@@ -4114,12 +4281,12 @@ function Profile() {
                 <>
                   <h2>Connect Your Digital World</h2>
                   <p className="onboarding-subtitle">Link your social media and other platforms</p>
-                  
+
                   <div className="onboarding-fields">
                     <div className="dash-links-section onboarding-added-links" style={{ marginBottom: '1.5rem' }}>
                       {generalForm.links.length === 0 ? (
                         <div className="general-onboarding-artist-empty">
-                          <p>No platforms added yet.<br/>Click below to add some!</p>
+                          <p>No platforms added yet.<br />Click below to add some!</p>
                         </div>
                       ) : (
                         generalForm.links.map((link, idx) => {
@@ -4139,12 +4306,12 @@ function Profile() {
                                   >✕</button>
                                 </div>
                                 <div className="dash-link-url">
-                                  <input 
-                                    className="onboarding-input" 
-                                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.5rem' }} 
-                                    placeholder="Link Title (e.g. My Website)" 
-                                    value={link.title} 
-                                    onChange={e => updateLink(idx, 'title', e.target.value)} 
+                                  <input
+                                    className="onboarding-input"
+                                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.5rem' }}
+                                    placeholder="Link Title (e.g. My Website)"
+                                    value={link.title}
+                                    onChange={e => updateLink(idx, 'title', e.target.value)}
                                   />
                                   {link.platform === 'whatsapp' && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -4175,7 +4342,7 @@ function Profile() {
                                     </div>
                                   )}
                                   {(!['whatsapp', 'telegram', 'instagram', 'twitter', 'tiktok', 'snapchat', 'threads'].includes(link.platform)) && (
-                                     <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
+                                    <input className="onboarding-input" style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem', borderRadius: '8px' }} placeholder="https://" value={link.url} onChange={e => updateLink(idx, 'url', e.target.value)} />
                                   )}
                                 </div>
                               </div>
@@ -4192,7 +4359,7 @@ function Profile() {
                     >
                       <span style={{ fontSize: '1.2rem', fontWeight: 400 }}>+</span> Add Platforms
                     </button>
-                    
+
                     <div className="onboarding-actions" style={{ marginTop: '2.5rem' }}>
                       <button type="submit" className="onboarding-btn-primary" disabled={generalSaving} style={{ width: '100%' }}>
                         {generalSaving ? <><span>Setting up...</span>{setupLoader}</> : 'Complete'}
@@ -4204,14 +4371,14 @@ function Profile() {
                 <div className="onboarding-selector-view fade-in">
                   <div className="selector-header">
                     <h3>Select Platforms</h3>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="selector-close-btn"
                       onClick={() => setIsGeneralPlatformSelectorOpen(false)}
                     >←</button>
                   </div>
                   <p className="selector-subtitle">Choose the platforms you want on your profile</p>
-                  
+
                   <div className="dash-selector-grid">
                     {ALL_PLATFORMS.map((p) => {
                       const isActive = generalForm.links.some(l => l.platform === p.id);
@@ -4236,11 +4403,11 @@ function Profile() {
                       );
                     })}
                   </div>
-                  
+
                   <div className="onboarding-actions" style={{ marginTop: '1.5rem' }}>
-                    <button 
-                      type="button" 
-                      className="onboarding-btn-primary" 
+                    <button
+                      type="button"
+                      className="onboarding-btn-primary"
                       onClick={() => setIsGeneralPlatformSelectorOpen(false)}
                       style={{ width: '100%', borderRadius: '24px' }}
                     >
@@ -4255,15 +4422,15 @@ function Profile() {
           <button type="button" onClick={handleLogout} className="profile-logout-btn-link" style={{ marginTop: 16 }}>Sign out</button>
         </div>
         {cropper.open && (
-           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-             <ImageCropperModal
-               image={cropper.image}
-               aspect={cropper.aspect}
-               onSave={cropper.onComplete}
-               onCancel={cropper.onCancel}
-             />
-           </div>
-         )}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -4345,6 +4512,10 @@ function Profile() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 Links
               </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'suggestions' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('suggestions')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                Suggestions
+              </button>
             </div>
           </nav>
 
@@ -4356,34 +4527,111 @@ function Profile() {
         </aside>
 
         <main className="dash-main">
-          <header className="dash-main-header">
-            <div>
-              <h1 className="dash-main-title">
-                {generalActiveTab === 'profile' ? 'General Profile' : generalActiveTab === 'design' ? 'Profile Design' : 'Manage Links'}
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
+              <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
+                {generalActiveTab === 'profile' ? 'General Profile' : generalActiveTab === 'design' ? 'Profile Design' : generalActiveTab === 'suggestions' ? 'Suggestions' : 'Manage Links'}
               </h1>
-              <p className="dash-main-subtitle">
-                {generalActiveTab === 'profile'
-                  ? 'Edit your personal information and profile details'
-                  : generalActiveTab === 'design'
-                    ? 'Customize the visual theme and typography of your public page'
-                    : 'Add and manage your links, social media, and more'}
-              </p>
-              {error && (
-                <div style={{ padding: '0.8rem 1.2rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '12px', marginTop: '1rem', fontSize: '0.9rem' }}>
-                  {error}
-                </div>
-              )}
-              {generalSuccess && (
-                <div style={{ padding: '0.8rem 1.2rem', background: '#f0fdf4', color: '#166534', border: '1px solid #4ade80', borderRadius: '12px', marginTop: '1rem', fontSize: '0.9rem' }}>
-                  {generalSuccess}
-                </div>
-              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {generalActiveTab === 'profile' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: profileChanged ? '#0070f3' : '#ffffff',
+                      color: profileChanged ? '#ffffff' : '#000000',
+                      border: profileChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: profileChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save Profile'}
+                  </button>
+                )}
+
+                {generalActiveTab === 'links' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: linksChanged ? '#0070f3' : '#ffffff',
+                      color: linksChanged ? '#ffffff' : '#000000',
+                      border: linksChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: linksChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save Links'}
+                  </button>
+                )}
+
+                {generalActiveTab === 'suggestions' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: suggestionsChanged ? '#0070f3' : '#ffffff',
+                      color: suggestionsChanged ? '#ffffff' : '#000000',
+                      border: suggestionsChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: suggestionsChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save Suggestions'}
+                  </button>
+                )}
+              </div>
             </div>
+
+            <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
+              {generalActiveTab === 'profile'
+                ? 'Edit your personal information and profile details'
+                : generalActiveTab === 'design'
+                  ? 'Customize the visual theme and typography of your public page'
+                  : generalActiveTab === 'suggestions'
+                    ? 'Add up to 4 suggested items with images, captions, and links'
+                    : 'Add and manage your links, social media, and more'}
+            </p>
+
+            {error && (
+              <div style={{ padding: '0.6rem 1rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '10px', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                {error}
+              </div>
+            )}
+            {generalSuccess && (
+              <div style={{ padding: '0.6rem 1rem', background: '#f0fdf4', color: '#166534', border: '1px solid #4ade80', borderRadius: '10px', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                {generalSuccess}
+              </div>
+            )}
+
             {generalActiveTab === 'profile' && (
-              <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
+              <div className="dash-profile-link-iconbar" style={{ marginTop: '0.5rem', alignSelf: 'flex-start', padding: '6px 10px', gap: '8px' }} aria-label="Profile link actions">
                 <button
                   type="button"
                   className="dash-icon-pill"
+                  style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
                   onClick={() => {
                     navigator.clipboard.writeText(gProfileLink);
                     setLinkCopiedGeneral(true);
@@ -4393,31 +4641,32 @@ function Profile() {
                 >
                   {linkCopiedGeneral ? (
                     <>
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                      <span>Copied</span>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                      <span style={{ fontSize: '0.7rem' }}>Copied</span>
                     </>
                   ) : (
                     <>
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="9" y="9" width="13" height="13" rx="2" />
                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                       </svg>
-                      <span>Copy Link</span>
+                      <span style={{ fontSize: '0.7rem' }}>Copy</span>
                     </>
                   )}
                 </button>
 
                 <a
                   className="dash-icon-pill"
+                  style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
                   href={gProfileLink}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Open profile link"
                 >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                   </svg>
-                  <span>Go to Site</span>
+                  <span style={{ fontSize: '0.7rem' }}>Visit</span>
                 </a>
               </div>
             )}
@@ -4431,45 +4680,108 @@ function Profile() {
                   {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
 
                   {/* Re-designed General Profile Hero (matches Artist style) */}
-                    <div className="dash-profile-hero" style={{ minHeight: 'auto', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-                      {/* Banner Image Background */}
-                      {(generalForm.banner || generalBannerFile) && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundImage: `url(${generalBannerPreviewUrl || generalForm.banner})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          zIndex: 0
-                        }} />
-                      )}
-                      {/* Dark overlay if banner exists */}
-                      {(generalForm.banner || generalBannerFile) && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                          zIndex: 1
-                        }} />
-                      )}
+                  <div className="dash-profile-hero" style={{ minHeight: 'auto', padding: '2rem', position: 'relative', overflow: 'visible', marginBottom: '40px' }}>
+                    {/* Banner Image Background */}
+                    {(generalForm.banner || generalBannerFile) && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `url(${generalBannerPreviewUrl || generalForm.banner})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        zIndex: 0
+                      }} />
+                    )}
+                    {/* Dark overlay if banner exists */}
+                    {(generalForm.banner || generalBannerFile) && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                        zIndex: 1
+                      }} />
+                    )}
 
-                      <div className="dash-profile-hero-content" style={{ alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                        <div className="dash-profile-hero-avatar" style={{ width: '100px', height: '100px' }}>
+                    <div className="dash-profile-hero-content" style={{ alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                      <div className="dash-profile-hero-avatar" style={{ width: '110px', height: '110px', borderRadius: '0', marginBottom: '-40px', border: '4px solid #fff', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                        <button
+                          type="button"
+                          className="dash-avatar-trigger upload-trigger-btn"
+                          style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
+                          onClick={() => { if (genDashPhotoInputRef.current) { genDashPhotoInputRef.current.value = ''; genDashPhotoInputRef.current.click(); } }}
+                          aria-label="Change profile photo"
+                        >
+                          <input
+                            ref={genDashPhotoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                            style={{ display: 'none' }}
+                            onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                              setGeneralPhotoFile(file);
+                              handleGeneralPhotoSave(file);
+                            })}
+                          />
+                          {(generalForm.photo || generalPhotoFile) ? (
+                            <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>
+                              {(generalProfile.name || '?')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div className="dash-avatar-overlay">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                              <circle cx="12" cy="13" r="4" />
+                            </svg>
+                          </div>
+                          {generalSaving && <div className="dash-avatar-uploading-spinner" style={{ position: 'absolute', inset: 0, border: '3px solid rgba(99, 102, 241, 0.4)', borderTopColor: '#6366f1', borderRadius: '0', animation: 'rotate 1s linear infinite' }} />}
+                        </button>
+                      </div>
+                      <div className="dash-profile-hero-info" style={{ marginTop: '45px', paddingTop: '5px' }}>
+                        <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px', lineHeight: '1.3', paddingBottom: '4px' }}>
+                          {generalProfile.name && generalProfile.name.length > 16 
+                            ? generalProfile.name.substring(0, 16) + '..' 
+                            : (generalProfile.name || 'Unnamed')}
+                        </h2>
+                        <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                          @{generalProfile.username}
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
                           <button
                             type="button"
-                            className="dash-avatar-trigger upload-trigger-btn"
-                            style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
-                            onClick={() => { if (genDashPhotoInputRef.current) { genDashPhotoInputRef.current.value = ''; genDashPhotoInputRef.current.click(); } }}
-                            aria-label="Change profile photo"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{
+                              padding: '10px 20px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
+                              color: '#fff',
+                              background: '#000',
+                              transition: 'all 0.2s ease',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              lineHeight: 1,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}
+                            onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
                           >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Photo
                             <input
-                              ref={genDashPhotoInputRef}
+                              ref={genDashChangePhotoInputRef}
                               type="file"
                               accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
                               style={{ display: 'none' }}
@@ -4478,110 +4790,49 @@ function Profile() {
                                 handleGeneralPhotoSave(file);
                               })}
                             />
-                            {(generalForm.photo || generalPhotoFile) ? (
-                              <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>
-                                {(generalProfile.name || '?')[0].toUpperCase()}
-                              </div>
-                            )}
-                            <div className="dash-avatar-overlay">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                                <circle cx="12" cy="13" r="4" />
-                              </svg>
-                            </div>
-                            {generalSaving && <div className="dash-avatar-uploading-spinner" style={{ position: 'absolute', inset: 0, border: '3px solid rgba(99, 102, 241, 0.4)', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'rotate 1s linear infinite' }} />}
                           </button>
-                        </div>
-                        <div className="dash-profile-hero-info">
-                          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-                            {generalProfile.name || 'Unnamed'}
-                          </h2>
-                          <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
-                            @{generalProfile.username}
-                          </p>
-                          
-                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-                            <button
-                              type="button"
-                              className="dash-icon-pill upload-trigger-btn"
-                              style={{
-                                padding: '10px 20px',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                fontSize: '0.9rem',
-                                fontWeight: 700,
-                                color: '#fff',
-                                background: '#000',
-                                transition: 'all 0.2s ease',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                lineHeight: 1,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                              }}
-                              onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                              </svg>
-                              Change Photo
-                              <input
-                                ref={genDashChangePhotoInputRef}
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handlePickAndCrop(e, 1, (file) => {
-                                  setGeneralPhotoFile(file);
-                                  handleGeneralPhotoSave(file);
-                                })}
-                              />
-                            </button>
 
-                            <button
-                              type="button"
-                              className="dash-icon-pill upload-trigger-btn"
-                              style={{
-                                padding: '10px 20px',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                fontSize: '0.9rem',
-                                fontWeight: 700,
-                                color: '#fff',
-                                background: '#000',
-                                transition: 'all 0.2s ease',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                lineHeight: 1,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                              }}
-                              onClick={() => { if (genDashBannerInputRef.current) { genDashBannerInputRef.current.value = ''; genDashBannerInputRef.current.click(); } }}
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                              </svg>
-                              Change Banner
-                              <input
-                                ref={genDashBannerInputRef}
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handlePickAndCrop(e, 25 / 7, (file) => {
-                                  setGeneralBannerFile(file);
-                                  handleGeneralBannerSave(file);
-                                })}
-                              />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{
+                              padding: '10px 20px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
+                              color: '#fff',
+                              background: '#000',
+                              transition: 'all 0.2s ease',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              lineHeight: 1,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}
+                            onClick={() => { if (genDashBannerInputRef.current) { genDashBannerInputRef.current.value = ''; genDashBannerInputRef.current.click(); } }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Banner
+                            <input
+                              ref={genDashBannerInputRef}
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handlePickAndCrop(e, 25 / 7, (file) => {
+                                setGeneralBannerFile(file);
+                                handleGeneralBannerSave(file);
+                              })}
+                            />
+                          </button>
                         </div>
                       </div>
                     </div>
+                  </div>
 
                   <div style={{ display: 'grid', gap: '1.25rem' }}>
                     {[
@@ -4595,7 +4846,10 @@ function Profile() {
                         {field.type === 'textarea' ? (
                           <textarea
                             value={generalForm[field.key] || ''}
-                            onChange={(e) => setGeneralForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            onChange={(e) => {
+                              setProfileChanged(true);
+                              setGeneralForm(prev => ({ ...prev, [field.key]: e.target.value }));
+                            }}
                             placeholder={field.placeholder}
                             rows={3}
                             style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
@@ -4604,7 +4858,12 @@ function Profile() {
                           <input
                             type="text"
                             value={generalForm[field.key] || ''}
-                            onChange={(e) => !field.disabled && setGeneralForm(prev => ({ ...prev, [field.key]: field.key === 'username' ? e.target.value.toLowerCase().replace(/\s+/g, '_') : e.target.value }))}
+                            onChange={(e) => {
+                              if (!field.disabled) {
+                                setProfileChanged(true);
+                                setGeneralForm(prev => ({ ...prev, [field.key]: field.key === 'username' ? e.target.value.toLowerCase().replace(/\s+/g, '_') : e.target.value }));
+                              }
+                            }}
                             placeholder={field.placeholder}
                             disabled={field.disabled}
                             style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: field.disabled ? 'var(--dash-border)' : 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box', opacity: field.disabled ? 0.6 : 1 }}
@@ -4660,28 +4919,6 @@ function Profile() {
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
-                    <button
-                      onClick={handleGeneralSaveAll}
-                      disabled={generalSaving}
-                      style={{
-                        padding: '0.85rem 2.5rem',
-                        borderRadius: '18px',
-                        fontSize: '0.95rem',
-                        fontWeight: 700,
-                        background: '#ffffff',
-                        color: '#000000',
-                        border: '1px solid #ffffff',
-                        cursor: generalSaving ? 'wait' : 'pointer',
-                        opacity: generalSaving ? 0.7 : 1,
-                        transition: 'all 0.2s',
-                        maxWidth: '380px',
-                        width: '100%'
-                      }}
-                    >
-                      {generalSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                  </div>
                 </div>
 
                 {!isMobileViewport && (
@@ -4692,7 +4929,7 @@ function Profile() {
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
-                        
+
                       />
                     </div>
                   </div>
@@ -4785,7 +5022,7 @@ function Profile() {
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
-                        
+
                       />
                     </div>
                   </div>
@@ -4800,8 +5037,6 @@ function Profile() {
                   {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
 
                   <section style={{ marginBottom: '2.5rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Your Links</h2>
-                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Add links to your website, social media, portfolios, and more</p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
                       {generalForm.links.map((link, idx) => (
@@ -4893,28 +5128,6 @@ function Profile() {
                     </button>
                   </section>
 
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <button
-                      onClick={handleGeneralSaveAll}
-                      disabled={generalSaving}
-                      style={{
-                        padding: '0.85rem 2.5rem',
-                        borderRadius: '18px',
-                        fontSize: '0.95rem',
-                        fontWeight: 700,
-                        background: '#ffffff',
-                        color: '#000000',
-                        border: '1px solid #ffffff',
-                        cursor: generalSaving ? 'wait' : 'pointer',
-                        opacity: generalSaving ? 0.7 : 1,
-                        transition: 'all 0.2s',
-                        maxWidth: '380px',
-                        width: '100%'
-                      }}
-                    >
-                      {generalSaving ? 'Saving...' : 'Save Links'}
-                    </button>
-                  </div>
                 </div>
 
                 {!isMobileViewport && (
@@ -4925,13 +5138,163 @@ function Profile() {
                         title="General Profile Preview"
                         src={gProfileLink}
                         className="dash-preview-iframe"
-                        
+
                       />
                     </div>
                   </div>
                 )}
               </div>
             )}
+
+            {/* Suggestions Tab */}
+            {generalActiveTab === 'suggestions' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+
+                  <section style={{ marginBottom: '2.5rem' }}>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)', marginBottom: '1.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Section Title</label>
+                      <input
+                        type="text"
+                        value={generalForm.suggestionsTitle || ''}
+                        onChange={(e) => {
+                          setSuggestionsChanged(true);
+                          setGeneralForm(prev => ({ ...prev, suggestionsTitle: e.target.value }));
+                        }}
+                        placeholder="Suggestions"
+                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                      {generalForm.suggestions.map((sug, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            background: 'var(--dash-bg-card)',
+                            padding: '0.85rem',
+                            borderRadius: '16px',
+                            border: '1px solid var(--dash-border)',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{ marginBottom: '0.75rem' }}>
+                            <div
+                              onClick={() => document.getElementById(`suggestion-file-${idx}`).click()}
+                              style={{
+                                width: '100%',
+                                aspectRatio: '1',
+                                borderRadius: '12px',
+                                background: 'var(--dash-bg)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                overflow: 'hidden',
+                                border: '1.5px dashed var(--dash-border)'
+                              }}
+                            >
+                              {sug.url ? (
+                                <img src={sug.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <span style={{ color: 'var(--dash-subtext)', fontSize: '0.85rem' }}>+ Add Image</span>
+                              )}
+                            </div>
+                            <input
+                              id={`suggestion-file-${idx}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) handleSuggestionImageUpload(idx, e.target.files[0]);
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <input
+                              placeholder="Caption (e.g. My Latest Work)"
+                              value={sug.caption || ''}
+                              onChange={(e) => updateSuggestion(idx, 'caption', e.target.value)}
+                              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.85rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                            <input
+                              placeholder="Link (https://...)"
+                              value={sug.link || ''}
+                              onChange={(e) => updateSuggestion(idx, 'link', e.target.value)}
+                              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.85rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeSuggestion(idx)}
+                            style={{
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: 'rgba(0,0,0,0.5)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '24px',
+                              height: '24px',
+                              minWidth: '24px',
+                              cursor: 'pointer',
+                              display: 'grid',
+                              placeItems: 'center',
+                              fontSize: '12px',
+                              padding: 0,
+                              lineHeight: 1
+                            }}
+                          >✕</button>
+                        </div>
+                      ))}
+
+                      {generalForm.suggestions.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={addSuggestion}
+                          style={{
+                            aspectRatio: '1',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            background: 'transparent',
+                            borderRadius: '16px',
+                            border: '2px dashed var(--dash-border)',
+                            color: 'var(--dash-accent)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          <span style={{ fontSize: '1.2rem' }}>+</span>
+                          <span>Add Suggestion</span>
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-suggestions-${previewKey}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
 
 
 
@@ -4944,7 +5307,7 @@ function Profile() {
                     title="General Profile Preview"
                     src={gProfileLink}
                     className="dash-mobile-preview-iframe"
-                    
+
                   />
                 </div>
               </div>
@@ -4997,6 +5360,18 @@ function Profile() {
               </button>
               <button
                 type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'suggestions' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('suggestions')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <span>Suggestions</span>
+              </button>
+              <button
+                type="button"
                 className="dash-mobile-bottom-btn"
                 onClick={handleLogout}
               >
@@ -5013,15 +5388,15 @@ function Profile() {
           </div>
         )}
         {cropper.open && (
-           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-             <ImageCropperModal
-               image={cropper.image}
-               aspect={cropper.aspect}
-               onSave={cropper.onComplete}
-               onCancel={cropper.onCancel}
-             />
-           </div>
-         )}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -5144,36 +5519,6 @@ function Profile() {
                 <label>Bio</label>
                 <textarea name="bio" value={generalForm.bio} onChange={(e) => setGeneralForm(prev => ({ ...prev, bio: e.target.value }))} rows={2} placeholder="Short bio" />
               </div>
-              <div className="profile-edit-field">
-                <label>Profile photo</label>
-                <div className="profile-edit-photo-row">
-                  <button
-                    type="button"
-                    className="profile-edit-file-btn upload-trigger-btn"
-                    style={{ width: 'auto' }}
-                    onClick={() => { if (genPhotoInputRef.current) { genPhotoInputRef.current.value = ''; genPhotoInputRef.current.click(); } }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <span>{generalPhotoFile ? 'Change photo' : 'Upload photo'}</span>
-                    <input
-                      ref={genPhotoInputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
-                      style={{ display: 'none' }}
-                      onChange={(e) => handlePickAndCrop(e, 1, (file) => setGeneralPhotoFile(file))}
-                    />
-                  </button>
-                  {(generalForm.photo || generalPhotoFile) && (
-                    <div className="profile-edit-photo-preview">
-                      <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" />
-                    </div>
-                  )}
-                </div>
-              </div>
               <div className="profile-edit-section">
                 <h4 className="profile-edit-section-title">Links</h4>
                 {generalForm.links.map((link, idx) => (
@@ -5268,7 +5613,7 @@ function Profile() {
                         const currentCount = generalForm.gallery.length;
                         const available = 4 - currentCount;
                         const toAdd = files.slice(0, available);
-                        
+
                         for (const file of toAdd) {
                           try {
                             if (file.type.startsWith('video/')) {
@@ -5302,18 +5647,18 @@ function Profile() {
                 <div className="dash-gallery-grid" style={{ marginTop: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
                   {generalForm.gallery.map((item, idx) => (
                     <div key={idx} className="dash-gallery-item" style={{ height: '100px' }}>
-                       {item.type === 'video' || item.url.includes('video') ? (
-                         <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                       ) : (
-                         <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                       )}
-                       <div className="dash-gallery-item-overlay">
-                          <button
-                            type="button"
-                            className="dash-gallery-remove-btn"
-                            onClick={() => setGeneralForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }))}
-                          >✕</button>
-                       </div>
+                      {item.type === 'video' || item.url.includes('video') ? (
+                        <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      )}
+                      <div className="dash-gallery-item-overlay">
+                        <button
+                          type="button"
+                          className="dash-gallery-remove-btn"
+                          onClick={() => setGeneralForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }))}
+                        >✕</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -5326,15 +5671,15 @@ function Profile() {
           </form>
         </div>
         {cropper.open && (
-           <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-             <ImageCropperModal
-               image={cropper.image}
-               aspect={cropper.aspect}
-               onSave={cropper.onComplete}
-               onCancel={cropper.onCancel}
-             />
-           </div>
-         )}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -5392,9 +5737,9 @@ function Profile() {
       {/* Main Content */}
       <main className="dash-main">
         {!(isMobileViewport && activeTab === 'design') && (
-          <header className="dash-main-header">
-            <div>
-              <h1 className="dash-main-title">
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
+              <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
                 {activeTab === 'profiles'
                   ? 'Artist Profiles'
                   : activeTab === 'design'
@@ -5403,24 +5748,49 @@ function Profile() {
                       ? 'Preview'
                       : 'Link Your Art'}
               </h1>
-              <p className="dash-main-subtitle">
-                {activeTab === 'profiles'
-                  ? 'Manage your artist profiles and portfolio'
-                  : activeTab === 'design'
-                    ? 'Customize the visual theme and typography of your public artist profile'
-                    : activeTab === 'preview'
-                      ? 'See a live preview of your public artist profile'
-                      : 'Connect your external portfolios, galleries, and art marketplaces'}
-              </p>
+
+              <button
+                onClick={() => {
+                  setArtistChanged(false);
+                }}
+                disabled={saving}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  background: artistChanged ? '#0070f3' : '#ffffff',
+                  color: artistChanged ? '#ffffff' : '#000000',
+                  border: artistChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                  cursor: saving ? 'wait' : 'pointer',
+                  opacity: saving ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  boxShadow: artistChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {saving ? '...' : 'Save Profile'}
+              </button>
             </div>
+
+            <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
+              {activeTab === 'profiles'
+                ? 'Manage your artist profiles and portfolio'
+                : activeTab === 'design'
+                  ? 'Customize the visual theme and typography of your public artist profile'
+                  : activeTab === 'preview'
+                    ? 'See a live preview of your public artist profile'
+                    : 'Connect your external portfolios, galleries, and art marketplaces'}
+            </p>
 
             {activeTab === 'profiles' && myArtists && myArtists[0] && (() => {
               const profileUrl = `${frontendBase}/artist/${myArtists[0].artistId}`;
               return (
-                <div className="dash-profile-link-iconbar" aria-label="Profile link actions">
+                <div className="dash-profile-link-iconbar" style={{ marginTop: '0.5rem', alignSelf: 'flex-start', padding: '6px 10px', gap: '8px' }} aria-label="Profile link actions">
                   <button
                     type="button"
                     className="dash-icon-pill"
+                    style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
                     onClick={() => {
                       navigator.clipboard.writeText(profileUrl);
                       setLinkCopiedArtist(true);
@@ -5430,30 +5800,31 @@ function Profile() {
                   >
                     {linkCopiedArtist ? (
                       <>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                        <span>Copied</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                        <span style={{ fontSize: '0.7rem' }}>Copied</span>
                       </>
                     ) : (
                       <>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="9" y="9" width="13" height="13" rx="2" />
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                         </svg>
-                        <span>Copy Link</span>
+                        <span style={{ fontSize: '0.7rem' }}>Copy</span>
                       </>
                     )}
                   </button>
                   <a
                     className="dash-icon-pill"
+                    style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
                     href={profileUrl}
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Open profile link"
                   >
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M7 17L17 7" /><path d="M7 7h10v10" />
                     </svg>
-                    <span>Go to Site</span>
+                    <span style={{ fontSize: '0.7rem' }}>Visit</span>
                   </a>
                 </div>
               );
@@ -5471,7 +5842,7 @@ function Profile() {
                   title="Artist Preview"
                   src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                   className="dash-mobile-preview-iframe"
-                  
+
                 />
 
               </div>
@@ -5508,7 +5879,7 @@ function Profile() {
                     title="Profile Design Preview"
                     src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                     className="dash-design-mobile-preview-iframe"
-                    
+
                   />
 
                 </div>
@@ -5766,7 +6137,7 @@ function Profile() {
                       title="Profile Design Preview"
                       src={`${frontendBase}/artist/${myArtists[0].artistId}`}
                       className="dash-preview-iframe"
-                      
+
                     />
                   </div>
                 </div>
@@ -5849,11 +6220,8 @@ function Profile() {
                 await handleUpdateHeroField('artLinks', updatedItems);
               };
 
-              // Pick first item for preview by default
-              const previewArtId = artPreviewId || (items[0]?.id ?? null);
-              const artPreviewSrc = previewArtId
-                ? `${frontendBase}/artist/${artistToken}?art=${previewArtId}`
-                : `${frontendBase}/artist/${artistToken}`;
+              // Default to showing the full gallery/profile in the preview so they can see all showcases
+              const artPreviewSrc = `${frontendBase}/artist/${artistToken}`;
 
               return (
                 <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
@@ -5934,7 +6302,12 @@ function Profile() {
                           <h3 className="dash-art-title">Your Art Showcase ({items.length})</h3>
                           <span className="dash-art-subtitle">Each card has its own unique URL + QR</span>
                         </div>
-                        <div className="dash-art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem' }}>
+                        <div className="dash-art-grid" style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(2, 1fr)', 
+                          gap: '1.25rem',
+                          alignItems: 'stretch'
+                        }}>
 
                           {items.map(item => {
                             const theme = ART_THEMES.find(t => t.id === item.theme) || ART_THEMES[ART_THEMES.length - 1];
@@ -5942,9 +6315,15 @@ function Profile() {
                             const qrUrl = getQrUrl(artUrl);
                             const coverImage = item.image || (Array.isArray(item.images) ? item.images[0] : '');
                             return (
-                              <div key={item.id} className="dash-art-card" style={{ position: 'relative' }}>
-                                <button 
-                                  onClick={() => handleRemoveArt(item.id)} 
+                              <div key={item.id} className="dash-art-card" style={{ 
+                                position: 'relative', 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                height: '100% !important',
+                                minHeight: '400px'
+                              }}>
+                                <button
+                                  onClick={() => handleRemoveArt(item.id)}
                                   style={{ position: 'absolute', top: '0', right: '0', background: '#000', color: '#fff', border: 'none', borderRadius: '0 20px 0 12px', width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, transition: 'all 0.2s', padding: 0, lineHeight: 1 }}
                                   title="Remove artwork"
                                   onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; }}
@@ -5952,7 +6331,7 @@ function Profile() {
                                 >
                                   ✕
                                 </button>
-                                
+
                                 <button
                                   onClick={() => handleSetPrimaryArt(item.id)}
                                   style={{
@@ -5987,15 +6366,34 @@ function Profile() {
                                   <div className="dash-art-placeholder" style={{ background: `linear-gradient(90deg, ${theme.color}, ${theme.color}88)` }} />
                                 )}
 
-                                <div style={{ padding: '1.25rem' }}>
+                                <div style={{ 
+                                  padding: '1.25rem', 
+                                  flex: 1, 
+                                  display: 'flex', 
+                                  flexDirection: 'column' 
+                                }}>
                                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                                     <h4 style={{ margin: '0 0 0.4rem', fontSize: '1rem', fontWeight: 700, color: 'var(--dash-text)', lineHeight: 1.3 }}>{item.title}</h4>
                                   </div>
-                                  {item.description && <p style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)', lineHeight: 1.55, margin: '0 0 1rem' }}>{item.description}</p>}
+                                  {item.description && (
+                                    <p style={{
+                                      fontSize: '0.82rem',
+                                      color: 'var(--dash-subtext)',
+                                      lineHeight: 1.55,
+                                      margin: '0 0 1rem',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 3,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}>
+                                      {item.description}
+                                    </p>
+                                  )}
 
-                                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                  <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
                                     <button
-                                      onClick={() => { 
+                                      onClick={() => {
                                         navigator.clipboard.writeText(artUrl);
                                       }}
                                       className="dash-art-btn-copy"
@@ -6042,7 +6440,7 @@ function Profile() {
                             title="Art Preview"
                             src={artPreviewSrc}
                             className="dash-preview-iframe"
-                            
+
                           />
                         ) : (
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--dash-subtext)', gap: '0.75rem', padding: '2rem' }}>
@@ -6152,49 +6550,49 @@ function Profile() {
                                 )}
                               </div>
 
-                            <div className="dash-hero-tags-simple" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                              <div 
-                                className="dash-hero-tag-item" 
-                                onClick={() => openHeroEditor('specialization', artist)}
-                                style={{ 
-                                  background: 'rgba(0,0,0,0.06)', 
-                                  padding: '6px 14px', 
-                                  borderRadius: '100px', 
-                                  fontSize: '0.85rem', 
-                                  fontWeight: 600, 
-                                  color: 'var(--dash-text)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'baseline',
-                                  gap: '6px'
-                                }}
-                              >
-                                <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Art:</span>
-                                <span>{artist.specialization || 'Add tag'}</span>
+                              <div className="dash-hero-tags-simple" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                                <div
+                                  className="dash-hero-tag-item"
+                                  onClick={() => openHeroEditor('specialization', artist)}
+                                  style={{
+                                    background: 'rgba(0,0,0,0.06)',
+                                    padding: '6px 14px',
+                                    borderRadius: '100px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: 'var(--dash-text)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'baseline',
+                                    gap: '6px'
+                                  }}
+                                >
+                                  <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Art:</span>
+                                  <span>{artist.specialization || 'Add tag'}</span>
+                                </div>
+                                <div
+                                  className="dash-hero-tag-item"
+                                  onClick={() => openHeroEditor('experience', artist)}
+                                  style={{
+                                    background: 'rgba(0,0,0,0.06)',
+                                    padding: '6px 14px',
+                                    borderRadius: '100px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: 'var(--dash-text)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'baseline',
+                                    gap: '6px'
+                                  }}
+                                >
+                                  <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Exp:</span>
+                                  <span>{artist.experience || 'Add XP'}</span>
+                                </div>
                               </div>
-                              <div 
-                                className="dash-hero-tag-item" 
-                                onClick={() => openHeroEditor('experience', artist)}
-                                style={{ 
-                                  background: 'rgba(0,0,0,0.06)', 
-                                  padding: '6px 14px', 
-                                  borderRadius: '100px', 
-                                  fontSize: '0.85rem', 
-                                  fontWeight: 600, 
-                                  color: 'var(--dash-text)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'baseline',
-                                  gap: '6px'
-                                }}
-                              >
-                                <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Exp:</span>
-                                <span>{artist.experience || 'Add XP'}</span>
-                              </div>
-                            </div>
 
-                            {/* Mobile inline editors (hidden by default, shown when editing) */}
-                            <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'specialization' ? 'block' : 'none' }}>
+                              {/* Mobile inline editors (hidden by default, shown when editing) */}
+                              <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'specialization' ? 'block' : 'none' }}>
                                 {editingHeroField === 'specialization' && (
                                   <div className="dash-hero-edit-row">
                                     <input
@@ -6208,8 +6606,8 @@ function Profile() {
                                     <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
                                   </div>
                                 )}
-                            </div>
-                            <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'experience' ? 'block' : 'none' }}>
+                              </div>
+                              <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'experience' ? 'block' : 'none' }}>
                                 {editingHeroField === 'experience' && (
                                   <div className="dash-hero-edit-row">
                                     <input
@@ -6223,7 +6621,7 @@ function Profile() {
                                     <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
                                   </div>
                                 )}
-                            </div>
+                              </div>
                             </div>
                           </div>
                           <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
@@ -6237,18 +6635,18 @@ function Profile() {
                             <div
                               className="dash-mobile-edit-modal"
                               aria-label={
-                                mobileHeroEditField === 'name' ? 'Edit name' : 
-                                mobileHeroEditField === 'experience' ? 'Edit experience' :
-                                'Edit artist tag'
+                                mobileHeroEditField === 'name' ? 'Edit name' :
+                                  mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                    'Edit artist tag'
                               }
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="dash-mobile-edit-header">
                                 <div className="dash-mobile-edit-title">
                                   {
-                                    mobileHeroEditField === 'name' ? 'Edit name' : 
-                                    mobileHeroEditField === 'experience' ? 'Edit experience' :
-                                    'Edit artist tag'
+                                    mobileHeroEditField === 'name' ? 'Edit name' :
+                                      mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                        'Edit artist tag'
                                   }
                                 </div>
                                 <button
@@ -6265,9 +6663,9 @@ function Profile() {
                                   className="dash-mobile-edit-input"
                                   value={mobileHeroDraft}
                                   placeholder={
-                                    mobileHeroEditField === 'name' ? 'Enter your name' : 
-                                    mobileHeroEditField === 'experience' ? 'Enter experience (e.g. 2 years)' :
-                                    'Enter your artist tag'
+                                    mobileHeroEditField === 'name' ? 'Enter your name' :
+                                      mobileHeroEditField === 'experience' ? 'Enter experience (e.g. 2 years)' :
+                                        'Enter your artist tag'
                                   }
                                   onChange={(e) => setMobileHeroDraft(e.target.value)}
                                   onKeyDown={(e) => {
@@ -6328,8 +6726,8 @@ function Profile() {
                                   value={mobileLinkEditValue}
                                   placeholder={
                                     mobileLinkEditPlatform === 'instagram' ? '@handle' :
-                                    mobileLinkEditPlatform === 'whatsapp' ? 'Phone number' :
-                                    'Enter URL / handle'
+                                      mobileLinkEditPlatform === 'whatsapp' ? 'Phone number' :
+                                        'Enter URL / handle'
                                   }
                                   onChange={(e) => setMobileLinkEditValue(e.target.value)}
                                   onKeyDown={(e) => {
@@ -6421,10 +6819,10 @@ function Profile() {
                             const currentValue = localValue !== undefined ? localValue : serverValue;
 
                             return (
-                              <div className="dash-link-card" key={platform.id} style={{ 
-                                border: '1px solid rgba(0,0,0,0.06)', 
-                                borderRadius: '20px', 
-                                padding: '14px 16px', 
+                              <div className="dash-link-card" key={platform.id} style={{
+                                border: '1px solid rgba(0,0,0,0.06)',
+                                borderRadius: '20px',
+                                padding: '14px 16px',
                                 background: '#fff',
                                 boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
                                 marginBottom: '12px',
@@ -6432,13 +6830,13 @@ function Profile() {
                               }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                   {/* Platform Icon Box */}
-                                  <div style={{ 
-                                    width: '46px', 
-                                    height: '46px', 
-                                    borderRadius: '14px', 
-                                    background: 'rgba(0,0,0,0.04)', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                  <div style={{
+                                    width: '46px',
+                                    height: '46px',
+                                    borderRadius: '14px',
+                                    background: 'rgba(0,0,0,0.04)',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0
                                   }}>
@@ -6456,11 +6854,11 @@ function Profile() {
                                     <button
                                       type="button"
                                       onClick={() => openLinkPopup(platform.id, platform.label, currentValue)}
-                                      style={{ 
-                                        background: 'rgba(0,0,0,0.05)', 
-                                        border: 'none', 
-                                        borderRadius: '10px', 
-                                        padding: '8px', 
+                                      style={{
+                                        background: 'rgba(0,0,0,0.05)',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        padding: '8px',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -6478,11 +6876,11 @@ function Profile() {
                                     <button
                                       type="button"
                                       onClick={() => handleUpdateLink(platform.id, null)}
-                                      style={{ 
-                                        background: 'rgba(255, 59, 48, 0.08)', 
-                                        border: 'none', 
-                                        borderRadius: '10px', 
-                                        padding: '8px 14px', 
+                                      style={{
+                                        background: 'rgba(255, 59, 48, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        padding: '8px 14px',
                                         cursor: 'pointer',
                                         fontSize: '0.85rem',
                                         fontWeight: 700,
@@ -6494,19 +6892,19 @@ function Profile() {
                                     </button>
                                   </div>
                                 </div>
-                                
+
                                 {/* Saving Overlay */}
                                 {savingLink === platform.id && (
-                                  <div style={{ 
-                                    position: 'absolute', 
-                                    inset: 0, 
-                                    background: 'rgba(255,255,255,0.7)', 
+                                  <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'rgba(255,255,255,0.7)',
                                     backdropFilter: 'blur(3px)',
-                                    borderRadius: '20px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    zIndex: 5 
+                                    borderRadius: '20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 5
                                   }}>
                                     <div className="dash-loading-spinner" style={{ width: '20px', height: '20px', border: '2.5px solid #000', borderTopColor: 'transparent' }} />
                                   </div>
@@ -6658,7 +7056,7 @@ function Profile() {
                               title="Profile Preview"
                               src={`${frontendBase}/artist/${artist.artistId}`}
                               className="dash-preview-iframe"
-                              
+
                             />
                             <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
                           </div>
@@ -6672,37 +7070,37 @@ function Profile() {
             )
           }
           {artQrModal && (
-         <div 
-           className="dash-qr-modal-overlay" 
-           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000000, padding: '1.5rem', backdropFilter: 'blur(4px)' }}
-           onClick={() => setArtQrModal(null)}
-         >
-           <div 
-             className="dash-qr-modal-card" 
-             style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '380px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center' }}
-             onClick={(e) => e.stopPropagation()}
-           >
-             <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000' }}>{artQrModal.title}</h3>
-               <button onClick={() => setArtQrModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#666' }}>✕</button>
-             </div>
-             <div style={{ padding: '2rem' }}>
-               <img src={artQrModal.url} alt="QR" style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto', borderRadius: '12px' }} />
-               <p style={{ marginTop: '1.25rem', fontSize: '0.9rem', color: '#666', lineHeight: 1.5 }}>Scan this code to visit the public page for this specific artwork.</p>
-             </div>
-             <div style={{ padding: '1.25rem', background: '#f9f9f9' }}>
-               <a 
-                 href={artQrModal.url} 
-                 download={`qr-${artQrModal.title}.png`}
-                 style={{ display: 'block', background: '#000', color: '#fff', textDecoration: 'none', padding: '0.85rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.95rem' }}
-               >
-                 Download QR Code
-               </a>
-             </div>
-           </div>
-         </div>
-       )}
-     </div >
+            <div
+              className="dash-qr-modal-overlay"
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000000, padding: '1.5rem', backdropFilter: 'blur(4px)' }}
+              onClick={() => setArtQrModal(null)}
+            >
+              <div
+                className="dash-qr-modal-card"
+                style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '380px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000' }}>{artQrModal.title}</h3>
+                  <button onClick={() => setArtQrModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#666' }}>✕</button>
+                </div>
+                <div style={{ padding: '2rem' }}>
+                  <img src={artQrModal.url} alt="QR" style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto', borderRadius: '12px' }} />
+                  <p style={{ marginTop: '1.25rem', fontSize: '0.9rem', color: '#666', lineHeight: 1.5 }}>Scan this code to visit the public page for this specific artwork.</p>
+                </div>
+                <div style={{ padding: '1.25rem', background: '#f9f9f9' }}>
+                  <a
+                    href={artQrModal.url}
+                    download={`qr-${artQrModal.title}.png`}
+                    style={{ display: 'block', background: '#000', color: '#fff', textDecoration: 'none', padding: '0.85rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.95rem' }}
+                  >
+                    Download QR Code
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div >
       </main >
 
 
@@ -7163,15 +7561,15 @@ function Profile() {
       )}
 
       {cropper.open && (
-         <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
-           <ImageCropperModal
-             image={cropper.image}
-             aspect={cropper.aspect}
-             onSave={cropper.onComplete}
-             onCancel={cropper.onCancel}
-           />
-         </div>
-       )}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+          <ImageCropperModal
+            image={cropper.image}
+            aspect={cropper.aspect}
+            onSave={cropper.onComplete}
+            onCancel={cropper.onCancel}
+          />
+        </div>
+      )}
     </div >
   );
 }

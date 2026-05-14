@@ -90,11 +90,11 @@ function StudentPublicView() {
           autoplay
           style={{ width: 200, height: 200 }}
         />
-        <p style={{ 
-          fontFamily: "'Press Start 2P', cursive", 
-          fontSize: '10px', 
-          color: '#fff', 
-          marginTop: '1.5rem', 
+        <p style={{
+          fontFamily: "'Press Start 2P', cursive",
+          fontSize: '10px',
+          color: '#fff',
+          marginTop: '1.5rem',
           opacity: 0.7,
           letterSpacing: '2px'
         }}>
