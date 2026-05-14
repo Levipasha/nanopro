@@ -979,7 +979,6 @@ function Profile() {
   const [newArtTheme, setNewArtTheme] = useState('painting');
   const [artSaving, setArtSaving] = useState(false);
   const [artImagePreview, setArtImagePreview] = useState([]); // [{ file, url }, ...] for new art upload
-  const [artPreviewId, setArtPreviewId] = useState(null); // which art item to preview in side panel
   const [showArtGallery, setShowArtGallery] = useState(false);
   const [artGallerySelectedItem, setArtGallerySelectedItem] = useState(null);
   const [onboardingStep, setOnboardingStep] = useState(() => {
@@ -6200,7 +6199,6 @@ function Profile() {
                   setArtImagePreview([]);
                   setNewArtTheme('painting');
                   // Automatically focus preview on the newly added artwork
-                  setArtPreviewId(artId);
                 } catch (err) {
                   alert(err.message || 'Could not save artwork.');
                 } finally {
