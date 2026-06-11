@@ -136,8 +136,8 @@
   width: 44px; /* Fixed small width */
   height: 44px; /* Fixed small height */
   border-radius: 50%; /* Circle */
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid transparent; /* No visible border in default state */
+  background: transparent; /* Transparent background */
   color: #334155;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -147,8 +147,7 @@
 }
 
 .crop-rotate-btn:hover {
-  background: #e0e7ff;
-  border-color: #c7d2fe;
+  background: #f1f5f9; /* Soft grey background on hover */
   color: #4f46e5;
   transform: translateY(-1px);
 }
