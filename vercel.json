@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "GENERATE_SOURCEMAP=false npm run build",
+  "buildCommand": "CI=false GENERATE_SOURCEMAP=false npm run build",
   "env": {
     "CI": "false",
     "GENERATE_SOURCEMAP": "false"
