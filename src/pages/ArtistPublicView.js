@@ -570,15 +570,7 @@ function ArtistPublicView() {
       });
     }
   }
-  if (artist.phone && artist.showPhone !== false) {
-    if (!primaryLinks.some(pl => pl.id === 'phone')) {
-      primaryLinks.push({
-        id: 'phone',
-        title: 'Phone',
-        url: `tel:${artist.phone}`,
-      });
-    }
-  }
+
 
   const getPlatformColor = (id) => {
     const colors = {

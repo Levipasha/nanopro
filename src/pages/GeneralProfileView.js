@@ -506,15 +506,7 @@ function GeneralProfileView() {
       });
     }
   }
-  if (displayPhone && profile.showPhone !== false) {
-    if (!primaryLinks.some(pl => pl.id === 'phone')) {
-      primaryLinks.push({
-        id: 'phone',
-        title: 'Phone',
-        url: `tel:${displayPhone}`,
-      });
-    }
-  }
+
 
   // 1. RENDER RESTAURANT PUBLIC VIEW
   if (isRestaurant) {
