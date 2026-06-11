@@ -473,12 +473,13 @@ export default function Profile() {
   };
 
   if (loading) {
-    return getSkeletonUI(profileMode, isMobileViewport);
+    return null;
   }
 
   if (user && (artistsLoading || generalProfileLoading)) {
-    return getSkeletonUI(profileMode, isMobileViewport);
+    return null;
   }
+
 
   if (user && profileMode === 'choice') {
     return (
@@ -518,5 +519,5 @@ export default function Profile() {
     }
   }
 
-  return getSkeletonUI(profileMode, isMobileViewport);
+  return null;
 }
