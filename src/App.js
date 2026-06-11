@@ -26,7 +26,7 @@ function App() {
       <Suspense fallback={<ShowcaseSkeleton type="home" />}>
         <Routes>
           <Route path="/profile" element={
-            <Suspense fallback={<ShowcaseSkeleton type="profile" />}>
+            <Suspense fallback={null}>
               <Profile />
             </Suspense>
           } />
