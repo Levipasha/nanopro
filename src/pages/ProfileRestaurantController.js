@@ -375,6 +375,8 @@ export default function ProfileRestaurantController(props) {
         name: profileInput.name || '',
         title: '',
         bio: bioParts.filter(Boolean).join('\n'),
+        phone: profileInput.phone || '',
+        email: profileInput.email || user?.email || '',
         photo: photoUrl || undefined,
         banner: bannerUrl || undefined,
         menuPdf: menuPdfUrl || undefined,
@@ -383,7 +385,8 @@ export default function ProfileRestaurantController(props) {
         bioFont: profileInput.bodyFont || profileInput.font || 'outfit',
         links,
         gallery: galleryNormalized,
-        profileType: 'restaurant'
+        profileType: 'restaurant',
+        isSetup: true
       };
 
       let saveResult;
