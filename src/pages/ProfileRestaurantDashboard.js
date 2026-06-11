@@ -16,7 +16,7 @@ import { getINDisplayDigits, toINFullPhone, getINDisplayDigitsFromWhatsAppStored
 import { fixImageUrl } from '../utils/imageHelper';
 import PlatformIconSelect from '../components/PlatformIconSelect';
 import {
-  ALL_PLATFORMS, PremiumToggle, LivePreviewSyncOverlay,
+  ALL_PLATFORMS, PremiumToggle, LivePreviewSyncOverlay, RestaurantPublicPreviewIframe,
   buildLinkUrl, SMART_PLATFORMS, MAX_PLATFORM_LINKS, titleForRestaurantLinkPlatform,
   extractUploadUrl
 } from './ProfileHelpers';
@@ -681,6 +681,12 @@ export default function ProfileRestaurantDashboard(props) {
                   </div>
                 </div>
 
+                {/* Right: live preview = same public page as /link/:username (desktop only) */}
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -788,6 +794,12 @@ export default function ProfileRestaurantDashboard(props) {
                   </div>
                 </div>
 
+                {/* Right: full live public page preview (desktop only) */}
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
+                  </div>
+                )}
               </div>
             )}
 
