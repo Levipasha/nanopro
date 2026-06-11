@@ -76,7 +76,7 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 .49-4" />
             </svg>
-            <span className="xs:inline hidden">Rotate Left</span>
+            <span className="sm:inline hidden">Rotate Left</span>
           </button>
 
           <span className="crop-rotation-badge text-sm font-bold text-slate-500 w-12 text-center select-none">{rotation}°</span>
@@ -88,7 +88,7 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
             aria-label="Rotate right 90°"
             title="Rotate right"
           >
-            <span className="xs:inline hidden">Rotate Right</span>
+            <span className="sm:inline hidden">Rotate Right</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
                  strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"
                  style={{ transform: 'scaleX(-1)' }}>
