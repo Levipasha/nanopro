@@ -8,7 +8,6 @@ import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 import { getLinkIcon } from '../components/LinkIcons';
 import { fixImageUrl } from '../utils/imageHelper';
 
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function StudentPublicView() {
   const [searchParams] = useSearchParams();
@@ -83,26 +82,44 @@ function StudentPublicView() {
 
   if (loading) {
     return (
-      <div className="gp-view gp-loading" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
-        <DotLottieReact
-          src="https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie"
-          loop
-          autoplay
-          style={{ width: 200, height: 200 }}
-        />
-        <p style={{
-          fontFamily: "'Press Start 2P', cursive",
-          fontSize: '10px',
-          color: '#fff',
-          marginTop: '1.5rem',
-          opacity: 0.7,
-          letterSpacing: '2px'
-        }}>
-          nano is here
-        </p>
-        <p style={{ marginTop: '2rem', color: '#94a3b8', fontSize: '1.1rem', fontWeight: '300', letterSpacing: '0.05em' }}>
-          Loading student profile...
-        </p>
+      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', position: 'relative', overflowX: 'hidden' }}>
+        <style>{`
+          @keyframes skeleton-shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .skeleton-shimmer-box {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.5s infinite linear;
+          }
+        `}</style>
+        
+        {/* Banner Skeleton */}
+        <div className="skeleton-shimmer-box" style={{ width: '100%', height: '220px' }} />
+        
+        {/* Profile Info Container */}
+        <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 1.5rem', position: 'relative', marginTop: '-60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
+          {/* Avatar Skeleton */}
+          <div className="skeleton-shimmer-box" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #0f172a', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }} />
+          
+          {/* Name & Title */}
+          <div className="skeleton-shimmer-box" style={{ width: '50%', height: '24px', borderRadius: '6px', marginTop: '0.5rem' }} />
+          <div className="skeleton-shimmer-box" style={{ width: '35%', height: '14px', borderRadius: '4px' }} />
+          
+          {/* Bio/Description */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div className="skeleton-shimmer-box" style={{ width: '80%', height: '12px', borderRadius: '4px' }} />
+            <div className="skeleton-shimmer-box" style={{ width: '60%', height: '12px', borderRadius: '4px' }} />
+          </div>
+          
+          {/* Platforms/Links Grid */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem', marginBottom: '3rem' }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton-shimmer-box" style={{ width: '100%', height: '54px', borderRadius: '16px' }} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

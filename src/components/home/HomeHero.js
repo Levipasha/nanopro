@@ -23,12 +23,18 @@ const ChefIcon = () => (
     </svg>
 );
 
+const UserIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="24" height="24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </svg>
+);
+
 export default function HomeHero() {
     return (
         <section id="home" className="home-hero-section">
             <div className="hero-particles-bg">
                 <Particles
-                    particleColors={["#ffffff"]}
+                    particleColors={["#C8001A", "#94a3b8"]}
                     particleCount={40}
                     particleSpread={10}
                     speed={0.03}
@@ -53,7 +59,7 @@ export default function HomeHero() {
                     </h1>
 
                     <p className="hero-description">
-                        One tap. Zero friction. Your entire world: artist, student, chef, delivered to any phone the moment they tap.
+                        One tap. Zero friction. Your entire world: artist, professional, restaurant, student, delivered to any phone.
                     </p>
 
                     <div className="hero-features-list">
@@ -68,6 +74,28 @@ export default function HomeHero() {
                             <span className="feature-arrow">→</span>
                         </Link>
 
+                        <Link to="/professional-showcase" className="hero-feature-item">
+                            <div className="feature-icon professional-icon">
+                                <UserIcon />
+                            </div>
+                            <div className="feature-info">
+                                <h3 className="feature-name">General Profile</h3>
+                                <p className="feature-detail">Bio • Links • Smart Contact</p>
+                            </div>
+                            <span className="feature-arrow">→</span>
+                        </Link>
+
+                        <Link to="/restaurant-showcase" className="hero-feature-item">
+                            <div className="feature-icon chef-icon">
+                                <ChefIcon />
+                            </div>
+                            <div className="feature-info">
+                                <h3 className="feature-name">The Restaurant</h3>
+                                <p className="feature-detail">Menu • Story • Reserve a table</p>
+                            </div>
+                            <span className="feature-arrow">→</span>
+                        </Link>
+
                         <Link to="/student-showcase" className="hero-feature-item">
                             <div className="feature-icon student-icon">
                                 <GraduationIcon />
@@ -75,17 +103,6 @@ export default function HomeHero() {
                             <div className="feature-info">
                                 <h3 className="feature-name">The Student</h3>
                                 <p className="feature-detail">Portfolio • Skills • Achievements</p>
-                            </div>
-                            <span className="feature-arrow">→</span>
-                        </Link>
-
-                         <Link to="/restaurant-showcase" className="hero-feature-item">
-                            <div className="feature-icon chef-icon">
-                                <ChefIcon />
-                            </div>
-                            <div className="feature-info">
-                                <h3 className="feature-name">The Chef</h3>
-                                <p className="feature-detail">Menu • Story • Reserve a table</p>
                             </div>
                             <span className="feature-arrow">→</span>
                         </Link>

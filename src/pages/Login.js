@@ -5,13 +5,32 @@ import { landingArtistAPI } from '../services/api';
 import './Login.css';
 
 function Login() {
-    const clearSavedProfileFlow = () => {
+    const clearSavedProfileFlow = (usr) => {
         localStorage.removeItem('landing_otp_auth');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('general_step');
         localStorage.removeItem('profile_mode');
         // Also clear locked profile type so new signups see the choice screen
         localStorage.removeItem('profile_type_lock');
+        localStorage.removeItem('restaurant_onboarding_step');
+        localStorage.removeItem('restaurant_profile');
+        localStorage.removeItem('general_flow_mode');
+
+        if (usr) {
+            try {
+                const identifier = usr.email || usr.uid;
+                localStorage.removeItem(`nano_${identifier}_profile_mode`);
+                localStorage.removeItem(`nano_${identifier}_profile_type_lock`);
+                localStorage.removeItem(`nano_${identifier}_general_flow_mode`);
+                localStorage.removeItem(`nano_${identifier}_restaurant_profile`);
+                localStorage.removeItem(`nano_${identifier}_restaurant_onboarding_step`);
+                localStorage.removeItem(`nano_${identifier}_onboarding_step`);
+                localStorage.removeItem(`nano_${identifier}_general_step`);
+                localStorage.removeItem(`nano_${identifier}_landing_otp_auth`);
+            } catch (e) {
+                console.error('Error clearing namespaced localStorage on login/signup:', e);
+            }
+        }
     };
 
     const [mode, setMode] = useState(() => {
@@ -72,7 +91,7 @@ function Login() {
                         const check = await landingArtistAPI.checkAccount(user.email);
                         if (!check || !check.exists) {
                             await auth.signOut();
-                            clearSavedProfileFlow();
+                            clearSavedProfileFlow(user);
                             if (!isActive) return;
                             // Keep Google-only login flow.
                             setSuccess('');
@@ -86,7 +105,7 @@ function Login() {
                     } catch (err) {
                         console.error('Account check failed:', err);
                         await auth.signOut();
-                        clearSavedProfileFlow();
+                        clearSavedProfileFlow(user);
                         if (!isActive) return;
                         // Keep Google-only login flow.
                         setSuccess('');
@@ -99,9 +118,28 @@ function Login() {
                     } finally {
                         if (isActive) setLoading(false);
                     }
+                } else if (mode === 'signup') {
+                    try {
+                        const check = await landingArtistAPI.checkAccount(user.email);
+                        if (check && check.exists) {
+                            await auth.signOut();
+                            clearSavedProfileFlow(user);
+                            if (!isActive) return;
+                            setSuccess('');
+                            setView('form');
+                            setMode('login');
+                            setError('An account with this email already exists. Please log in.');
+                            navigate('/login?mode=login', { replace: true });
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Account check failed:', err);
+                    } finally {
+                        if (isActive) setLoading(false);
+                    }
                 }
 
-                clearSavedProfileFlow();
+                clearSavedProfileFlow(user);
                 if (isActive) navigate('/profile', { replace: true });
             }
         });

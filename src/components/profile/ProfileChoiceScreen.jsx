@@ -30,7 +30,7 @@ export default function ProfileChoiceScreen({
         </div>
 
         <div className="profile-choice-grid" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3.5rem' }}>
-          {profileLock !== 'general_restaurant' && !choiceSource && (
+          {profileLock !== 'general_restaurant' && (
             <button
               onClick={handleSelectArtistMode}
               type="button"
@@ -117,7 +117,7 @@ export default function ProfileChoiceScreen({
                   </div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>General</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>General Profile</p>
                   <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Link-in-Bio</div>
                 </div>
               </button>

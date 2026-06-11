@@ -401,6 +401,7 @@
         width: 100%;
     }
 }
+
 .mode-toggle {
     margin-top: 10px;
     font-size: 15px;
@@ -445,6 +446,7 @@
     .title {
         font-size: 28px;
     }
+
     .title span {
         font-size: 15px;
     }

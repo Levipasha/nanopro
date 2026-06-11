@@ -3,6 +3,7 @@ import "./image-gallery.css";
 import { fixImageUrl } from "../../utils/imageHelper";
 
 export default function ImageGallery({ items = [], artistName = "Artist" }) {
+  const cleanArtistName = artistName ? artistName.replace(/\|/g, ' ').replace(/\s+/g, ' ').trim() : 'Artist';
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -37,7 +38,7 @@ export default function ImageGallery({ items = [], artistName = "Artist" }) {
     return (
       <section className="image-gallery-section">
         <div className="gallery-title-wrapper">
-          <h1 className="gallery-title">{artistName}'s Art</h1>
+          <h1 className="gallery-title">{cleanArtistName}'s Art</h1>
           <p className="gallery-desc">No artwork has been uploaded to this gallery yet.</p>
         </div>
       </section>
@@ -49,7 +50,7 @@ export default function ImageGallery({ items = [], artistName = "Artist" }) {
     return (
       <section className="image-gallery-section">
         <div className="gallery-title-wrapper">
-          <h1 className="gallery-title">{artistName}'s Art</h1>
+          <h1 className="gallery-title">{cleanArtistName}'s Art</h1>
           <p className="gallery-desc">Select a showcase to view the collection.</p>
         </div>
 
@@ -107,61 +108,52 @@ export default function ImageGallery({ items = [], artistName = "Artist" }) {
             </button>
           )}
           <h1 className="gallery-title">
-            {selectedFolder ? selectedFolder.title : `${artistName}'s Art`}
+            {selectedFolder ? selectedFolder.title : (items.length === 1 ? items[0].title : `${cleanArtistName}'s Art`)}
           </h1>
-          {!selectedFolder && (
+          {!(selectedFolder || items.length === 1) && (
             <p className="gallery-desc">
               Exploring the unique vision and artistic depth through a curated collection.
             </p>
           )}
         </div>
 
-        {selectedFolder ? (
+        {selectedFolder || items.length === 1 ? (
           <>
             <div className="gallery-zigzag-list">
               {(() => {
-                // --- Smart Logic for Paragraph Splitting ---
-                const rawDescription = selectedFolder.description || "";
-                // Split by user's own double newlines first
-                const initialParas = rawDescription.split(/\n\n/).filter(p => p.trim());
-                const finalParas = [];
+                // --- Flow-based Line Chunking Logic ---
+                const rawDescription = selectedFolder ? (selectedFolder.description || "") : (items[0]?.description || "");
+                
+                // Split entire text into words
+                const words = rawDescription.split(/\s+/).filter(Boolean);
+                const charsPerLine = 32;
+                const linesPerImage = 9; // Fit exactly 9 lines of text next to the polaroid card
 
-                const charsPerLine = 70; 
-                const maxLinesPerChunk = 8;
-                const maxCharsPerChunk = charsPerLine * maxLinesPerChunk; // ~560 chars
-                const minCharsForOrphan = charsPerLine * 3; // ~210 chars (3 lines)
+                // Build text lines
+                const lines = [];
+                let currentLine = [];
+                let currentLineLen = 0;
 
-                initialParas.forEach(para => {
-                  if (para.length <= maxCharsPerChunk + minCharsForOrphan) {
-                    finalParas.push(para);
+                words.forEach(word => {
+                  if (currentLineLen + word.length + (currentLineLen > 0 ? 1 : 0) <= charsPerLine) {
+                    currentLine.push(word);
+                    currentLineLen += word.length + (currentLineLen > 0 ? 1 : 0);
                   } else {
-                    // Split a huge block into roughly equal chunks of ~8 lines
-                    const words = para.split(' ');
-                    let currentChunk = [];
-                    let currentLen = 0;
-
-                    words.forEach(word => {
-                      currentChunk.push(word);
-                      currentLen += word.length + 1;
-
-                      if (currentLen >= maxCharsPerChunk) {
-                        finalParas.push(currentChunk.join(' '));
-                        currentChunk = [];
-                        currentLen = 0;
-                      }
-                    });
-
-                    if (currentChunk.length > 0) {
-                      const leftover = currentChunk.join(' ');
-                      // If leftover is 3 lines or less, merge it with the last added chunk
-                      if (leftover.length <= minCharsForOrphan && finalParas.length > 0) {
-                        finalParas[finalParas.length - 1] += " " + leftover;
-                      } else {
-                        finalParas.push(leftover);
-                      }
-                    }
+                    lines.push(currentLine.join(' '));
+                    currentLine = [word];
+                    currentLineLen = word.length;
                   }
                 });
+                if (currentLine.length > 0) {
+                  lines.push(currentLine.join(' '));
+                }
+
+                // Group lines into chunks of linesPerImage size
+                const finalParas = [];
+                for (let i = 0; i < lines.length; i += linesPerImage) {
+                  const chunkLines = lines.slice(i, i + linesPerImage);
+                  finalParas.push(chunkLines.join(' '));
+                }
 
                 // --- Mismatch Logic ---
                 const numZigzags = Math.min(images.length, finalParas.length);
@@ -197,7 +189,7 @@ export default function ImageGallery({ items = [], artistName = "Artist" }) {
                     {extraParas.length > 0 && (
                       <div className="gallery-extra-text-list">
                         {extraParas.map((para, idx) => (
-                          <p key={idx} className="zigzag-text" style={{ textAlign: 'center' }}>{para}</p>
+                          <p key={idx} className="zigzag-text">{para}</p>
                         ))}
                       </div>
                     )}

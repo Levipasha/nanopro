@@ -15,3 +15,423 @@
 @import './App.part14.css';
 @import './App.part15.css';
 @import './App.part16.css';
+
+/* ==========================================================================
+   PREMIUM LIGHT THEME REDESIGN OVERRIDES
+   ========================================================================== */
+
+:root {
+  --nano-bg: #FAF9F6;          /* Alabaster Warm White background */
+  --nano-accent-blue: #2563eb;  /* Premium Navy Blue */
+  --nano-accent-purple: #7c3aed; /* Royal Violet */
+  --nano-accent-teal: #C8001A;   /* Brand Crimson Red (premium) */
+  --nano-card-glass: rgba(255, 255, 255, 0.88); /* Translucent premium white card */
+  --nano-border-glass: rgba(15, 23, 42, 0.08); /* Clean subtle border */
+}
+
+/* 1. Global / Wrapper Overrides */
+.landing-page-container {
+  background: var(--nano-bg) !important;
+  color: #0f172a !important;
+}
+
+body {
+  background-color: var(--nano-bg) !important;
+  color: #0f172a !important;
+}
+
+/* 2. Hero Section Background & Layout */
+.home-hero-section {
+  background: var(--nano-bg) !important;
+  color: #0f172a !important;
+}
+
+/* Particle adjustments: make sure they blend nicely */
+.hero-particles-bg {
+  opacity: 0.65;
+}
+
+/* Tagline / ONE TAP IDENTITY */
+.home-hero-section .tagline-line {
+  background: #C8001A !important;
+}
+
+.home-hero-section .tagline-text {
+  color: #C8001A !important;
+}
+
+/* Hero Title - Slate Navy NANO, and Gradient PROFILES */
+.home-hero-section .hero-title .title-white {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.home-hero-section .hero-title .title-gradient {
+  background: linear-gradient(135deg, #C8001A 0%, #7c3aed 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hero Description */
+.home-hero-section .hero-description {
+  color: #475569 !important;
+}
+
+/* 3. Hero Feature Cards (The Artist, The Student, The Chef) */
+.home-hero-section .hero-feature-item {
+  background: var(--nano-card-glass) !important;
+  border: 1px solid var(--nano-border-glass) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03) !important;
+  color: #0f172a !important;
+  border-radius: 14px !important;
+}
+
+.home-hero-section .hero-feature-item:hover {
+  transform: translateY(-2px) translateX(6px) !important;
+  background: #ffffff !important;
+  border-color: rgba(200, 0, 26, 0.25) !important;
+  box-shadow: 0 20px 40px rgba(200, 0, 26, 0.06) !important;
+}
+
+/* Feature Icons (Circle backgrounds) */
+.home-hero-section .feature-icon {
+  background: rgba(200, 0, 26, 0.04) !important;
+  border-radius: 10px !important;
+  color: #C8001A !important;
+}
+
+.home-hero-section .feature-icon svg {
+  color: #C8001A !important;
+}
+
+.home-hero-section .artist-icon svg { color: #C8001A !important; }
+.home-hero-section .professional-icon svg { color: #7c3aed !important; }
+.home-hero-section .student-icon svg { color: #0284c7 !important; }
+.home-hero-section .chef-icon svg { color: #b45309 !important; }
+
+/* Feature Icon Hover Accent updates */
+.home-hero-section .hero-feature-item:hover .feature-icon {
+  background: rgba(200, 0, 26, 0.08) !important;
+}
+
+/* Card titles and details */
+.home-hero-section .feature-name {
+  color: #0f172a !important;
+}
+
+.home-hero-section .feature-detail {
+  color: #64748b !important;
+}
+
+.home-hero-section .feature-arrow {
+  color: #94a3b8 !important;
+}
+
+.home-hero-section .hero-feature-item:hover .feature-arrow {
+  color: #C8001A !important;
+}
+
+/* 4. Interactive Orbit / 3D area */
+.home-hero-section .orbit-ring {
+  border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.home-hero-section .profile-center {
+  background: radial-gradient(circle, #ffffff, #F7F3EE) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.06) !important;
+}
+
+.home-hero-section .hero-3d-center {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(247, 243, 238, 0.95)) !important;
+  border-color: rgba(15, 23, 42, 0.05) !important;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.06) !important;
+}
+
+.home-hero-section .orbit-dot.dot-1 { background: #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5) !important; }
+.home-hero-section .orbit-dot.dot-2 { background: #8b5cf6 !important; box-shadow: 0 0 15px rgba(139, 92, 246, 0.5) !important; }
+.home-hero-section .orbit-dot.dot-3 { background: #C8001A !important; box-shadow: 0 0 15px rgba(200, 0, 26, 0.5) !important; }
+.home-hero-section .orbit-dot.dot-4 { background: #0f172a !important; opacity: 0.25 !important; }
+
+/* 5. Contact Section Overrides */
+.contact.page-section {
+  background: var(--nano-bg) !important;
+  color: #0f172a !important;
+}
+
+.contact-hero h2 {
+  color: #0f172a !important;
+}
+
+.contact-hero p {
+  color: #475569 !important;
+}
+
+/* Contact Cards/Tiles */
+.contact-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02) !important;
+  color: #0f172a !important;
+  border-radius: 16px !important;
+}
+
+.contact-card:hover {
+  border-color: rgba(200, 0, 26, 0.2) !important;
+  box-shadow: 0 20px 40px rgba(200, 0, 26, 0.05) !important;
+  transform: translateY(-4px) !important;
+}
+
+.contact-card .contact-icon {
+  background: rgba(200, 0, 26, 0.04) !important;
+  color: #C8001A !important;
+}
+
+.contact-card .contact-title {
+  color: #64748b !important;
+}
+
+.contact-card .contact-value {
+  color: #0f172a !important;
+}
+
+/* Contact Message Form */
+.contact-form {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.03) !important;
+  border-radius: 20px !important;
+  padding: 32px 40px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 480px) {
+  .contact-form {
+    padding: 24px 20px !important;
+  }
+}
+
+.contact-form h3 {
+  color: #0f172a !important;
+}
+
+.contact-form input,
+.contact-form textarea {
+  background: #f8fafc !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+  border-radius: 8px !important;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: #C8001A !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(200, 0, 26, 0.06) !important;
+}
+
+.contact-form button[type="submit"] {
+  background: #C8001A !important;
+  color: #ffffff !important;
+  border-radius: 99px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(200, 0, 26, 0.2) !important;
+}
+
+.contact-form button[type="submit"]:hover {
+  background: #b00016 !important;
+  box-shadow: 0 6px 20px rgba(200, 0, 26, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 6. Footer Overrides */
+.footer {
+  background: #FAF9F6 !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.06) !important;
+  color: #475569 !important;
+}
+
+.footer-brandText {
+  color: #0f172a !important;
+}
+
+.footer-brand p {
+  color: #64748b !important;
+}
+
+.footer-quote {
+  color: #C8001A !important;
+}
+
+.footer-links h4,
+.footer-contact h4,
+.footer-social h4 {
+  color: #0f172a !important;
+}
+
+.footer-links a,
+.footer-social a {
+  color: #475569 !important;
+}
+
+.footer-links a:hover,
+.footer-social a:hover {
+  color: #C8001A !important;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+.footer-bottom p {
+  color: #64748b !important;
+}
+
+.footer-bottom a {
+  color: #C8001A !important;
+}
+
+/* 7. Navbar Light Overrides */
+.nano-navbar {
+  background: rgba(250, 249, 246, 0.8) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+.nano-navbar .logo-text {
+  color: #0f172a !important;
+}
+
+.nano-navbar .logo-sub {
+  color: #64748b !important;
+}
+
+.nano-navbar .nav-link {
+  color: #475569 !important;
+}
+
+.nano-navbar .nav-link:hover,
+.nano-navbar .nav-link.active {
+  color: #C8001A !important;
+}
+
+/* Nav Actions & Buttons */
+.nano-navbar .nav-login-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02) !important;
+}
+
+.nano-navbar .nav-login-btn:hover {
+  background: #ffffff !important;
+  border-color: rgba(200, 0, 26, 0.2) !important;
+  color: #C8001A !important;
+  box-shadow: 0 6px 16px rgba(200, 0, 26, 0.06) !important;
+}
+
+/* Hamburger menu toggle */
+.nano-navbar .nav-toggle span {
+  background: #0f172a !important;
+}
+
+/* Google Sign-in button overrides */
+.nav-profile-signin {
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02) !important;
+}
+
+.nav-profile-signin:hover {
+  background: #ffffff !important;
+  border-color: rgba(200, 0, 26, 0.2) !important;
+  color: #C8001A !important;
+  box-shadow: 0 6px 16px rgba(200, 0, 26, 0.06) !important;
+}
+
+/* Active Nav Links styling */
+.nav-link.nav-link--active {
+  color: #C8001A !important;
+}
+
+.nav-link.nav-link--active::after {
+  background: linear-gradient(90deg, transparent, #C8001A, transparent) !important;
+  box-shadow: 0 0 12px rgba(200, 0, 26, 0.3) !important;
+}
+
+/* Dropdown Menu overrides */
+.nav-dropdown {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+}
+
+.nav-dropdown button {
+  color: #475569 !important;
+}
+
+.nav-dropdown button:hover {
+  background: rgba(200, 0, 26, 0.04) !important;
+  color: #C8001A !important;
+}
+
+/* ==========================================================================
+   SHOWCASE PAGES REDESIGN OVERRIDES (LIGHT THEME SUPPORT)
+   ========================================================================== */
+.showcase-page {
+  background: var(--nano-bg) !important;
+  color: #0f172a !important;
+}
+
+.showcase-subtitle {
+  color: #475569 !important;
+}
+
+.showcase-cta-secondary {
+  color: #475569 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+.showcase-cta-secondary:hover {
+  border-color: rgba(15, 23, 42, 0.4) !important;
+  color: #0f172a !important;
+}
+
+.showcase-feat-card {
+  background: var(--nano-card-glass) !important;
+  border-color: var(--nano-border-glass) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02) !important;
+}
+
+.showcase-feat-card:hover {
+  border-color: rgba(200, 0, 26, 0.2) !important;
+  box-shadow: 0 20px 40px rgba(200, 0, 26, 0.05) !important;
+}
+
+.showcase-feat-card h3 {
+  color: #0f172a !important;
+}
+
+.showcase-feat-card p {
+  color: #475569 !important;
+}
+
+.showcase-section-title {
+  color: #0f172a !important;
+}
+
+.showcase-cta-section h2 {
+  color: #0f172a !important;
+}
+
+.showcase-cta-section p {
+  color: #475569 !important;
+}
+

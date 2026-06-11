@@ -1,0 +1,105 @@
+/* dashProfile.css – shared design tokens & base layout for all profile pages */
+
+:root {
+  /* Color palette – dark mode friendly */
+  --dash-bg: #0f172a;               /* base background */
+  --dash-bg-card: #1e293b;         /* card containers */
+  --dash-text: #e2e8f0;            /* primary text */
+  --dash-subtext: #94a3b8;         /* secondary text */
+  --dash-accent: #6366f1;         /* interactive accent */
+  --dash-border: #334155;          /* border color */
+  --dash-shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* Core layout */
+.dash-profile-layout {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  background: var(--dash-bg);
+  color: var(--dash-text);
+}
+
+.dash-single-profile {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem 2.5rem;
+  background: var(--dash-bg);
+}
+
+.dash-sidebar {
+  width: 260px;
+  background: var(--dash-bg-card);
+  border-right: 1px solid var(--dash-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dash-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.dash-preview-panel {
+  width: 380px;
+  background: var(--dash-bg-card);
+  border-left: 1px solid var(--dash-border);
+  overflow: hidden;
+}
+
+/* Buttons & interactive elements */
+.dash-icon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  background: var(--dash-bg-card);
+  color: var(--dash-text);
+  border: 1px solid var(--dash-border);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.dash-icon-pill:hover {
+  background: var(--dash-accent);
+  border-color: var(--dash-accent);
+  color: #fff;
+}
+
+/* Card components used across pages */
+.dash-section-card {
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px var(--dash-shadow);
+}
+
+/* Gallery grid – generic */
+.dash-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .dash-profile-layout {
+    flex-direction: column;
+  }
+  .dash-sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--dash-border);
+  }
+  .dash-preview-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--dash-border);
+  }
+}

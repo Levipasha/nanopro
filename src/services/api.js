@@ -39,7 +39,9 @@ async function request(method, path, { body, getIdToken, getFirebaseUser, header
   }
   const base = API_URL;
   const fullUrl = `${base}${path}`;
-  console.log(`[API] ${method} ${fullUrl}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.debug(`[API] ${method} ${fullUrl}`);
+  }
   const fetchOpts = {
     method,
     headers,
@@ -89,7 +91,7 @@ export const landingArtistAPI = {
     request('POST', '/api/artist/check-account', { body: { email } }),
   // Public, read-only artist profile used by /artist?id=<id>
   getPublicProfile: (artistId) =>
-    request('GET', `/api/artist/public/${encodeURIComponent(artistId)}`, { cache: 'no-store' })
+    request('GET', `/api/artist/public/${encodeURIComponent(artistId)}?t=${Date.now()}`, { cache: 'no-store' })
 };
 
 // General Profile (Linktree-like) API

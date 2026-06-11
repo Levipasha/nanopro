@@ -1,97 +1,99 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import GeneralProfileView from './pages/GeneralProfileView';
-import ArtistPublicView from './pages/ArtistPublicView';
-import StudentPublicView from './pages/StudentPublicView';
-import Home from './pages/Home';
-import ArtistShowcase from './pages/ArtistShowcase';
-import StudentShowcase from './pages/StudentShowcase';
-import RestaurantShowcase from './pages/RestaurantShowcase';
-import ArtGalleryPage from './pages/ArtGalleryPage';
-import MasterArtRedirect from './pages/MasterArtRedirect';
+import ScrollToTop from './components/ScrollToTop';
+import ShowcaseSkeleton from './components/ShowcaseSkeleton';
 // import ResumePage from './pages/ResumePage';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const GeneralProfileView = lazy(() => import('./pages/GeneralProfileView'));
+const ArtistPublicView = lazy(() => import('./pages/ArtistPublicView'));
+const StudentPublicView = lazy(() => import('./pages/StudentPublicView'));
+const Home = lazy(() => import('./pages/Home'));
+const ArtistShowcase = lazy(() => import('./pages/ArtistShowcase'));
+const StudentShowcase = lazy(() => import('./pages/StudentShowcase'));
+const RestaurantShowcase = lazy(() => import('./pages/RestaurantShowcase'));
+const ProfessionalShowcase = lazy(() => import('./pages/ProfessionalShowcase'));
+const ArtGalleryPage = lazy(() => import('./pages/ArtGalleryPage'));
+const MasterArtRedirect = lazy(() => import('./pages/MasterArtRedirect'));
 
 function App() {
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial app loading/splash
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false);
-    }, 2500); // 2.5 seconds splash
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const isArtistRoute = window.location.pathname.includes('/artist');
-  const splashSrc = isArtistRoute
-    ? "https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
-    : "https://lottie.host/6b4bd948-73df-46e5-aa82-fbc42ca9d04a/k5p94sM04J.lottie";
-
-  if (isInitialLoading) {
-    return (
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0f172a'
-      }}>
-        <DotLottieReact
-          src={splashSrc}
-          loop
-          autoplay
-          style={{ width: isArtistRoute ? 250 : 300, height: isArtistRoute ? 250 : 300 }}
-        />
-        <p style={{
-          fontFamily: "'Press Start 2P', cursive",
-          fontSize: '12px',
-          color: '#fff',
-          marginTop: '2rem',
-          letterSpacing: '0.1em',
-          opacity: 0.8,
-          animation: 'pulse 2s infinite'
-        }}>
-          nano is here
-        </p>
-        <style>
-          {`
-            @keyframes pulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.5; }
-            }
-          `}
-        </style>
-      </div>
-    );
-  }
 
   return (
     <div>
-      <Routes>
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Login />} />
-        <Route path="/link/:username" element={<GeneralProfileView />} />
-        <Route path="/artist/:artistId" element={<ArtistPublicView />} />
-        <Route path="/a/:artistId/art" element={<MasterArtRedirect />} />
-        <Route path="/student" element={<StudentPublicView />} />
-        <Route path="/show-my-art" element={<ArtGalleryPage />} />
-        <Route path="/artist-showcase" element={<ArtistShowcase />} />
-        <Route path="/student-showcase" element={<StudentShowcase />} />
-        <Route path="/restaurant-showcase" element={<RestaurantShowcase />} />
+      <ScrollToTop />
+      <Suspense fallback={<ShowcaseSkeleton type="home" />}>
+        <Routes>
+          <Route path="/profile" element={
+            <Suspense fallback={<ShowcaseSkeleton type="profile" />}>
+              <Profile />
+            </Suspense>
+          } />
+          <Route path="/login" element={
+            <Suspense fallback={<ShowcaseSkeleton type="login" />}>
+              <Login />
+            </Suspense>
+          } />
+          <Route path="/signup" element={
+            <Suspense fallback={<ShowcaseSkeleton type="login" />}>
+              <Login />
+            </Suspense>
+          } />
+          <Route path="/link/:username" element={
+            <Suspense fallback={<ShowcaseSkeleton type="public-general" />}>
+              <GeneralProfileView />
+            </Suspense>
+          } />
+          <Route path="/artist/:artistId" element={
+            <Suspense fallback={<ShowcaseSkeleton type="public-artist" />}>
+              <ArtistPublicView />
+            </Suspense>
+          } />
+          <Route path="/a/:artistId/art" element={
+            <Suspense fallback={<ShowcaseSkeleton type="public-artist" />}>
+              <MasterArtRedirect />
+            </Suspense>
+          } />
+          <Route path="/student" element={
+            <Suspense fallback={<ShowcaseSkeleton type="public-student" />}>
+              <StudentPublicView />
+            </Suspense>
+          } />
+          <Route path="/show-my-art" element={
+            <Suspense fallback={<ShowcaseSkeleton type="public-artist" />}>
+              <ArtGalleryPage />
+            </Suspense>
+          } />
+          <Route path="/artist-showcase" element={
+            <Suspense fallback={<ShowcaseSkeleton type="artist" />}>
+              <ArtistShowcase />
+            </Suspense>
+          } />
+          <Route path="/student-showcase" element={
+            <Suspense fallback={<ShowcaseSkeleton type="student" />}>
+              <StudentShowcase />
+            </Suspense>
+          } />
+          <Route path="/restaurant-showcase" element={
+            <Suspense fallback={<ShowcaseSkeleton type="restaurant" />}>
+              <RestaurantShowcase />
+            </Suspense>
+          } />
+          <Route path="/professional-showcase" element={
+            <Suspense fallback={<ShowcaseSkeleton type="professional" />}>
+              <ProfessionalShowcase />
+            </Suspense>
+          } />
 {/* <Route path="/resume" element={<ResumePage />} /> */}
 
-        <Route path="/*" element={<Home />} />
-      </Routes>
+          <Route path="/*" element={
+            <Suspense fallback={<ShowcaseSkeleton type="home" />}>
+              <Home />
+            </Suspense>
+          } />
+        </Routes>
+      </Suspense>
     </div>
   );
 }

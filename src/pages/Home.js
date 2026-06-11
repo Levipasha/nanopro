@@ -5,7 +5,6 @@ import HomeNavbar from '../components/home/HomeNavbar';
 import HomeFooter from '../components/home/HomeFooter';
 import HomeHero from '../components/home/HomeHero';
 import HomeAbout from '../components/home/HomeAbout';
-import HomeTestimonials from '../components/home/HomeTestimonials';
 import HomeContact from '../components/home/HomeContact';
 
 export default function Home() {
@@ -26,7 +25,6 @@ export default function Home() {
 
                 <HomeHero />
                 <HomeAbout />
-                <HomeTestimonials />
                 <HomeContact />
 
                 <HomeFooter />

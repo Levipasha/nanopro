@@ -18,14 +18,21 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
   const handleSave = () => onSave(croppedAreaPixels, rotation);
 
   return (
-    <div className="crop-modal-overlay" onClick={onCancel}>
-      <div className="crop-modal-card" onClick={(e) => e.stopPropagation()}>
-
-        <div className="crop-modal-header">
-          <h3>Adjust Photo</h3>
-          <p>Move the frame • Zoom • Rotate</p>
+    <div 
+      className="crop-modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none touch-none" 
+      onClick={onCancel}
+    >
+      <div 
+        className="crop-modal-card bg-white text-slate-800 rounded-3xl border border-slate-100 shadow-2xl w-full max-w-lg flex flex-col overflow-visible animate-in fade-in zoom-in-95 duration-200 max-h-[92dvh]" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="crop-modal-header p-6 text-center border-b border-slate-100 flex-shrink-0">
+          <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Adjust Photo</h3>
+          <p className="text-sm text-slate-500 mt-1">Move the frame • Zoom • Rotate</p>
         </div>
 
+        {/* Cropper Viewport */}
         <div className="crop-container">
           <Cropper
             image={image}
@@ -40,9 +47,9 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
           />
         </div>
 
-        {/* Zoom row */}
-        <div className="crop-controls">
-          <span className="crop-zoom-label">Zoom</span>
+        {/* Zoom controls */}
+        <div className="crop-controls px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center gap-4 shrink-0">
+          <span className="crop-zoom-label text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Zoom</span>
           <input
             type="range"
             value={zoom}
@@ -51,41 +58,39 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
             step={0.05}
             aria-label="Zoom"
             onChange={(e) => setZoom(parseFloat(e.target.value))}
-            className="crop-zoom-slider"
+            className="crop-zoom-slider cursor-pointer"
           />
         </div>
 
-        {/* Rotate row */}
-        <div className="crop-rotate-row">
+        {/* Rotate controls */}
+        <div className="crop-rotate-row px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between gap-4 shrink-0">
           <button
             type="button"
-            className="crop-rotate-btn"
+            className="crop-rotate-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm font-semibold hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
             onClick={rotateLeft}
             aria-label="Rotate left 90°"
             title="Rotate left"
           >
-            {/* Rotate-left icon */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 .49-4" />
             </svg>
-            <span>Rotate Left</span>
+            <span className="xs:inline hidden">Rotate Left</span>
           </button>
 
-          <span className="crop-rotation-badge">{rotation}°</span>
+          <span className="crop-rotation-badge text-sm font-bold text-slate-500 w-12 text-center select-none">{rotation}°</span>
 
           <button
             type="button"
-            className="crop-rotate-btn"
+            className="crop-rotate-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm font-semibold hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
             onClick={rotateRight}
             aria-label="Rotate right 90°"
             title="Rotate right"
           >
-            <span>Rotate Right</span>
-            {/* Rotate-right icon (mirrored) */}
+            <span className="xs:inline hidden">Rotate Right</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" width="20" height="20"
+                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"
                  style={{ transform: 'scaleX(-1)' }}>
               <polyline points="1 4 1 10 7 10" />
               <path d="M3.51 15a9 9 0 1 0 .49-4" />
@@ -93,11 +98,20 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
           </button>
         </div>
 
-        <div className="crop-modal-footer">
-          <button type="button" className="crop-btn-cancel" onClick={onCancel}>
+        {/* Footer actions */}
+        <div className="crop-modal-footer p-6 flex gap-4 shrink-0 bg-slate-50/50 border-t border-slate-100 rounded-b-3xl">
+          <button 
+            type="button" 
+            className="crop-btn-cancel flex-1 py-3.5 px-6 rounded-2xl bg-white border border-slate-200 text-slate-600 font-bold text-base hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap" 
+            onClick={onCancel}
+          >
             Cancel
           </button>
-          <button type="button" className="crop-btn-save" onClick={handleSave}>
+          <button 
+            type="button" 
+            className="crop-btn-save flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-base shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/30 hover:from-indigo-500 hover:to-violet-500 transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap" 
+            onClick={handleSave}
+          >
             Save & Crop
           </button>
         </div>

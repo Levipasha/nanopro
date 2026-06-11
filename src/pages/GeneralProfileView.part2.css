@@ -1,0 +1,895 @@
+﻿.gp-footer a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* Photo Enlarge Modal */
+.gp-photo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: gp-fade-in 0.3s ease;
+}
+
+.gp-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.gp-modal-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 24px;
+  position: relative;
+  z-index: 1001;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  animation: gp-zoom-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gp-modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.6) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1300;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gp-modal-close:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: scale(1.1);
+}
+
+@keyframes gp-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gp-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Profile photo preview card (artist public) */
+.gp-profile-preview-card {
+  position: relative;
+  max-width: 320px;
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.6);
+  z-index: 1001;
+}
+
+.gp-profile-preview-img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-profile-preview-info {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.1rem 1.2rem 1.3rem;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.2), transparent);
+  color: #f9fafb;
+}
+
+.gp-profile-preview-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.gp-profile-preview-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.gp-profile-preview-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+.gp-profile-preview-role {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+/* Artist public view enhancements */
+.gp-cover-img {
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+}
+
+/* Unused avatar row styles removed */
+
+.gp-general-view .gp-avatar-text {
+  align-items: flex-start !important;
+  text-align: left !important;
+  margin-top: 0 !important;
+}
+
+.gp-artist-themed-card .gp-avatar-circle,
+.gp-student-themed-card .gp-avatar-circle,
+.gp-general-view .gp-avatar-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: #1a1a1a;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.gp-avatar-circle .gp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-general-view .gp-avatar-square {
+  width: 120px;
+  height: 120px;
+  border-radius: 0;
+  overflow: hidden;
+  border: 4px solid var(--artist-bg, #1a1a1a);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  background: #1a1a1a;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.gp-avatar-square .gp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-general-view .gp-avatar-square-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.2);
+  color: inherit;
+}
+
+.gp-avatar-circle-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.2);
+  color: inherit;
+}
+
+.gp-avatar-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 0.75rem;
+  gap: 0.25rem;
+}
+
+.gp-photo-header-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.gp-section {
+  padding: 1.25rem 1rem 0;
+}
+
+.gp-section-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 1 !important;
+  color: inherit !important;
+}
+
+.gp-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.gp-contact-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Tinted surface from theme text color so light + dark profile themes stay readable (no solid black chip). */
+.gp-contact-item {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  box-shadow: none;
+  color: inherit;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+@supports (background: color-mix(in srgb, white, black)) {
+  .gp-contact-item {
+    background: color-mix(in srgb, currentColor 11%, transparent);
+    border-color: color-mix(in srgb, currentColor 26%, transparent);
+  }
+}
+
+.gp-contact-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+  margin-bottom: 0.25rem;
+  color: inherit;
+}
+
+.gp-contact-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: inherit;
+  word-break: break-all;
+}
+
+.gp-contact-value:hover {
+  opacity: 0.9;
+}
+
+/* Events slideshow (main image + thumbnail indicators) */
+.gp-events-slideshow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.gp-events-stage {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.35);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.5);
+  position: relative;
+}
+
+.gp-events-stage-img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+  animation: gp-events-fade 250ms ease;
+}
+
+.gp-events-stage-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.9rem 0.9rem 0.75rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+  color: #fff;
+  text-align: left;
+}
+
+.gp-events-stage-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.gp-events-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.gp-events-dot {
+  border: none;
+  padding: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  /* small square */
+  cursor: pointer;
+  background: #000;
+  opacity: 0.4;
+  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.gp-events-dot:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.gp-events-dot.is-active {
+  opacity: 1;
+  background: #fb7185;
+  /* coral/pink for active */
+  transform: rotate(45deg) scale(1.7);
+  /* diamond shape and larger */
+}
+
+@keyframes gp-events-fade {
+  from {
+    opacity: 0.75;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.gp-gallery-strip-wrapper {
+  margin-top: 0.75rem;
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding: 0.1rem 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.7), transparent 55%);
+}
+
+.gp-gallery-strip {
+  display: flex;
+  gap: 0.9rem;
+  min-width: 0;
+  scroll-snap-type: x mandatory;
+  padding: 0 1.5rem;
+}
+
+.gp-gallery-chip {
+  flex: 0 0 auto;
+  width: 150px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  padding: 0;
+  overflow: hidden;
+  background: #000000;
+  cursor: pointer;
+  scroll-snap-align: start;
+  text-align: left;
+  color: inherit;
+  box-shadow: none;
+  transition: none;
+}
+
+.gp-gallery-chip:hover {
+  background: #000000;
+}
+
+.gp-gallery-chip-thumb {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.gp-gallery-chip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-gallery-chip-title {
+  font-size: 0.8rem;
+  padding: 0.5rem 0.55rem 0.7rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.gp-art-button {
+  width: 100%;
+  margin: 0.75rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(249, 250, 251, 0.9);
+  cursor: pointer;
+  background: #000000;
+  color: #f9fafb;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.gp-art-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-art-button-count {
+  background: #ffffff;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: #000000;
+}
+
+/* Art gallery modal */
+.gp-art-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.gp-art-modal {
+  max-width: 960px;
+  width: 100%;
+  max-height: 90vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 24px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #e5e7eb;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.gp-art-modal * {
+  touch-action: auto;
+}
+
+.gp-art-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gp-art-modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gp-art-modal-header h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  color: #ffffff;
+}
+
+.gp-art-modal-count {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  color: #94a3b8;
+}
+
+.gp-art-modal-close {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+}
+
+.gp-art-modal-close:hover {
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(1.1);
+}
+
+.gp-art-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.9rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.gp-art-card {
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.gp-art-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-art-card-empty {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: radial-gradient(circle at 50% 0, rgba(148, 163, 184, 0.3), transparent 55%), #020617;
+}
+
+.gp-art-card-info {
+  padding: 0.55rem 0.7rem 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.gp-art-card-info h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.2rem 0;
+  display: inline-block;
+  padding: 0.2rem 0.45rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gp-art-card-info p {
+  font-size: 0.8rem;
+  margin: 0;
+  opacity: 0.8;
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gp-art-lightbox {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  z-index: 1200;
+  overflow-y: auto;
+}
+
+/* X button floats at top-right of the overlay â€” always visible */
+.gp-art-lightbox-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1300;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  color: #ffffff !important;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gp-art-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  transform: scale(1.1);
+}
+
+.gp-art-lightbox-inner {
+  max-width: 960px;
+  width: 100%;
+  /* No dark background â€” images appear directly over the blurred overlay */
+  background: transparent;
+  border-radius: 24px;
+  padding: 3.5rem 0 2rem;
+  overflow: visible;
+  color: #e5e7eb;
+  position: relative;
+}
+
+.gp-art-lightbox-images {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.gp-art-lightbox-images img {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: contain;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Artist profile: clear visuals for art/event images (fill and crop) */
+.gp-view.gp-artist-themed .gp-events-stage-img,
+.gp-view.gp-artist-themed .gp-gallery-chip-thumb img,
+.gp-view.gp-artist-themed .gp-art-card-img {
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Artist public view avatar row */
+.gp-avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -64px;
+  padding: 0 1.5rem 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.gp-artist-themed-card .gp-avatar-circle,
+.gp-student-themed-card .gp-avatar-circle {
+  width: 100px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: none;
+  /* remove dark ring */
+  overflow: hidden;
+  background: transparent;
+  /* no black background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  /* cleaner edge so photo fills circle */
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.gp-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-avatar-circle-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.9);
+  background: radial-gradient(circle at 30% 0, rgba(129, 140, 248, 0.75), transparent 55%), #020617;
+}
+
+.gp-avatar-text .gp-name {
+  text-align: center;
+  font-family: var(--font-heading), serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.gp-general-view .gp-avatar-text .gp-name {
+  text-align: left !important;
+  color: inherit !important;
+}
+
+.gp-avatar-text .gp-username {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.6;
+  margin: 0.25rem 0 0;
+}
+
+.gp-general-view .gp-avatar-text .gp-username {
+  text-align: left !important;
+}
+
+.gp-avatar-text .gp-title-overlay {
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.gp-general-view .gp-avatar-text .gp-title-overlay {
+  text-align: left;
+}
+
+.gp-general-view .gp-avatar-text {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  margin-left: 0 !important;
+  width: auto !important;
+  gap: 2px !important;
+  margin-top: 45px !important;
+  /* Push text further down to clear the banner */
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.gp-username-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+  width: 100%;
+}
+
+.gp-general-view .gp-username-display {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  opacity: 0.8 !important;
+  color: inherit !important;
+  font-variant-numeric: lining-nums !important;
+  -moz-font-feature-settings: "lnum" !important;
+  -webkit-font-feature-settings: "lnum" !important;
+  font-feature-settings: "lnum" !important;
+  text-align: left !important;
+  display: inline-block !important;
+}
+
+.gp-sep {
+  opacity: 0.4;
+  font-weight: 300;
+  color: inherit !important;
+}
+
+.gp-tagline {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  font-weight: 500;
+  color: inherit !important;
+  text-align: left !important;
+}
+
+.gp-general-view .gp-links {
+  padding: 0 1.25rem !important;
+  margin-top: 0.25rem !important;
+}
+
+.gp-general-view .gp-link {
+  padding: 0.15rem 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+}
+
+.gp-general-view .gp-link-text {
+  line-height: 1.6 !important;
+  padding-bottom: 2px !important;
+  /* Safety for descenders like 'p' */
+}
+
+/* Animated Themes Additions */
+.theme-anim-aurora {
+  background: linear-gradient(-45deg, #020617, #020617, #0b1120, #020617);
+  background-size: 400% 400%;
+  animation: aurora-flow 15s ease infinite;
+}
+
+@keyframes aurora-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.theme-anim-galaxy {
+  background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
+  position: relative;
+  overflow: hidden;
+}
+

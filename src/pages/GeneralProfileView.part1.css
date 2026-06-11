@@ -1,0 +1,899 @@
+﻿.gp-view {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.gp-layout {
+  padding: 0;
+  background: #1a1a1a;
+  width: 100%;
+}
+
+/* Force Restaurant/General Profile to match Artist Profile size */
+.gp-general-view {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+}
+
+/* Artist public theme (force override on deploy) */
+.gp-artist-themed.gp-layout {
+  background: var(--artist-bg) !important;
+  color: var(--artist-text) !important;
+}
+
+.gp-artist-themed-card {
+  background: var(--artist-bg);
+  color: var(--artist-text);
+}
+
+.gp-loading,
+.gp-error {
+  justify-content: center;
+  padding: 2rem;
+  color: #1a1a1a;
+}
+
+.gp-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: gp-spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes gp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gp-error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.gp-error h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.gp-error p {
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Card - light gray, rounded corners (reference design) */
+.gp-card {
+  max-width: 420px;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.gp-card-themed {
+  /* Theme applied via inline style: background, color */
+  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Share button - top right, over photo */
+.gp-share-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  z-index: 10;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.gp-share-btn:hover {
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Profile photo - header banner */
+.gp-photo-header {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  background: transparent;
+  z-index: 0;
+}
+
+/* Artist card: banner size matches General profile for consistency */
+.gp-artist-themed-card .gp-photo-header,
+.gp-student-themed-card .gp-photo-header {
+  aspect-ratio: 16 / 7 !important;
+  height: auto !important;
+}
+
+/* Enlarge banner specifically for restaurants */
+.gp-profile-restaurant .gp-photo-header {
+  aspect-ratio: 16 / 9 !important;
+  height: auto !important;
+}
+
+.gp-banner-overlay-info {
+  position: relative;
+  margin-top: -45px;
+  /* Slightly less overlap to move text down */
+  padding: 0 1rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  /* Reduced gap to save space */
+  z-index: 10;
+}
+
+.gp-avatar-text-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-bottom: 5px;
+  padding-top: 10px;
+  /* Space for descenders/ascenders */
+  color: inherit;
+  overflow: visible;
+  /* Ensure nothing gets cut */
+}
+
+.gp-avatar-text-overlay .gp-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.3;
+  /* Increased for descenders */
+  padding-bottom: 4px;
+  /* Space for descenders */
+  color: inherit !important;
+  text-align: left !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  /* Reduced to ensure dots are visible on mobile */
+}
+
+.gp-avatar-text-overlay .gp-username-display {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.9;
+  color: inherit !important;
+}
+
+.gp-avatar-text-overlay .gp-tagline {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.8;
+  color: inherit !important;
+}
+
+.gp-avatar-text-overlay .gp-sep {
+  margin: 0 0.4rem;
+  opacity: 0.6;
+}
+
+.gp-restaurant-header-info {
+  padding: 1.5rem 1.5rem 0.5rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gp-restaurant-header-info .gp-name {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: inherit;
+  line-height: 1.1;
+  text-align: left !important;
+}
+
+.gp-restaurant-header-info .gp-title-small {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.5rem 0 0;
+  opacity: 0.8;
+  color: inherit;
+}
+
+.gp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  cursor: zoom-in;
+  transition: transform 0.3s ease;
+}
+
+.gp-banner-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gp-banner-bg-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px) brightness(0.6);
+  transform: scale(1.1);
+  opacity: 0.5;
+}
+
+.gp-profile-restaurant .gp-banner-bg-fallback {
+  filter: none;
+  transform: none;
+  opacity: 1;
+}
+
+.gp-avatar-img:hover {
+  transform: scale(1.02);
+}
+
+.gp-avatar-placeholder-header {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.3);
+  background: #d0d0d0;
+}
+
+/* Text overlay on bottom of photo */
+.gp-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.25rem 1.25rem 0.85rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  color: #fff;
+}
+
+.gp-photo-overlay .gp-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+  color: #fff;
+  text-align: left;
+}
+
+.gp-title-overlay {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Glassmorphism pill for artist specialization */
+.gp-avatar-text .gp-title-overlay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  margin-top: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--artist-glass-pill-border, rgba(255, 255, 255, 0.22));
+  background: var(--artist-glass-pill-bg, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: var(--artist-text, rgba(255, 255, 255, 0.95));
+}
+
+.gp-username {
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.8;
+  text-align: center;
+  margin: 1rem 0 0;
+  color: inherit;
+}
+
+.gp-avatar-row-left+.gp-username {
+  text-align: left;
+  margin-top: 0.75rem;
+}
+
+/* Bio */
+.gp-bio {
+  font-size: 1rem;
+  font-weight: 500;
+  color: inherit;
+  line-height: 1.6;
+  margin: 0.5rem 0 1.5rem;
+  text-align: left;
+  opacity: 0.95;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.gp-avatar-row-left~.gp-bio {
+  text-align: left;
+}
+
+/* Restaurant gallery (public link) */
+.gp-restaurant-gallery {
+  padding: 0 1rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.gp-restaurant-gallery-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  color: inherit;
+}
+
+.gp-restaurant-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.gp-restaurant-gallery-tile {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  aspect-ratio: 1;
+  opacity: 0.98;
+  transition: opacity 0.2s, transform 0.2s;
+  /* reset button defaults */
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gp-restaurant-gallery-tile:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.gp-restaurant-gallery-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gp-restaurant-gallery-tile {
+  position: relative;
+}
+
+.gp-restaurant-gallery-tile-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.4rem 0.25rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Link buttons */
+.gp-links {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 0;
+  padding: 0 1rem 2rem;
+}
+
+.gp-links-scrollable {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 8px;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Chrome, Edge, and Safari */
+.gp-links-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.gp-links-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gp-links-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  border: transparent;
+}
+
+.gp-links-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.gp-artist-hero-links-wrap {
+  margin-top: 1.25rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.gp-artist-hero-links {
+  display: flex;
+  align-items: center;
+  padding: 4px 0 14px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  width: auto;
+  max-width: 100%;
+}
+
+.gp-artist-hero-links-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 3px;
+}
+
+.gp-links-fixed {
+  justify-content: center;
+  overflow-x: hidden;
+  margin: 0 auto;
+}
+
+.gp-links-loop {
+  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.gp-links-loop .gp-artist-hero-links-inner {
+  animation: social-marquee 15s linear infinite;
+}
+
+@keyframes social-marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Pause animation on hover */
+.gp-links-loop:hover .gp-artist-hero-links-inner {
+  animation-play-state: paused;
+}
+
+.gp-artist-hero-links::-webkit-scrollbar {
+  display: none;
+}
+
+.gp-link-circle {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+}
+
+.gp-link-circle:hover {
+  transform: scale(1.2) translateY(-2px);
+}
+
+.gp-link-circle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-link-circle-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Artist public: icon-only links grid */
+.gp-links-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 2rem;
+}
+
+.gp-link-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto;
+  text-decoration: none;
+  border: 1px solid var(--artist-text, rgba(255, 255, 255, 0.6));
+  background: rgba(15, 23, 42, 0.75);
+  color: var(--artist-text, #fff);
+}
+
+.gp-link-icon-only-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-link-icon-only-inner svg {
+  width: 22px;
+  height: 22px;
+}
+
+.gp-link {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.1rem 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  background: transparent !important;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  color: inherit;
+  position: relative;
+}
+
+.gp-link:last-child {
+  border-bottom: none;
+}
+
+.gp-link:hover {
+  opacity: 1;
+  padding-left: 0.5rem;
+}
+
+/* Featured link styling */
+.gp-link-featured {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  border-radius: 20px;
+  padding: 12px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.gp-link-featured:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.gp-link-featured-image-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.gp-link-featured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.gp-link-featured:hover .gp-link-featured-image {
+  transform: scale(1.02);
+}
+
+.gp-link-featured-details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+}
+
+.gp-link-featured-text {
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.gp-link-menu {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Primary CTA â€” menu now matches the list style */
+.gp-link-menu-cta {
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.gp-link-menu-cta .gp-link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+}
+
+.gp-link-menu-cta .gp-link-icon svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.gp-link-menu-cta:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.08),
+    0 18px 44px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.gp-link-menu-cta:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.gp-link-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.gp-link-text {
+  flex: 1;
+  text-align: left;
+  margin: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  font-variant-numeric: lining-nums;
+  -moz-font-feature-settings: "lnum";
+  -webkit-font-feature-settings: "lnum";
+  font-feature-settings: "lnum";
+}
+
+/* Book-style menu PDF viewer */
+.gp-menu-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.gp-menu-book {
+  position: relative;
+  width: min(92vw, 860px);
+  max-height: 90vh;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #111827;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+}
+
+.gp-menu-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.gp-menu-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.gp-menu-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gp-menu-page-indicator {
+  font-size: 0.9rem;
+  color: #475569;
+  opacity: 1;
+}
+
+.gp-menu-close {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: #111827;
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 400;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  padding: 0.25rem 0.35rem;
+  margin: 0;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.gp-menu-close:hover {
+  opacity: 0.55;
+}
+
+.gp-menu-close:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
+}
+
+.gp-menu-page-shell {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 58vh;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background: radial-gradient(circle at center, #1f2937 0%, #0b1220 100%);
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.gp-menu-page-shell.turn-next {
+  transform: perspective(1200px) rotateY(-8deg);
+}
+
+.gp-menu-page-shell.turn-prev {
+  transform: perspective(1200px) rotateY(8deg);
+}
+
+.gp-menu-page-shell .react-pdf__Page {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  margin: 1.5rem 0;
+}
+
+.gp-menu-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem 0.4rem;
+}
+
+.gp-menu-controls button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #000;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gp-menu-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gp-menu-hint {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.gp-menu-loading,
+.gp-menu-error {
+  color: #e5e7eb;
+  padding: 2rem;
+  text-align: center;
+}
+
+.gp-link-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.gp-link-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer */
+.gp-footer {
+  margin-top: 1.5rem;
+  padding: 0 1.5rem 1.5rem;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.7;
+  color: inherit;
+}
+

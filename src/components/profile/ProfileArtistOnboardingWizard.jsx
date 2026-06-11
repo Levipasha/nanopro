@@ -1,27 +1,10 @@
 import React, { useRef } from 'react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { getLinkIcon } from '../LinkIcons';
 import PhoneINInput from '../PhoneINInput';
 import { buildWhatsAppUrlFromFullINPhone } from '../../utils/indianPhone';
 import { generalProfileAPI } from '../../services/api';
 
-function OnboardingGalleryTilePreview({ file }) {
-  // Create/revoke in an effect only. useMemo + revoke cleanup breaks under React Strict Mode
-  // (cleanup revokes the URL while useMemo still returns the same stale string).
-  const [url, setUrl] = React.useState(null);
-  React.useLayoutEffect(() => {
-    const u = URL.createObjectURL(file);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [file]);
-  const isVideo = file.type.startsWith('video/');
-  if (!url) return null;
-  return isVideo ? (
-    <video src={url} muted playsInline preload="metadata" />
-  ) : (
-    <img src={url} alt="" />
-  );
-}
+
 
 function useBlobUrl(file) {
   const [url, setUrl] = React.useState(null);
@@ -50,8 +33,7 @@ export default function ProfileArtistOnboardingWizard({
   setPhotoFile,
   bgFile,
   setBgFile,
-  onboardingGalleryFiles,
-  setOnboardingGalleryFiles,
+
   error,
   saving,
   handleLogout,
@@ -100,7 +82,7 @@ export default function ProfileArtistOnboardingWizard({
   // Refs for file inputs — iOS Safari requires direct .click() on the input element;
   // using <label htmlFor> on hidden inputs is unreliable on mobile.
   const photoInputRef = useRef(null);
-  const galleryInputRef = useRef(null);
+
 
   const isArtistStep1Valid =
     String(formData.name || '').trim() &&
@@ -110,13 +92,12 @@ export default function ProfileArtistOnboardingWizard({
     String(formData.phone || '').trim();
 
   const setupLoader = (
-    <span className="onboarding-inline-loader" aria-hidden="true">
-      <DotLottieReact
-        src="https://lottie.host/c1b7e87d-cc8f-44a2-b59a-9f00ec8c540b/n7PRg2j8GX.lottie"
-        loop
-        autoplay
-        style={{ width: 40, height: 40 }}
-      />
+    <span className="onboarding-inline-loader" aria-hidden="true" style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </span>
   );
 
@@ -446,7 +427,7 @@ export default function ProfileArtistOnboardingWizard({
             {onboardingStep === 3 && (
               <div className="onboarding-step fade-in">
                 <h2>Show your style</h2>
-                <p className="onboarding-subtitle">Upload your profile and gallery images</p>
+                <p className="onboarding-subtitle">Upload your profile image</p>
                 <div className="onboarding-images">
                   <div className="image-upload-box">
                     <label>Profile Image</label>
@@ -472,115 +453,7 @@ export default function ProfileArtistOnboardingWizard({
 
                 </div>
 
-                <div className="onboarding-field" style={{ marginTop: '2.5rem' }}>
-                  <label>Gallery — images, GIFs, or videos up to 30s (max 4)</label>
-                  <p className="onboarding-gallery-hint">Add one or many at a time (up to 4 total). Videos must be 30 seconds or less. Tap <span aria-hidden="true">x</span> on a preview to remove it.</p>
-                  <input
-                    ref={galleryInputRef}
-                    type="file"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (galleryInputRef.current) galleryInputRef.current.value = '';
-                      
-                      const videoFiles = files.filter(f => f.type.startsWith('video/'));
-                      const imageFiles = files.filter(f => !f.type.startsWith('video/'));
 
-                      if (videoFiles.length > 0) {
-                        setOnboardingGalleryFiles((prev) => [...prev, ...videoFiles].slice(0, 4));
-                      }
-                      
-                      if (imageFiles.length > 0 && handlePickAndCropBatch) {
-                        handlePickAndCropBatch(
-                          { target: { files: imageFiles, value: '' } },
-                          2,
-                          (croppedFile) => {
-                            setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 4));
-                          }
-                        );
-                      } else if (imageFiles.length > 0) {
-                        imageFiles.forEach((file) => {
-                          handlePickAndCrop(
-                            { target: { files: [file], value: '' } },
-                            2,
-                            (croppedFile) => {
-                              setOnboardingGalleryFiles((prev) => [...prev, croppedFile].slice(0, 4));
-                            }
-                          );
-                        });
-                      }
-                    }}
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml,video/*"
-                  />
-                  <div
-                    role="button"
-                    tabIndex={onboardingGalleryFiles.length >= 4 ? -1 : 0}
-                    className="upload-preview-banner onboarding-gallery-grid upload-trigger-btn"
-                    style={{ cursor: onboardingGalleryFiles.length >= 3 ? 'default' : 'pointer', display: 'grid' }}
-                    onClick={() => {
-                      if (onboardingGalleryFiles.length < 4 && galleryInputRef.current) {
-                        galleryInputRef.current.value = '';
-                        galleryInputRef.current.click();
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && onboardingGalleryFiles.length < 4 && galleryInputRef.current) {
-                        e.preventDefault();
-                        galleryInputRef.current.value = '';
-                        galleryInputRef.current.click();
-                      }
-                    }}
-                    aria-label="Add gallery images or videos"
-                  >
-                    {onboardingGalleryFiles.length > 0 ? (
-                      onboardingGalleryFiles.map((f, i) => {
-                        const isVideo = f.type.startsWith('video/');
-                        return (
-                        <div
-                          key={`${f.name}-${f.lastModified}-${i}`}
-                          className="onboarding-gallery-tile"
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          <div className="onboarding-gallery-tile-crop">
-                            <OnboardingGalleryTilePreview file={f} />
-                          </div>
-                          <button
-                            type="button"
-                            className="onboarding-gallery-remove"
-                            aria-label={`Remove ${isVideo ? 'video' : 'image'} ${i + 1}`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setOnboardingGalleryFiles((prev) => prev.filter((_, j) => j !== i));
-                            }}
-                          >
-                            x
-                          </button>
-                        </div>
-                        );
-                      })
-                    ) : null}
-                    {onboardingGalleryFiles.length < 4 && (
-                      <span
-                        className={
-                          onboardingGalleryFiles.length > 0
-                            ? 'onboarding-gallery-add-more'
-                            : 'onboarding-gallery-placeholder'
-                        }
-                        style={
-                          onboardingGalleryFiles.length > 0
-                            ? { gridColumn: `span ${4 - onboardingGalleryFiles.length}` }
-                            : undefined
-                        }
-                      >
-                        {onboardingGalleryFiles.length > 0
-                          ? `+ Add more (${4 - onboardingGalleryFiles.length} left)`
-                          : '+ Click to add images (up to 4)'}
-                      </span>
-                    )}
-                  </div>
-                </div>
 
                 <div className="onboarding-fields" style={{ marginTop: '1.5rem' }}>
                   <div className="onboarding-field">

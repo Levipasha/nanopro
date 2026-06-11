@@ -11,6 +11,7 @@ export default function HomeNavbar() {
 
     const isHomeActive = pathname === '/';
     const isArtistActive = pathname.startsWith('/artist-showcase') || pathname === '/artist';
+    const isProfessionalActive = pathname.startsWith('/professional-showcase') || pathname === '/professional';
     const isStudentActive = pathname.startsWith('/student-showcase') || pathname === '/student';
     const isRestaurantActive = pathname.startsWith('/restaurant-showcase') || pathname.startsWith('/link/');
     const avatarMenuRef = useRef(null);
@@ -35,11 +36,34 @@ export default function HomeNavbar() {
     }, []);
 
     const handleLogout = () => {
-        if (user) logout();
-        try { localStorage.removeItem('landing_otp_auth'); } catch (e) { }
-        localStorage.removeItem('onboarding_step');
-        localStorage.removeItem('general_step');
-        localStorage.removeItem('profile_mode');
+        if (user) {
+            try {
+                const identifier = user.email || user.uid;
+                localStorage.removeItem(`nano_${identifier}_profile_mode`);
+                localStorage.removeItem(`nano_${identifier}_profile_type_lock`);
+                localStorage.removeItem(`nano_${identifier}_general_flow_mode`);
+                localStorage.removeItem(`nano_${identifier}_restaurant_profile`);
+                localStorage.removeItem(`nano_${identifier}_restaurant_onboarding_step`);
+                localStorage.removeItem(`nano_${identifier}_onboarding_step`);
+                localStorage.removeItem(`nano_${identifier}_general_step`);
+                localStorage.removeItem(`nano_${identifier}_landing_otp_auth`);
+            } catch (e) {
+                console.error('Error clearing namespaced localStorage on logout:', e);
+            }
+            logout();
+        }
+        try {
+            localStorage.removeItem('landing_otp_auth');
+            localStorage.removeItem('onboarding_step');
+            localStorage.removeItem('general_step');
+            localStorage.removeItem('profile_mode');
+            localStorage.removeItem('profile_type_lock');
+            localStorage.removeItem('general_flow_mode');
+            localStorage.removeItem('restaurant_onboarding_step');
+            localStorage.removeItem('restaurant_profile');
+        } catch (e) {
+            console.error('Error clearing localStorage on logout:', e);
+        }
         setMobileMenuOpen(false);
         setAvatarMenuOpen(false);
     };
@@ -80,12 +104,12 @@ export default function HomeNavbar() {
                             ARTIST
                         </Link>
                         <Link
-                            to="/student-showcase"
-                            className={`nav-link${isStudentActive ? ' nav-link--active' : ''}`}
-                            aria-current={isStudentActive ? 'page' : undefined}
+                            to="/professional-showcase"
+                            className={`nav-link${isProfessionalActive ? ' nav-link--active' : ''}`}
+                            aria-current={isProfessionalActive ? 'page' : undefined}
                             onClick={() => setMobileMenuOpen(false)}
                         >
-                            STUDENT
+                            PROFESSIONAL
                         </Link>
                         <Link
                             to="/restaurant-showcase"
@@ -94,6 +118,14 @@ export default function HomeNavbar() {
                             onClick={() => setMobileMenuOpen(false)}
                         >
                             RESTAURANT
+                        </Link>
+                        <Link
+                            to="/student-showcase"
+                            className={`nav-link${isStudentActive ? ' nav-link--active' : ''}`}
+                            aria-current={isStudentActive ? 'page' : undefined}
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            STUDENT
                         </Link>
 {/* <Link
                             to="/resume"

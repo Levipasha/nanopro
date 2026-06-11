@@ -1,0 +1,3024 @@
+  // Artist Profile (existing flow - logged in)
+
+  return (
+    <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${activeTab} dash-mode-artist`}>
+      {/* Sidebar */}
+      <aside className="dash-sidebar">
+        <div className="dash-sidebar-brand">
+          <div className="dash-sidebar-top-avatar">
+            {user?.photoURL
+              ? <img src={user.photoURL} alt={displayName} />
+              : <span>{avatarLetter}</span>
+            }
+          </div>
+          <span className="dash-brand-email-main">{displayEmail}</span>
+        </div>
+
+        <nav className="dash-nav">
+          <div className="dash-nav-section">
+            <span className="dash-nav-label">Management</span>
+            <button
+              className={`dash-nav-item ${activeTab === 'profiles' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('profiles')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              Artist Profiles
+            </button>
+
+            <button
+              className={`dash-nav-item ${activeTab === 'platforms' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('platforms')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><circle cx="12" cy="12" r="10" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /><path d="M2 12h20" /></svg>
+              Digital Platforms
+            </button>
+
+            <button
+              className={`dash-nav-item ${activeTab === 'link-art' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('link-art')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+              Link Your Art
+            </button>
+
+            <button
+              className={`dash-nav-item ${activeTab === 'what-i-do' ? 'dash-nav-active' : ''}`}
+              onClick={() => setActiveTab('what-i-do')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="3" y="3" width="7" height="9" /><rect x="14" y="3" width="7" height="5" /><rect x="14" y="12" width="7" height="9" /><rect x="3" y="16" width="7" height="5" /></svg>
+              What I Do
+            </button>
+          </div>
+        </nav>
+
+        <div className="dash-sidebar-bottom">
+          <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="dash-main">
+        {!(isMobileViewport && activeTab === 'design') && (
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
+              <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
+                {activeTab === 'profiles'
+                  ? 'Artist Profiles'
+                  : activeTab === 'design'
+                    ? 'Profile Design'
+                    : activeTab === 'preview'
+                      ? 'Preview'
+                      : activeTab === 'what-i-do'
+                        ? 'What I Do'
+                        : activeTab === 'platforms'
+                          ? 'Digital Platforms'
+                          : 'Link Your Art'}
+              </h1>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {(activeTab === 'profiles' || activeTab === 'platforms') && myArtists && myArtists[0] && (() => {
+                  const profileUrl = `${frontendBase}/artist/${myArtists[0].artistId}`;
+                  return (
+                    <div className="dash-profile-link-iconbar" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <button
+                        type="button"
+                        className="dash-icon-pill"
+                        style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(profileUrl);
+                          setLinkCopiedArtist(true);
+                          setTimeout(() => setLinkCopiedArtist(false), 2000);
+                        }}
+                        aria-label={linkCopiedArtist ? 'Copied' : 'Copy profile link'}
+                      >
+                        {linkCopiedArtist ? (
+                          <>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                            <span style={{ fontSize: '0.7rem' }}>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span style={{ fontSize: '0.7rem' }}>Copy</span>
+                          </>
+                        )}
+                      </button>
+                      <a
+                        className="dash-icon-pill"
+                        style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Open profile link"
+                      >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                           <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                        </svg>
+                        <span style={{ fontSize: '0.7rem' }}>Visit</span>
+                      </a>
+                    </div>
+                  );
+                })()}
+
+                <button
+                  onClick={() => {
+                    setArtistChanged(false);
+                  }}
+                  disabled={saving}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '12px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    background: artistChanged ? '#0070f3' : '#ffffff',
+                    color: artistChanged ? '#ffffff' : '#000000',
+                    border: artistChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                    cursor: saving ? 'wait' : 'pointer',
+                    opacity: saving ? 0.7 : 1,
+                    transition: 'all 0.2s',
+                    boxShadow: artistChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {saving ? '...' : 'Save Profile'}
+                </button>
+              </div>
+            </div>
+
+            <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
+              {activeTab === 'profiles'
+                ? 'Manage your artist profiles and portfolio'
+                : activeTab === 'design'
+                  ? 'Customize the visual theme and typography of your public artist profile'
+                  : activeTab === 'preview'
+                    ? 'See a live preview of your public artist profile'
+                    : activeTab === 'what-i-do'
+                      ? 'Manage your professional services, offerings, and what you do'
+                      : activeTab === 'platforms'
+                        ? 'Manage your social media, web links, and contact information'
+                        : 'Connect your external portfolios, galleries, and art marketplaces'}
+            </p>
+          </header>
+        )}
+
+        <div className="dash-content">
+          {/* Preview-only page (used mainly for mobile bottom nav "Preview") */}
+          {activeTab === 'preview' && myArtists[0] && (
+            <div className="dash-mobile-preview-page">
+              <div className="dash-mobile-preview-frame-wrap dash-mobile-preview-frame-wrap--relative">
+                <iframe
+                  key={previewKey}
+                  title="Artist Preview"
+                  src={`${frontendBase}/artist/${myArtists[0].artistId}`}
+                  className="dash-mobile-preview-iframe"
+
+                />
+
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'design' && myArtists[0] && (
+            isMobileViewport ? (
+              <div className="dash-design-mobile-page">
+                <div className="dash-design-mobile-header">
+                  <button
+                    type="button"
+                    className="dash-design-mobile-back"
+                    onClick={() => setActiveTab('profiles')}
+                    aria-label="Back"
+                  >
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="dash-design-mobile-title">Design</span>
+                </div>
+                <div className="dash-design-mobile-preview-wrap dash-design-mobile-preview-wrap--relative">
+                  {designSubTab && (
+                    <button
+                      type="button"
+                      className="dash-design-mobile-preview-dismiss"
+                      aria-label="Close design options"
+                      onClick={() => setDesignSubTab(null)}
+                    />
+                  )}
+                  <iframe
+                    key={previewKey}
+                    title="Profile Design Preview"
+                    src={`${frontendBase}/artist/${myArtists[0].artistId}`}
+                    className="dash-design-mobile-preview-iframe"
+
+                  />
+
+                </div>
+
+                <div className="dash-design-mobile-sheet">
+                  <div className="dash-premium-toggle-container">
+                    <div className="dash-premium-toggle">
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'theme' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab(prev => (prev === 'theme' ? null : 'theme'))}
+                      >
+                        <span className="toggle-icon">🎨</span>
+                        <span>Themes</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab(prev => (prev === 'font' ? null : 'font'))}
+                      >
+                        <span className="toggle-icon">Aa</span>
+                        <span>Fonts</span>
+                      </button>
+                    </div>
+                  </div>
+                  {designSubTab && (
+                    <div className="dash-design-mobile-body">
+                      {designSubTab === 'theme' && (
+                        <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                          <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a professional look for your public page</p>
+                          <div className="dash-design-grid dash-themes-grid">
+                            {GENERAL_THEMES.map(t => (
+                              <button
+                                key={t.id}
+                                onClick={() => handleUpdateHeroField('profileTheme', t.id)}
+                                className={`dash-design-card ${myArtists[0].profileTheme === t.id ? 'active' : ''}`}
+                                style={{
+                                  border: '2px solid ' + (myArtists[0].profileTheme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                                  boxShadow: myArtists[0].profileTheme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                                }}
+                              >
+                                <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                                <h3 className="dash-design-card-label">{t.label}</h3>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      {designSubTab === 'font' && (
+                        <section className="dash-design-section">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--dash-text)' }}>Typography</h2>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--dash-subtext)', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={syncFonts}
+                                onChange={e => {
+                                  setSyncFonts(e.target.checked);
+                                  if (e.target.checked && myArtists[0]) {
+                                    handleUpdateHeroField('bioFont', myArtists[0].profileFont || 'outfit');
+                                  }
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              Use same font for all
+                            </label>
+                          </div>
+                          <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that suit your artist brand</p>
+
+                          <div style={{ marginBottom: '2rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Username & Titles)</h3>
+                            <div className="dash-design-grid dash-fonts-grid">
+                              {AVAILABLE_FONTS.map(f => (
+                                <button
+                                  key={`head-${f.id}`}
+                                  onClick={() => {
+                                    if (syncFonts) {
+                                      handleUpdateHeroField('profileFont', f.id, { bioFont: f.id });
+                                    } else {
+                                      handleUpdateHeroField('profileFont', f.id);
+                                    }
+                                  }}
+                                  className={`dash-design-card ${myArtists[0].profileFont === f.id ? 'active' : ''}`}
+                                  style={{ border: '2px solid ' + (myArtists[0].profileFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                                >
+                                  <p style={{
+                                    fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                    fontFamily: resolveFontFamily(f.id)
+                                  }}>{f.sample}</p>
+                                  <h3 className="dash-design-card-label">{f.label}</h3>
+                                  <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {!syncFonts && (
+                            <div>
+                              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio & Descriptions)</h3>
+                              <div className="dash-design-grid dash-fonts-grid">
+                                {AVAILABLE_FONTS.map(f => (
+                                  <button
+                                    key={`body-${f.id}`}
+                                    onClick={() => handleUpdateHeroField('bioFont', f.id)}
+                                    className={`dash-design-card ${myArtists[0].bioFont === f.id ? 'active' : ''}`}
+                                    style={{ border: '2px solid ' + (myArtists[0].bioFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                                  >
+                                    <p style={{
+                                      fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                      fontFamily: resolveFontFamily(f.id)
+                                    }}>{f.sample}</p>
+                                    <h3 className="dash-design-card-label">{f.label}</h3>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </section>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {/* Desktop sub‑toggle: Theme / Font */}
+                  {/* Desktop sub‑toggle: Theme / Font */}
+                  <div className="dash-premium-toggle-container">
+                    <div className="dash-premium-toggle">
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${(!designSubTab || designSubTab === 'theme') ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab('theme')}
+                      >
+                        <span className="toggle-icon">🎨</span>
+                        <span>Theme</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dash-premium-toggle-btn ${designSubTab === 'font' ? 'active' : ''}`}
+                        onClick={() => setDesignSubTab('font')}
+                      >
+                        <span className="toggle-icon">Aa</span>
+                        <span>Font</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {(!designSubTab || designSubTab === 'theme') && (
+                    <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a professional look for your public page</p>
+                      <div className="dash-design-grid dash-themes-grid">
+                        {GENERAL_THEMES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleUpdateHeroField('profileTheme', t.id)}
+                            className={`dash-design-card ${myArtists[0].profileTheme === t.id ? 'active' : ''}`}
+                            style={{
+                              border: '2px solid ' + (myArtists[0].profileTheme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                              boxShadow: myArtists[0].profileTheme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                          >
+                            <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                            <h3 className="dash-design-card-label">{t.label}</h3>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {designSubTab === 'font' && (
+                    <section className="dash-design-section">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--dash-text)' }}>Typography</h2>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--dash-subtext)', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={syncFonts}
+                            onChange={e => {
+                              setSyncFonts(e.target.checked);
+                              if (e.target.checked && myArtists[0]) {
+                                handleUpdateHeroField('bioFont', myArtists[0].profileFont || 'outfit');
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          Use same font for all
+                        </label>
+                      </div>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that suit your artist brand</p>
+
+                      <div style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Username & Titles)</h3>
+                        <div className="dash-design-grid dash-fonts-grid">
+                          {AVAILABLE_FONTS.map(f => (
+                            <button
+                              key={`head-${f.id}`}
+                              onClick={() => {
+                                if (syncFonts) {
+                                  handleUpdateHeroField('profileFont', f.id, { bioFont: f.id });
+                                } else {
+                                  handleUpdateHeroField('profileFont', f.id);
+                                }
+                              }}
+                              className={`dash-design-card ${myArtists[0].profileFont === f.id ? 'active' : ''}`}
+                              style={{ border: '2px solid ' + (myArtists[0].profileFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                            >
+                              <p style={{
+                                fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                fontFamily: resolveFontFamily(f.id)
+                              }}>{f.sample}</p>
+                              <h3 className="dash-design-card-label">{f.label}</h3>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {!syncFonts && (
+                        <div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio & Descriptions)</h3>
+                          <div className="dash-design-grid dash-fonts-grid">
+                            {AVAILABLE_FONTS.map(f => (
+                              <button
+                                key={`body-${f.id}`}
+                                onClick={() => handleUpdateHeroField('bioFont', f.id)}
+                                className={`dash-design-card ${myArtists[0].bioFont === f.id ? 'active' : ''}`}
+                                style={{ border: '2px solid ' + (myArtists[0].bioFont === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                              >
+                                <p style={{
+                                  fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)',
+                                  fontFamily: resolveFontFamily(f.id)
+                                }}>{f.sample}</p>
+                                <h3 className="dash-design-card-label">{f.label}</h3>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  )}
+                </div>
+
+                {/* Preview on the right (desktop / laptop only) */}
+                <div className="dash-preview-panel">
+                  <div className="dash-full-preview-container">
+                    <iframe
+                      key={previewKey}
+                      title="Profile Design Preview"
+                      src={`${frontendBase}/artist/${myArtists[0].artistId}`}
+                      className="dash-preview-iframe"
+
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {
+            (activeTab === 'link-art' || activeTab === 'what-i-do') && myArtists[0] && (() => {
+              const ART_THEMES = [
+                { id: 'painting', label: 'Painting', icon: '🖼️', color: '#e67e22' },
+                { id: 'digital', label: 'Digital Art', icon: '💻', color: '#3498db' },
+                { id: 'sculpture', label: 'Sculpture', icon: '🗿', color: '#95a5a6' },
+                { id: 'photography', label: 'Photography', icon: '📷', color: '#2c3e50' },
+                { id: 'illustration', label: 'Illustration', icon: '✏️', color: '#9b59b6' },
+                { id: 'abstract', label: 'Abstract', icon: '🌀', color: '#e74c3c' },
+                { id: 'portrait', label: 'Portrait', icon: '👤', color: '#1abc9c' },
+                { id: 'landscape', label: 'Landscape', icon: '🏞️', color: '#27ae60' },
+                { id: 'miniature', label: 'Miniature', icon: '🔬', color: '#f39c12' },
+                { id: 'street', label: 'Street Art', icon: '🏙️', color: '#e91e63' },
+                { id: 'mixed', label: 'Mixed Media', icon: '🎭', color: '#673ab7' },
+                { id: 'other', label: 'Other', icon: '🎨', color: '#607d8b' },
+              ];
+              const artShowcase = myArtists[0].artLinks || [];
+              const allItems = Array.isArray(artShowcase) ? artShowcase : [];
+              const items = allItems.filter(item => {
+                if (activeTab === 'what-i-do') {
+                  return item.itemType === 'service';
+                } else {
+                  return item.itemType === 'artwork' || !item.itemType;
+                }
+              });
+              const artistToken = myArtists[0].artistId || myArtists[0]._id;
+              const getArtUrl = (artId) => `${frontendBase}/artist/${artistToken}?art=${artId}`;
+              const getQrUrl = (artUrl) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(artUrl)}&bgcolor=ffffff&color=1a1a2e&qzone=2`;
+
+              const handleArtImagePick = (e) => {
+                handlePickAndCropBatch(e, 3 / 4, async (croppedFile) => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    setArtImagePreview(prev => [...prev, { file: croppedFile, url: ev.target.result }]);
+                  };
+                  reader.readAsDataURL(croppedFile);
+                });
+              };
+
+              const handleAddArt = async () => {
+                const title = document.getElementById('art-title-input')?.value?.trim();
+                const desc = document.getElementById('art-desc-input')?.value?.trim();
+                const label = activeTab === 'what-i-do' ? 'service' : 'artwork';
+                if (!title) return alert(activeTab === 'what-i-do' ? 'Please enter a title for what you do.' : 'Please enter an art title.');
+                setArtSaving(true);
+                try {
+                  const uploadedUrls = [];
+                  for (const img of artImagePreview) {
+                    const uploaded = await landingArtistAPI.uploadPhoto(img.file, () => getIdToken());
+                    const u = extractUploadUrl(uploaded);
+                    if (u) uploadedUrls.push(u);
+                  }
+                  if (artImagePreview.length > 0 && uploadedUrls.length === 0) {
+                    throw new Error('Image upload did not return URLs. Try again.');
+                  }
+                  const artId = Date.now();
+                  const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls, itemType: label };
+                  await handleUpdateHeroField('artLinks', [...allItems, newItem]);
+                  document.getElementById('art-title-input').value = '';
+                  document.getElementById('art-desc-input').value = '';
+                  setArtImagePreview([]);
+                  setNewArtTheme('painting');
+                } catch (err) {
+                  alert(err.message || (activeTab === 'what-i-do' ? 'Could not save "What I Do" item.' : 'Could not save artwork.'));
+                } finally {
+                  setArtSaving(false);
+                }
+              };
+
+              const handleRemoveArt = async (itemId) => {
+                await handleUpdateHeroField('artLinks', allItems.filter(i => i.id !== itemId));
+              };
+
+              const handleSetPrimaryArt = async (itemId) => {
+                const updatedAllItems = allItems.map(item => {
+                  if (item.itemType === 'service') {
+                    return {
+                      ...item,
+                      isPrimary: activeTab === 'what-i-do' ? item.id === itemId : item.isPrimary
+                    };
+                  } else {
+                    return {
+                      ...item,
+                      isPrimary: activeTab === 'link-art' ? item.id === itemId : item.isPrimary
+                    };
+                  }
+                });
+                await handleUpdateHeroField('artLinks', updatedAllItems);
+              };
+
+              // Default to showing the full gallery/profile in the preview so they can see all showcases
+              const artPreviewSrc = `${frontendBase}/artist/${artistToken}`;
+
+              return (
+                <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                  {/* ── LEFT: Form + cards ── */}
+                  <div className="dash-single-profile" style={{ padding: '2rem 2.5rem', overflowY: 'auto' }}>
+
+                    {/* ── Add New Art Form ── */}
+                    <div className="dash-art-add-card">
+                      {activeTab !== 'what-i-do' && (
+                        <h3 className="dash-art-form-title">
+                          ✨ Add New Artwork
+                        </h3>
+                      )}
+
+                      {/* Multi-image upload */}
+                      {activeTab !== 'what-i-do' && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Artwork Images {artImagePreview.length > 0 && <span style={{ color: 'var(--dash-accent)' }}>({artImagePreview.length} added)</span>}
+                          </label>
+
+                          {/* Thumbnail strip if images picked */}
+                          {artImagePreview.length > 0 && (
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                              {artImagePreview.map((img, idx) => (
+                                <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--dash-accent)' }}>
+                                  <img src={img.url} alt={`art-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <button onClick={() => setArtImagePreview(prev => prev.filter((_, i) => i !== idx))}
+                                    style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, padding: 0 }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Upload zone */}
+                          <label htmlFor="art-image-file" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', border: '2px dashed var(--dash-accent)', borderRadius: '14px', padding: '1.25rem', cursor: 'pointer', background: 'var(--dash-bg)', transition: 'all 0.2s' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ color: 'var(--dash-accent)', opacity: 0.7 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--dash-subtext)' }}>{artImagePreview.length > 0 ? '+ Add more images' : 'Click to upload artwork photos'}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--dash-subtext)', opacity: 0.55 }}>Multiple images per showcase — shown as slideshow</span>
+                            <input id="art-image-file" type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml" multiple onChange={handleArtImagePick} style={{ display: 'none' }} />
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Title + Description */}
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {activeTab === 'what-i-do' ? 'What I Do Title *' : 'Art Title *'}
+                        </label>
+                        <input id="art-title-input" type="text" placeholder={activeTab === 'what-i-do' ? 'e.g. Custom Portrait Commissions, Clay Workshops, Teaching, Designing' : 'e.g. Ocean Blue – Abstract Series No. 4'} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.9rem', border: '1.5px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--dash-subtext)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brief Description</label>
+                        <textarea id="art-desc-input" rows={3} placeholder={activeTab === 'what-i-do' ? 'Tell viewers about what you do in this area — details, process, tools, or style...' : 'Tell viewers what makes this artwork special — materials, inspiration, story behind it...'} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', fontSize: '0.9rem', border: '1.5px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                      </div>
+
+                      <button
+                        onClick={handleAddArt}
+                        disabled={artSaving}
+                        style={{
+                          padding: '0.85rem 2.25rem',
+                          borderRadius: '14px',
+                          fontSize: '0.95rem',
+                          fontWeight: 700,
+                          background: '#ffffff',
+                          color: '#000000',
+                          border: '1px solid #ffffff',
+                          cursor: artSaving ? 'wait' : 'pointer',
+                          opacity: artSaving ? 0.7 : 1,
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        {artSaving ? (<><span>Uploading...</span></>) : (<><span>✦</span><span>{activeTab === 'what-i-do' ? 'Add to "What I Do"' : 'Add to Showcase'}</span></>)}
+                      </button>
+                    </div>
+
+                     {/* ── Art Cards ── */}
+                     {items.length > 0 ? (
+                       <div>
+                         <div className="dash-art-header">
+                           <h3 className="dash-art-title">
+                             {activeTab === 'what-i-do' ? `Your "What I Do" Items (${items.length})` : `Your Art Showcase (${items.length})`}
+                           </h3>
+                           <span className="dash-art-subtitle">
+                             {activeTab === 'what-i-do' ? 'Add the things you do to showcase your skills and offerings' : 'Each card has its own unique URL + QR'}
+                           </span>
+                         </div>
+
+                         {activeTab === 'what-i-do' ? (
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                             {items.map(item => (
+                               <div key={item.id} className="dash-what-i-do-item-row" style={{
+                                 display: 'flex',
+                                 alignItems: 'center',
+                                 justifyContent: 'space-between',
+                                 background: 'var(--dash-card-bg, rgba(255,255,255,0.03))',
+                                 border: '1.5px solid var(--dash-border)',
+                                 borderRadius: '16px',
+                                 padding: '1.25rem 1.5rem',
+                                 gap: '1.5rem',
+                                 position: 'relative'
+                               }}>
+                                 <div style={{ flex: 1 }}>
+                                   <h4 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--dash-text)', textTransform: 'capitalize' }}>
+                                     {item.title}
+                                   </h4>
+                                   {item.description && (
+                                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--dash-subtext)', lineHeight: 1.5 }}>
+                                       {item.description}
+                                     </p>
+                                   )}
+                                 </div>
+                                 <button
+                                   onClick={() => handleRemoveArt(item.id)}
+                                   style={{
+                                     background: 'rgba(239, 68, 68, 0.1)',
+                                     color: '#ef4444',
+                                     border: 'none',
+                                     borderRadius: '12px',
+                                     padding: '8px 16px',
+                                     fontSize: '0.82rem',
+                                     fontWeight: 700,
+                                     cursor: 'pointer',
+                                     transition: 'all 0.2s',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     gap: '0.35rem',
+                                     whiteSpace: 'nowrap'
+                                   }}
+                                   onMouseEnter={(e) => {
+                                     e.currentTarget.style.background = '#ef4444';
+                                     e.currentTarget.style.color = '#fff';
+                                   }}
+                                   onMouseLeave={(e) => {
+                                     e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                                     e.currentTarget.style.color = '#ef4444';
+                                   }}
+                                 >
+                                   ✕ Remove
+                                 </button>
+                                </div>
+                              ))}
+                            </div>
+                         ) : (
+                           <div className="dash-art-grid" style={{
+                             display: 'grid',
+                             gridTemplateColumns: 'repeat(2, 1fr)',
+                             gap: '1.25rem',
+                             alignItems: 'stretch'
+                           }}>
+                             {items.map(item => {
+                               const theme = ART_THEMES.find(t => t.id === item.theme) || ART_THEMES[ART_THEMES.length - 1];
+                               const artUrl = getArtUrl(item.id);
+                               const qrUrl = getQrUrl(artUrl);
+                               const coverImage = item.image || (Array.isArray(item.images) ? item.images[0] : '');
+                               return (
+                                 <div key={item.id} className="dash-art-card" style={{
+                                   position: 'relative',
+                                   display: 'flex',
+                                   flexDirection: 'column',
+                                   height: '100% !important',
+                                   minHeight: coverImage ? '400px' : '220px'
+                                 }}>
+                                   <button
+                                     onClick={() => handleRemoveArt(item.id)}
+                                     style={{ position: 'absolute', top: '0', right: '0', background: '#000', color: '#fff', border: 'none', borderRadius: '0 20px 0 12px', width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, transition: 'all 0.2s', padding: 0, lineHeight: 1 }}
+                                     title="Remove artwork"
+                                     onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; }}
+                                     onMouseLeave={(e) => { e.currentTarget.style.background = '#000'; }}
+                                   >
+                                     ✕
+                                   </button>
+
+                                   <button
+                                     onClick={() => handleSetPrimaryArt(item.id)}
+                                     style={{
+                                       position: 'absolute',
+                                       top: '0',
+                                       left: '0',
+                                       background: item.isPrimary ? '#22c55e' : 'rgba(0,0,0,0.5)',
+                                       color: '#fff',
+                                       border: 'none',
+                                       borderRadius: '20px 0 12px 0',
+                                       padding: '6px 12px',
+                                       cursor: 'pointer',
+                                       fontSize: '0.72rem',
+                                       fontWeight: 800,
+                                       zIndex: 10,
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       gap: '4px',
+                                       backdropFilter: 'blur(4px)',
+                                       boxShadow: item.isPrimary ? '0 4px 12px rgba(34, 197, 94, 0.3)' : 'none'
+                                     }}
+                                   >
+                                     {item.isPrimary ? '✦ Primary' : 'Set Primary'}
+                                   </button>
+
+                                   {/* Artwork image */}
+                                   {coverImage ? (
+                                     <div style={{ width: '100%', height: '140px', overflow: 'hidden' }}>
+                                       <img src={coverImage} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                     </div>
+                                   ) : (
+                                     <div className="dash-art-placeholder" style={{ background: `linear-gradient(90deg, ${theme.color}, ${theme.color}88)` }} />
+                                   )}
+
+                                   <div style={{
+                                     padding: '1.25rem',
+                                     flex: 1,
+                                     display: 'flex',
+                                     flexDirection: 'column'
+                                   }}>
+                                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                       <h4 style={{ margin: '0 0 0.4rem', fontSize: '1rem', fontWeight: 700, color: 'var(--dash-text)', lineHeight: 1.3 }}>{item.title}</h4>
+                                     </div>
+                                     {item.description && (
+                                       <p style={{
+                                         fontSize: '0.82rem',
+                                         color: 'var(--dash-subtext)',
+                                         lineHeight: 1.55,
+                                         margin: '0 0 1rem',
+                                         display: '-webkit-box',
+                                         WebkitLineClamp: 3,
+                                         WebkitBoxOrient: 'vertical',
+                                         overflow: 'hidden',
+                                         textOverflow: 'ellipsis'
+                                       }}>
+                                         {item.description}
+                                       </p>
+                                     )}
+
+                                     <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                       <button
+                                         onClick={() => {
+                                           navigator.clipboard.writeText(artUrl);
+                                         }}
+                                         className="dash-art-btn-copy"
+                                         style={{ width: '85%', maxWidth: '220px', padding: '10px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', margin: 0 }}
+                                       >
+                                         <span>🔗</span> Copy URL
+                                       </button>
+                                       <button
+                                         type="button"
+                                         onClick={() => setArtQrModal({ url: qrUrl, title: item.title })}
+                                         className="dash-art-btn-secondary"
+                                         style={{ width: '85%', maxWidth: '220px', padding: '10px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', margin: 0 }}
+                                       >
+                                         <span>⬇</span> QR Code
+                                       </button>
+                                     </div>
+
+                                   </div>
+                                 </div>
+                               );
+                             })}
+                           </div>
+                         )}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '3.5rem', color: 'var(--dash-subtext)', border: '2px dashed var(--dash-border)', borderRadius: '20px' }}>
+                        <h3 style={{ fontWeight: 700, color: 'var(--dash-text)', marginBottom: '0.5rem' }}>
+                          {activeTab === 'what-i-do' ? 'No services or offerings added yet' : 'No artworks added yet'}
+                        </h3>
+                        <p style={{ fontSize: '0.9rem' }}>
+                          {activeTab === 'what-i-do' ? 'Add your first service or offering above — you\'ll get a unique URL + QR code for it!' : 'Upload your first artwork above — you\'ll get a unique URL + QR code to place on the physical art!'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── RIGHT: Phone Preview (desktop / laptop only) ── */}
+                  {!isMobileViewport && (
+                    <div className="dash-preview-panel">
+                      <div className="dash-full-preview-container">
+                        {items.length > 0 ? (
+                          <iframe
+                            key={artPreviewSrc}
+                            title="Art Preview"
+                            src={artPreviewSrc}
+                            className="dash-preview-iframe"
+
+                          />
+                        ) : (
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--dash-subtext)', gap: '0.75rem', padding: '2rem' }}>
+                            <span style={{ fontSize: '3rem' }}>📱</span>
+                            <p style={{ fontSize: '0.82rem', textAlign: 'center', margin: 0 }}>
+                              {activeTab === 'what-i-do' ? 'Add a service or offering to see the live preview here' : 'Add an artwork to see the live preview here'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          }
+
+          {
+            activeTab === 'profiles' && (
+              <>
+                {error && <div className="profile-error-msg" style={{ marginBottom: '1.5rem' }}>{error}</div>}
+
+                {artistsLoading ? (
+                  <div className="dash-loading">
+                    <div className="dash-loading-spinner" />
+                    <span>Loading your profile…</span>
+                  </div>
+                ) : myArtists.length === 0 ? (
+                  <div className="dash-empty-state" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="64" height="64" style={{ opacity: 0.4, marginBottom: '1.5rem' }}>
+                      <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                    </svg>
+                    <h3 style={{ marginBottom: '0.75rem', fontSize: '1.3rem' }}>Create Your Artist Profile</h3>
+                    <p style={{ marginBottom: '1.5rem', color: 'var(--dash-subtext)', maxWidth: '380px', margin: '0 auto 1.5rem' }}>Set up your portfolio, connect social links, and get your unique profile link.</p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          setSaving(true);
+                          if (user) {
+                            await landingArtistAPI.createMyProfile({ name: user.displayName || 'New Artist' }, () => getIdToken(), getFirebaseUser);
+                          }
+                          await loadMyProfiles();
+                        } catch (err) {
+                          setError(err.message || 'Failed to create profile');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving}
+                      style={{ padding: '0.9rem 2.5rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, background: '#ffffff', color: '#000000', border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(0,0,0,0.45)' }}
+                    >
+                      {saving ? 'Creating...' : 'Get Started'}
+                    </button>
+                  </div>
+                ) : (() => {
+                  // Only use the first (primary) profile — 1 per email rule
+                  const artist = myArtists[0];
+                  return (
+                    <div className="dash-profile-layout">
+
+                      {/* ── LEFT: Profile Info ── */}
+                      <div className="dash-single-profile">
+                        {/* Profile Hero */}
+                        <div className="dash-profile-hero">
+
+                          <div className="dash-profile-hero-content">
+                            <div className="dash-profile-hero-avatar">
+                              <label className="dash-avatar-trigger">
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                                  onChange={(e) => handlePickAndCrop(e, 1, (file) => handleUploadField('photo', file))}
+                                  style={{ display: 'none' }}
+                                />
+                                {artist.photo
+                                  ? <img src={artist.photo} alt={artist.name} />
+                                  : <span>{artist.name?.charAt(0) || '?'}</span>
+                                }
+                                <div className="dash-avatar-overlay">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                    <circle cx="12" cy="13" r="4" />
+                                  </svg>
+                                </div>
+                                {isUploading === 'photo' && <div className="dash-avatar-uploading-spinner" />}
+                              </label>
+                            </div>
+                            <div className="dash-profile-hero-info">
+                              <div className="dash-hero-editable-wrapper">
+                                {editingHeroField === 'name' ? (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input name"
+                                      autoFocus
+                                      value={heroUpdates.name !== undefined ? heroUpdates.name : (artist.name || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, name: e.target.value }))}
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('name', heroUpdates.name)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                ) : (
+                                  <h2
+                                    className="dash-profile-hero-name clickable"
+                                    onClick={() => openHeroEditor('name', artist)}
+                                  >
+                                    <span>{artist.name || 'Unnamed Artist'}</span>
+                                  </h2>
+                                )}
+                              </div>
+
+                              <div className="dash-hero-tags-simple" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '8px' }}>
+                                {/* Location Tag */}
+                                <div
+                                  className="dash-hero-tag-item"
+                                  onClick={() => openHeroEditor('location', artist)}
+                                  style={{
+                                    background: 'rgba(0,0,0,0.06)',
+                                    padding: '6px 14px',
+                                    borderRadius: '100px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: 'var(--dash-text)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'baseline',
+                                    gap: '6px'
+                                  }}
+                                >
+                                  <span style={{ opacity: 0.5, fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Loc:</span>
+                                  <span>{artist.city || artist.state ? `${artist.city}${artist.city && artist.state ? ', ' : ''}${artist.state}` : 'Add Location'}</span>
+                                </div>
+
+                                {/* Custom Dynamic Tags */}
+                                {(artist.specialization || '').split(',').map(t => t.trim()).filter(Boolean).map((tag, idx) => (
+                                  <div
+                                    className="dash-hero-tag-item"
+                                    key={idx}
+                                    style={{
+                                      background: 'rgba(124, 58, 237, 0.08)',
+                                      border: '1px solid rgba(124, 58, 237, 0.15)',
+                                      padding: '6px 14px',
+                                      borderRadius: '100px',
+                                      fontSize: '0.85rem',
+                                      fontWeight: 600,
+                                      color: '#4f46e5',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <span>{tag}</span>
+                                    <span
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTag(tag);
+                                      }}
+                                      style={{
+                                        marginLeft: '6px',
+                                        fontSize: '1.1rem',
+                                        fontWeight: 'bold',
+                                        color: '#ef4444',
+                                        cursor: 'pointer',
+                                        lineHeight: '1',
+                                        display: 'inline-block'
+                                      }}
+                                      title="Delete tag"
+                                    >
+                                      ×
+                                    </span>
+                                  </div>
+                                ))}
+
+                                {/* Inline Add Tag Form/Button */}
+                                {isAddingTag ? (
+                                  <form
+                                    onSubmit={(e) => {
+                                      e.preventDefault();
+                                      handleAddTag(newTagText);
+                                    }}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                                  >
+                                    <input
+                                      type="text"
+                                      value={newTagText}
+                                      onChange={(e) => setNewTagText(e.target.value)}
+                                      placeholder="Add tag..."
+                                      autoFocus
+                                      style={{
+                                        background: '#ffffff',
+                                        border: '1.5px solid #a855f7',
+                                        borderRadius: '50px',
+                                        padding: '5px 12px',
+                                        fontSize: '0.8rem',
+                                        outline: 'none',
+                                        color: '#0f172a',
+                                        width: '120px',
+                                        fontFamily: 'Outfit, sans-serif'
+                                      }}
+                                    />
+                                    <button
+                                      type="submit"
+                                      style={{
+                                        border: 'none',
+                                        background: '#4f46e5',
+                                        color: '#fff',
+                                        borderRadius: '50%',
+                                        width: '26px',
+                                        height: '26px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      ✓
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsAddingTag(false)}
+                                      style={{
+                                        border: 'none',
+                                        background: 'rgba(0,0,0,0.06)',
+                                        color: '#4b5563',
+                                        borderRadius: '50%',
+                                        width: '26px',
+                                        height: '26px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  </form>
+                                ) : (
+                                  <div
+                                    onClick={() => {
+                                      setIsAddingTag(true);
+                                      setNewTagText('');
+                                    }}
+                                    style={{
+                                      background: 'rgba(79, 70, 229, 0.08)',
+                                      border: '1.5px dashed rgba(79, 70, 229, 0.35)',
+                                      color: '#4f46e5',
+                                      padding: '6px 14px',
+                                      borderRadius: '100px',
+                                      fontSize: '0.85rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    + Add Tag
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Mobile inline editors (hidden by default, shown when editing) */}
+                              <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'specialization' ? 'block' : 'none' }}>
+                                {editingHeroField === 'specialization' && (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      autoFocus
+                                      value={heroUpdates.specialization !== undefined ? heroUpdates.specialization : (artist.specialization || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, specialization: e.target.value }))}
+                                      placeholder="e.g. Visual Artist"
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('specialization', heroUpdates.specialization)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'experience' ? 'block' : 'none' }}>
+                                {editingHeroField === 'experience' && (
+                                  <div className="dash-hero-edit-row">
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      autoFocus
+                                      value={heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, experience: e.target.value }))}
+                                      placeholder="e.g. 2 years experience"
+                                    />
+                                    <button onClick={() => handleUpdateHeroField('experience', heroUpdates.experience)}>Save</button>
+                                    <button className="cancel" onClick={() => setEditingHeroField(null)}>✕</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="dash-hero-editable-wrapper" style={{ display: editingHeroField === 'location' ? 'block' : 'none' }}>
+                                {editingHeroField === 'location' && (
+                                  <div className="dash-hero-edit-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      autoFocus
+                                      value={heroUpdates.city !== undefined ? heroUpdates.city : (artist.city || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, city: e.target.value }))}
+                                      placeholder="City (e.g. Mumbai)"
+                                    />
+                                    <input
+                                      className="dash-hero-inline-input spec"
+                                      value={heroUpdates.state !== undefined ? heroUpdates.state : (artist.state || '')}
+                                      onChange={(e) => setHeroUpdates(prev => ({ ...prev, state: e.target.value }))}
+                                      placeholder="State (e.g. Maharashtra)"
+                                    />
+                                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                      <button style={{ flex: 1 }} onClick={() => {
+                                        const c = heroUpdates.city !== undefined ? heroUpdates.city : artist.city;
+                                        const s = heroUpdates.state !== undefined ? heroUpdates.state : artist.state;
+                                        landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { city: c, state: s }, () => getIdToken(), getFirebaseUser)
+                                          .then(res => {
+                                            if (res.success) {
+                                              setMyArtists(prev => prev.map((a, idx) => idx === 0 ? res.data : a));
+                                              setEditingHeroField(null);
+                                              setHeroUpdates({});
+                                              setPreviewKey(k => k + 1);
+                                            }
+                                          });
+                                      }}>Save</button>
+                                      <button className="cancel" style={{ flex: 1 }} onClick={() => setEditingHeroField(null)}>✕</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
+                        </div>
+
+                        {mobileHeroEditField && (
+                          <div
+                            className="dash-mobile-edit-overlay"
+                            onClick={() => setMobileHeroEditField(null)}
+                          >
+                            <div
+                              className="dash-mobile-edit-modal"
+                              aria-label={
+                                mobileHeroEditField === 'name' ? 'Edit name' :
+                                  mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                    'Edit artist tag'
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="dash-mobile-edit-header">
+                                <div className="dash-mobile-edit-title">
+                                  {
+                                    mobileHeroEditField === 'name' ? 'Edit name' :
+                                      mobileHeroEditField === 'experience' ? 'Edit experience' :
+                                        'Edit artist tag'
+                                  }
+                                </div>
+                                <button
+                                  type="button"
+                                  className="dash-mobile-edit-close"
+                                  onClick={() => setMobileHeroEditField(null)}
+                                  aria-label="Close"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <div className="dash-mobile-edit-body">
+                                <input
+                                  className="dash-mobile-edit-input"
+                                  value={mobileHeroDraft}
+                                  placeholder={
+                                    mobileHeroEditField === 'name' ? 'Enter your name' :
+                                      mobileHeroEditField === 'experience' ? 'Enter experience (e.g. 2 years)' :
+                                        'Enter your artist tag'
+                                  }
+                                  onChange={(e) => setMobileHeroDraft(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') setMobileHeroEditField(null);
+                                    if (e.key === 'Enter') saveMobileHeroField();
+                                  }}
+                                />
+                                <div className="dash-mobile-edit-actions">
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn ghost"
+                                    onClick={() => setMobileHeroEditField(null)}
+                                    disabled={savingLink === mobileHeroEditField}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dash-mobile-edit-btn primary"
+                                    onClick={saveMobileHeroField}
+                                    disabled={savingLink === mobileHeroEditField}
+                                  >
+                                    {savingLink === mobileHeroEditField ? 'Saving…' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+
+                        {/* Bio Section */}
+                        <div className="dash-profile-bio-section">
+                          <h3 className="dash-section-label">About</h3>
+                          <div className="dash-hero-editable-wrapper">
+                            {editingHeroField === 'about' ? (
+                              <div className="dash-hero-edit-row bio" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <input
+                                  className="dash-hero-inline-input spec"
+                                  autoFocus
+                                  value={heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '')}
+                                  onChange={(e) => setHeroUpdates(prev => ({ ...prev, experience: e.target.value }))}
+                                  placeholder="Headline (e.g. A passionate creative mind)"
+                                  style={{ width: '100%', fontFamily: 'Outfit, sans-serif' }}
+                                />
+                                <textarea
+                                  className="dash-hero-inline-textarea"
+                                  rows={4}
+                                  value={heroUpdates.bio !== undefined ? heroUpdates.bio : (artist.bio || '')}
+                                  onChange={(e) => setHeroUpdates(prev => ({ ...prev, bio: e.target.value }))}
+                                  placeholder="Describe yourself..."
+                                  style={{ width: '100%', fontFamily: 'Outfit, sans-serif' }}
+                                />
+                                <div className="dash-bio-actions" style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => {
+                                    const expVal = heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '');
+                                    const bioVal = heroUpdates.bio !== undefined ? heroUpdates.bio : (artist.bio || '');
+                                    landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { experience: expVal, bio: bioVal }, () => getIdToken(), getFirebaseUser)
+                                      .then(res => {
+                                        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, experience: expVal, bio: bioVal } : a));
+                                        setEditingHeroField(null);
+                                        setHeroUpdates({});
+                                        setPreviewKey(k => k + 1);
+                                      });
+                                  }}>Save About</button>
+                                  <button className="cancel" onClick={() => { setEditingHeroField(null); setHeroUpdates({}); }}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className="dash-profile-bio clickable"
+                                onClick={() => {
+                                  setHeroUpdates({ experience: artist.experience || '', bio: artist.bio || '' });
+                                  setEditingHeroField('about');
+                                }}
+                                style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}
+                              >
+                                <h4 style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '1.1rem' }}>
+                                  {artist.experience || 'Add an inspiring headline...'}
+                                </h4>
+                                <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                                  {artist.bio || 'Add a bio describing your art...'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+
+
+                        {/* Gallery Section */}
+                        <div className="dash-profile-bio-section">
+                          <div className="dash-section-header">
+                            <h3 className="dash-section-label">Gallery</h3>
+                            <button
+                              type="button"
+                              className="dash-add-platform-btn upload-trigger-btn"
+                              style={{ width: 'auto' }}
+                              onClick={() => { if (artistGalleryInputRef.current) { artistGalleryInputRef.current.value = ''; artistGalleryInputRef.current.click(); } }}
+                            >
+                              <input
+                                ref={artistGalleryInputRef}
+                                type="file"
+                                accept="image/*,image/gif"
+                                multiple
+                                style={{ display: 'none' }}
+                                onChange={handleAddMultipleGalleryItems}
+                              />
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                              </svg>
+                              {galleryUploading ? 'Uploading...' : 'Add Images'}
+                            </button>
+                          </div>
+
+                          <div className="dash-gallery-grid">
+                            {(artist.gallery || []).map((item, idx) => (
+                              <div className="dash-gallery-item" key={idx}>
+                                <img src={item.url} alt={item.name} />
+                                <div className="dash-gallery-item-overlay">
+                                  <input
+                                    className="dash-gallery-item-name-input"
+                                    value={item.name || ''}
+                                    placeholder="Gallery title"
+                                    onChange={(e) => {
+                                      // Immutable spread — preserve all fields including `link`
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, name: e.target.value } : { ...g }
+                                      );
+                                      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
+                                    }}
+                                    onBlur={(e) => {
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, name: e.target.value } : { ...g }
+                                      );
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { gallery: newGal }, () => getIdToken(), getFirebaseUser);
+                                    }}
+                                  />
+                                  <input
+                                    className="dash-gallery-item-name-input"
+                                    style={{ marginTop: '4px', fontSize: '0.75rem', opacity: 0.8 }}
+                                    value={item.link || ''}
+                                    placeholder="https://external-link.com"
+                                    onChange={(e) => {
+                                      // Immutable spread — preserve all fields including `name`
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, link: e.target.value } : { ...g }
+                                      );
+                                      setMyArtists(prev => prev.map((a, j) => j === 0 ? { ...a, gallery: newGal } : a));
+                                    }}
+                                    onBlur={(e) => {
+                                      const newGal = (artist.gallery || []).map((g, i) =>
+                                        i === idx ? { ...g, link: e.target.value } : { ...g }
+                                      );
+                                      landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { gallery: newGal }, () => getIdToken(), getFirebaseUser)
+                                        .then(() => setPreviewKey(prev => prev + 1))
+                                        .catch(err => console.error('Gallery link save failed:', err));
+                                    }}
+                                  />
+                                  <button
+                                    className="dash-gallery-remove-btn"
+                                    onClick={() => handleRemoveGalleryItem(idx)}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            {(!artist.gallery || artist.gallery.length === 0) && (
+                              <div className="dash-gallery-empty">
+                                <p>No images added yet. Start by adding images from your gallery.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {myArtists.length > 1 && (
+                          <p className="dash-multi-profile-note">
+                            ⚠️ Your account has {myArtists.length} profiles linked. Only one profile per email is allowed. Please contact support to resolve this.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ── RIGHT: Live iframe Preview (desktop / laptop only) ── */}
+                      {!isMobileViewport && (
+                        <div className="dash-preview-panel">
+                          <div className="dash-full-preview-container">
+                            <iframe
+                              key={previewKey}
+                              title="Profile Preview"
+                              src={`${frontendBase}/artist/${artist.artistId}?no_redirect=1`}
+                              className="dash-preview-iframe"
+
+                            />
+                            <LivePreviewSyncOverlay show={isUploading === 'backgroundPhoto'} message="Uploading cover…" />
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })()}
+              </>
+            )
+          }
+          {
+            activeTab === 'platforms' && (
+              <>
+                {error && <div className="profile-error-msg" style={{ marginBottom: '1.5rem' }}>{error}</div>}
+
+                {artistsLoading ? (
+                  <div className="dash-loading">
+                    <div className="dash-loading-spinner" />
+                    <span>Loading digital platforms…</span>
+                  </div>
+                ) : myArtists.length === 0 ? (
+                  <div className="dash-empty-state" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                    <h3 style={{ marginBottom: '0.75rem', fontSize: '1.3rem' }}>Please set up your profile first.</h3>
+                  </div>
+                ) : (() => {
+                  const artist = myArtists[0];
+                  return (
+                    <div className="dash-profile-layout">
+                      <div className="dash-single-profile" style={{ padding: '1.5rem' }}>
+                        {/* Links Section Header */}
+                        <div className="dash-section-header">
+                          <h3 className="dash-section-label">Links</h3>
+                          <button
+                            type="button"
+                            className="dash-add-platform-btn"
+                            onClick={() => {
+                              setTempPlatforms([...visiblePlatforms]);
+                              setIsSelectorOpen(true);
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Platforms
+                          </button>
+                        </div>
+
+                        {/* Link Cards Section */}
+                        <div className="dash-links-section" style={{ marginBottom: '2rem' }}>
+                          {ALL_PLATFORMS.filter(p => visiblePlatforms.includes(p.id)).map(platform => {
+                            let serverValue = artist[platform.id] || '';
+                            if (platform.id === 'whatsapp' && serverValue.includes('wa.me/')) {
+                              serverValue = serverValue.split('wa.me/')[1];
+                            }
+                            const localValue = pendingLinks[platform.id];
+                            const currentValue = localValue !== undefined ? localValue : serverValue;
+
+                            const getPlatformFullUrl = (platformId, val) => {
+                              if (!val) return `Add your ${getPlatformLabel(platformId)} URL or username`;
+                              switch (platformId) {
+                                case 'whatsapp':
+                                  return `https://wa.me/${val.replace(/\D/g, '')}`;
+                                case 'instagram':
+                                  return `https://instagram.com/${val.replace('@', '')}`;
+                                case 'twitter':
+                                  return `https://twitter.com/${val}`;
+                                case 'youtube':
+                                  return val.startsWith('http') ? val : `https://youtube.com/${val}`;
+                                case 'facebook':
+                                  return val.startsWith('http') ? val : `https://facebook.com/${val}`;
+                                case 'linkedin':
+                                  return val.startsWith('http') ? val : `https://linkedin.com/in/${val}`;
+                                case 'pinterest':
+                                  return val.startsWith('http') ? val : `https://pinterest.com/${val}`;
+                                case 'tiktok':
+                                  return val.startsWith('http') ? val : `https://tiktok.com/@${val}`;
+                                case 'behance':
+                                  return val.startsWith('http') ? val : `https://behance.net/${val}`;
+                                case 'dribbble':
+                                  return val.startsWith('http') ? val : `https://dribbble.com/${val}`;
+                                default:
+                                  return val.startsWith('http') ? val : `https://${val}`;
+                              }
+                            };
+
+                            const getPlatformLabel = (platformId) => {
+                              if (Array.isArray(artist.links)) {
+                                const found = artist.links.find(l => (l.platform || '').toLowerCase() === platformId.toLowerCase());
+                                if (found && found.title) return found.title;
+                              }
+                              return platform.label;
+                            };
+
+                            const isPlatformEnabled = artist[`show_${platform.id}`] !== false;
+
+                            return (
+                              <div className="dash-link-card" key={platform.id} style={{
+                                border: '1px solid rgba(0,0,0,0.06)',
+                                borderRadius: '20px',
+                                padding: '1.25rem',
+                                background: '#fff',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                                marginBottom: '16px',
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                opacity: isPlatformEnabled ? 1 : 0.65,
+                                transition: 'opacity 0.2s ease-in-out'
+                              }}>
+                                {/* Top Row */}
+                                <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '12px' }}>
+                                  {/* Drag Handle Icon */}
+                                  <div style={{ display: 'flex', alignItems: 'center', cursor: 'grab', color: isPlatformEnabled ? '#cbd5e1' : '#e2e8f0', paddingRight: '4px', transition: 'color 0.2s' }}>
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                      <circle cx="9" cy="5" r="1.5" />
+                                      <circle cx="15" cy="5" r="1.5" />
+                                      <circle cx="9" cy="12" r="1.5" />
+                                      <circle cx="15" cy="12" r="1.5" />
+                                      <circle cx="9" cy="19" r="1.5" />
+                                      <circle cx="15" cy="19" r="1.5" />
+                                    </svg>
+                                  </div>
+
+                                  {/* Thumbnail Preview if custom image exists */}
+                                  {(() => {
+                                    const platformLinkInfo = (artist.links || []).find(l => (l.platform || '').toLowerCase() === platform.id.toLowerCase());
+                                    if (platformLinkInfo && platformLinkInfo.image) {
+                                      return (
+                                        <div style={{ 
+                                          width: '32px', 
+                                          height: '32px', 
+                                          borderRadius: '8px', 
+                                          overflow: 'hidden', 
+                                          marginRight: '8px',
+                                          flexShrink: 0
+                                        }}>
+                                          <img src={platformLinkInfo.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+
+                                  {/* Title & Edit Column */}
+                                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span 
+                                        onClick={() => openLinkPopup(platform.id, platform.label, getPlatformLabel(platform.id), 'title')}
+                                        style={{ 
+                                          fontWeight: 700, 
+                                          fontSize: '0.95rem', 
+                                          color: isPlatformEnabled ? '#1e293b' : '#94a3b8', 
+                                          cursor: 'pointer',
+                                          transition: 'color 0.2s'
+                                        }}
+                                      >
+                                        {getPlatformLabel(platform.id)}
+                                      </span>
+                                      <svg 
+                                        onClick={() => openLinkPopup(platform.id, platform.label, getPlatformLabel(platform.id), 'title')}
+                                        viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" 
+                                        style={{ color: '#94a3b8', cursor: 'pointer', verticalAlign: 'middle' }}
+                                      >
+                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                                      </svg>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span 
+                                        onClick={() => openLinkPopup(platform.id, platform.label, currentValue, 'value')}
+                                        style={{ 
+                                          fontSize: '0.85rem', 
+                                          color: isPlatformEnabled ? (currentValue ? '#2563eb' : '#64748b') : '#94a3b8', 
+                                          cursor: 'pointer', 
+                                          textDecoration: isPlatformEnabled && currentValue ? 'underline' : 'none', 
+                                          wordBreak: 'break-all',
+                                          fontWeight: currentValue ? '600' : '400',
+                                          transition: 'color 0.2s'
+                                        }}
+                                      >
+                                        {getPlatformFullUrl(platform.id, currentValue)}
+                                      </span>
+                                      <svg 
+                                        onClick={() => openLinkPopup(platform.id, platform.label, currentValue, 'value')}
+                                        viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" 
+                                        style={{ color: '#94a3b8', cursor: 'pointer', verticalAlign: 'middle' }}
+                                      >
+                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+
+                                  {/* Actions Right */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {/* Share/Visit Link button */}
+                                    {currentValue && isPlatformEnabled && (
+                                      <a 
+                                        href={getPlatformFullUrl(platform.id, currentValue)} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        style={{ 
+                                          color: '#64748b', 
+                                          display: 'flex', 
+                                          alignItems: 'center', 
+                                          justifyContent: 'center',
+                                          width: '32px',
+                                          height: '32px',
+                                          borderRadius: '8px',
+                                          background: 'rgba(0,0,0,0.02)',
+                                          transition: 'all 0.2s'
+                                        }}
+                                        className="dash-link-action-icon-btn"
+                                      >
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                          <polyline points="15 3 21 3 21 9" />
+                                          <line x1="10" y1="14" x2="21" y2="3" />
+                                        </svg>
+                                      </a>
+                                    )}
+
+                                    {/* Toggle Switch */}
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateHeroField(`show_${platform.id}`, !isPlatformEnabled)}
+                                        style={{
+                                          width: '38px',
+                                          height: '20px',
+                                          borderRadius: '999px',
+                                          background: isPlatformEnabled ? '#10b981' : '#cbd5e1',
+                                          border: 'none',
+                                          position: 'relative',
+                                          cursor: 'pointer',
+                                          padding: 0,
+                                          transition: 'background 0.2s'
+                                        }}
+                                      >
+                                        <div style={{
+                                          width: '16px',
+                                          height: '16px',
+                                          borderRadius: '50%',
+                                          background: '#fff',
+                                          position: 'absolute',
+                                          top: '2px',
+                                          left: isPlatformEnabled ? '20px' : '2px',
+                                          transition: 'left 0.2s',
+                                          boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                                        }} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', marginTop: '0.75rem', marginBottom: '0.75rem' }} />
+
+                                {/* Footer Row */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '0.25rem' }}>
+                                  {/* Sub Option Icons */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#cbd5e1' }}>
+                                    {(() => {
+                                      const platformLinkInfo = (artist.links || []).find(l => (l.platform || '').toLowerCase() === platform.id.toLowerCase());
+                                      const hasCustomImage = !!(platformLinkInfo && platformLinkInfo.image);
+                                      const isPrioritized = platformLinkInfo && platformLinkInfo.prioritizeType && platformLinkInfo.prioritizeType !== 'none';
+                                      const isPrioritizeOpen = openSubPanel[platform.id] === 'prioritize';
+
+                                      return (
+                                        <>
+                                          {/* 1. Default logo icon */}
+                                          <button 
+                                            type="button"
+                                            onClick={() => setOpenSubPanel(prev => ({
+                                              ...prev,
+                                              [platform.id]: prev[platform.id] === 'layout' ? null : 'layout'
+                                            }))}
+                                            title="Link layout options"
+                                            style={{ 
+                                              background: 'none', 
+                                              border: 'none', 
+                                              cursor: 'pointer', 
+                                              padding: 0, 
+                                              color: openSubPanel[platform.id] === 'layout' ? '#7c3aed' : '#cbd5e1',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              transition: 'color 0.2s'
+                                            }}
+                                          >
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <circle cx="12" cy="12" r="10" />
+                                              <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                          </button>
+
+                                          {/* 2. Image icon (photo custom image) */}
+                                          <button 
+                                            type="button"
+                                            onClick={() => setOpenSubPanel(prev => ({
+                                              ...prev,
+                                              [platform.id]: prev[platform.id] === 'thumbnail' ? null : 'thumbnail'
+                                            }))}
+                                            title="Add or edit thumbnail" 
+                                            style={{ 
+                                              background: openSubPanel[platform.id] === 'thumbnail' ? '#7c3aed' : 'none', 
+                                              border: 'none', 
+                                              cursor: 'pointer', 
+                                              padding: openSubPanel[platform.id] === 'thumbnail' ? '6px' : 0,
+                                              borderRadius: openSubPanel[platform.id] === 'thumbnail' ? '8px' : 0,
+                                              color: openSubPanel[platform.id] === 'thumbnail' ? '#ffffff' : '#cbd5e1', 
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              transition: 'all 0.2s'
+                                            }}
+                                          >
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                              <circle cx="8.5" cy="8.5" r="1.5" />
+                                              <polyline points="21 15 16 10 5 21" />
+                                            </svg>
+                                          </button>
+
+                                          {/* 3. Star icon (prioritize) */}
+                                          <button 
+                                            type="button"
+                                            onClick={() => setOpenSubPanel(prev => ({
+                                              ...prev,
+                                              [platform.id]: prev[platform.id] === 'prioritize' ? null : 'prioritize'
+                                            }))}
+                                            title="Prioritize this link"
+                                            style={{ 
+                                              background: 'none', 
+                                              border: 'none', 
+                                              cursor: 'pointer', 
+                                              padding: 0, 
+                                              color: isPrioritizeOpen || isPrioritized ? '#7c3aed' : '#cbd5e1',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              transition: 'all 0.2s'
+                                            }}
+                                          >
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill={isPrioritizeOpen || isPrioritized ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                            </svg>
+                                          </button>
+
+                                          
+
+                                          {/* 6. Graph icon followed by "0 clicks" */}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px', cursor: 'default' }}>
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <line x1="18" y1="20" x2="18" y2="10" />
+                                              <line x1="12" y1="20" x2="12" y2="4" />
+                                              <line x1="6" y1="20" x2="6" y2="14" />
+                                            </svg>
+                                            <span>0 clicks</span>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+
+                                  {/* Delete Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateLink(platform.id, null)}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: '#cbd5e1',
+                                      cursor: 'pointer',
+                                      padding: '4px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      transition: 'color 0.2s'
+                                    }}
+                                    className="dash-link-delete-trash-btn"
+                                    title="Delete platform link"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                      <line x1="10" y1="11" x2="10" y2="17" />
+                                      <line x1="14" y1="11" x2="14" y2="17" />
+                                    </svg>
+                                  </button>
+                                </div>
+
+                                {/* Panel Drawers */}
+                                {(() => {
+                                  const platformLinkInfo = (artist.links || []).find(l => (l.platform || '').toLowerCase() === platform.id.toLowerCase());
+                                  const currentPrioritizeType = (platformLinkInfo && platformLinkInfo.prioritizeType) || 'none';
+                                  const currentAnimationType = (platformLinkInfo && platformLinkInfo.animationType) || 'buzz';
+
+                                  if (openSubPanel[platform.id] === 'layout') {
+                                    const hasCustomImage = !!(platformLinkInfo && platformLinkInfo.image);
+                                    const layoutType = platformLinkInfo?.layoutType || (hasCustomImage ? 'featured' : 'classic');
+                                    const isClassic = layoutType === 'classic';
+                                    const isFeatured = layoutType === 'featured';
+
+                                    return (
+                                      <div style={{
+                                        marginTop: '16px',
+                                        border: '1px solid rgba(0,0,0,0.06)',
+                                        borderRadius: '16px',
+                                        overflow: 'hidden',
+                                        background: '#ffffff',
+                                        fontFamily: "'Outfit', sans-serif",
+                                        position: 'relative',
+                                        padding: '24px 20px 20px'
+                                      }}>
+                                        {/* Absolute Close Button */}
+                                        <button 
+                                          type="button" 
+                                          onClick={() => setOpenSubPanel(prev => ({ ...prev, [platform.id]: null }))}
+                                          style={{ 
+                                            position: 'absolute',
+                                            top: '12px',
+                                            right: '12px',
+                                            background: 'none', 
+                                            border: 'none', 
+                                            cursor: 'pointer', 
+                                            padding: '4px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            color: '#94a3b8',
+                                            zIndex: 10,
+                                            transition: 'color 0.2s'
+                                          }}
+                                          onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
+                                          onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                                        >
+                                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                          </svg>
+                                        </button>
+
+                                        <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px', textAlign: 'left' }}>
+                                          Choose a layout for your link
+                                        </div>
+
+                                        {/* Option 1: Classic */}
+                                        <div 
+                                          onClick={() => {
+                                            handleUpdateLinkLayout(platform.id, 'classic');
+                                          }}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            border: '2px solid ' + (isClassic ? '#000000' : 'rgba(0,0,0,0.06)'),
+                                            cursor: 'pointer',
+                                            marginBottom: '16px',
+                                            background: '#ffffff',
+                                            transition: 'all 0.2s'
+                                          }}
+                                        >
+                                          {/* Radio dot */}
+                                          <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            border: '2.5px solid ' + (isClassic ? '#000000' : '#d1d1d6'),
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: '16px',
+                                            flexShrink: 0
+                                          }}>
+                                            {isClassic && (
+                                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000' }} />
+                                            )}
+                                          </div>
+
+                                          {/* Details */}
+                                          <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a', marginBottom: '4px' }}>Classic</div>
+                                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>Efficient, direct and compact.</div>
+                                            {/* Mock compact card */}
+                                            <div style={{
+                                              width: '160px',
+                                              height: '32px',
+                                              borderRadius: '16px',
+                                              background: '#f8fafc',
+                                              border: '1px solid #e2e8f0',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'space-between',
+                                              padding: '0 12px',
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                            }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {/* Mock platform icon circle */}
+                                                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#cbd5e1' }} />
+                                                {/* Mock text lines */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                  <div style={{ width: '45px', height: '4px', background: '#94a3b8', borderRadius: '2px' }} />
+                                                  <div style={{ width: '25px', height: '3px', background: '#cbd5e1', borderRadius: '1.5px' }} />
+                                                </div>
+                                              </div>
+                                              {/* Mock arrow */}
+                                              <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'bold' }}>↗</div>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Option 2: Featured */}
+                                        <div 
+                                          onClick={() => {
+                                            handleUpdateLinkLayout(platform.id, 'featured');
+                                            if (!hasCustomImage) {
+                                              setOpenSubPanel(prev => ({ ...prev, [platform.id]: 'thumbnail' }));
+                                            }
+                                          }}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            border: '2px solid ' + (isFeatured ? '#000000' : 'rgba(0,0,0,0.06)'),
+                                            cursor: 'pointer',
+                                            background: '#ffffff',
+                                            transition: 'all 0.2s'
+                                          }}
+                                        >
+                                          {/* Radio dot */}
+                                          <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            border: '2.5px solid ' + (isFeatured ? '#000000' : '#d1d1d6'),
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: '16px',
+                                            flexShrink: 0
+                                          }}>
+                                            {isFeatured && (
+                                              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000' }} />
+                                            )}
+                                          </div>
+
+                                          {/* Details */}
+                                          <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a', marginBottom: '4px' }}>Featured</div>
+                                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>Make your link stand out with a larger, more attractive display.</div>
+                                            {/* Mock featured card image */}
+                                            <div style={{
+                                              width: '160px',
+                                              height: '92px',
+                                              borderRadius: '12px',
+                                              background: '#ffffff',
+                                              border: '1px solid #e2e8f0',
+                                              padding: '6px',
+                                              boxShadow: '0 4px 6px rgba(0,0,0,0.04)',
+                                              boxSizing: 'border-box'
+                                            }}>
+                                              {/* Mock banner image */}
+                                              <div style={{
+                                                width: '100%',
+                                                height: '52px',
+                                                borderRadius: '8px',
+                                                background: 'linear-gradient(135deg, #7c3aed, #c084fc)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                              }}>
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                                  <circle cx="8.5" cy="8.5" r="1.5" />
+                                                  <polyline points="21 15 16 10 5 21" />
+                                                </svg>
+                                              </div>
+                                              {/* Mock title text */}
+                                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
+                                                <div style={{ width: '50px', height: '5px', background: '#475569', borderRadius: '2px' }} />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  if (openSubPanel[platform.id] === 'thumbnail') {
+                                    const hasCustomImage = !!(platformLinkInfo && platformLinkInfo.image);
+
+                                    return (
+                                      <div style={{
+                                        marginTop: '16px',
+                                        border: '1px solid rgba(0,0,0,0.06)',
+                                        borderRadius: '16px',
+                                        overflow: 'hidden',
+                                        background: '#ffffff',
+                                        fontFamily: "'Outfit', sans-serif",
+                                        position: 'relative',
+                                        padding: '24px 20px 20px'
+                                      }}>
+                                        {/* Absolute Close Button */}
+                                        <button 
+                                          type="button" 
+                                          onClick={() => setOpenSubPanel(prev => ({ ...prev, [platform.id]: null }))}
+                                          style={{ 
+                                            position: 'absolute',
+                                            top: '12px',
+                                            right: '12px',
+                                            background: 'none', 
+                                            border: 'none', 
+                                            cursor: 'pointer', 
+                                            padding: '4px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            color: '#94a3b8',
+                                            zIndex: 10,
+                                            transition: 'color 0.2s'
+                                          }}
+                                          onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
+                                          onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                                        >
+                                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                          </svg>
+                                        </button>
+
+                                        {/* Content area */}
+                                        <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                          {hasCustomImage ? (
+                                            <>
+                                              {/* Left: image preview */}
+                                              <img 
+                                                src={platformLinkInfo.image} 
+                                                alt="Thumbnail preview" 
+                                                style={{
+                                                  width: '80px',
+                                                  height: '80px',
+                                                  objectFit: 'cover',
+                                                  borderRadius: '12px',
+                                                  border: '1px solid rgba(0,0,0,0.08)',
+                                                  flexShrink: 0
+                                                }}
+                                              />
+
+                                              {/* Right: stacked buttons */}
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                                                <label style={{
+                                                  background: '#7c3aed',
+                                                  color: '#ffffff',
+                                                  border: 'none',
+                                                  borderRadius: '999px',
+                                                  padding: '10px 16px',
+                                                  fontSize: '13px',
+                                                  fontWeight: '700',
+                                                  cursor: 'pointer',
+                                                  textAlign: 'center',
+                                                  transition: 'background 0.2s',
+                                                  display: 'block',
+                                                  boxSizing: 'border-box'
+                                                }}>
+                                                  Change
+                                                  <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => {
+                                                      if (e.target.files && e.target.files[0]) {
+                                                        handleUpdateLinkImage(platform.id, e.target.files[0]);
+                                                      }
+                                                      e.target.value = '';
+                                                    }}
+                                                  />
+                                                </label>
+                                                <button 
+                                                  type="button" 
+                                                  onClick={() => handleRemoveLinkImage(platform.id)}
+                                                  style={{
+                                                    background: '#ffffff',
+                                                    color: '#1a1a1a',
+                                                    border: '1px solid rgba(0,0,0,0.15)',
+                                                    borderRadius: '999px',
+                                                    padding: '10px 16px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    boxSizing: 'border-box'
+                                                  }}
+                                                >
+                                                  Remove
+                                                </button>
+                                              </div>
+                                            </>
+                                          ) : (
+                                            /* No thumbnail state */
+                                            <label style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              gap: '8px',
+                                              width: '100%',
+                                              height: '80px',
+                                              borderRadius: '16px',
+                                              border: '2px dashed rgba(0,0,0,0.12)',
+                                              cursor: 'pointer',
+                                              fontSize: '13px',
+                                              fontWeight: '600',
+                                              color: '#7c3aed',
+                                              background: '#faf5ff',
+                                              boxSizing: 'border-box'
+                                            }}>
+                                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                                <polyline points="21 15 16 10 5 21" />
+                                              </svg>
+                                              Upload Thumbnail
+                                              <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => {
+                                                  if (e.target.files && e.target.files[0]) {
+                                                    handleUpdateLinkImage(platform.id, e.target.files[0]);
+                                                  }
+                                                  e.target.value = '';
+                                                }}
+                                              />
+                                            </label>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  if (openSubPanel[platform.id] === 'prioritize') {
+                                    return (
+                                      <div style={{
+                                        marginTop: '16px',
+                                        border: '1px solid rgba(0,0,0,0.06)',
+                                        borderRadius: '16px',
+                                        overflow: 'hidden',
+                                        background: '#ffffff',
+                                        fontFamily: "'Outfit', sans-serif"
+                                      }}>
+                                        {/* Header Bar */}
+                                        <div style={{
+                                          background: '#e6e4df',
+                                          padding: '10px 16px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between'
+                                        }}>
+                                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#1a1a1a', textTransform: 'capitalize', letterSpacing: '0.3px', margin: '0 auto', paddingLeft: '24px' }}>Prioritize</span>
+                                          <button 
+                                            type="button" 
+                                            onClick={() => setOpenSubPanel(prev => ({ ...prev, [platform.id]: null }))}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#666' }}
+                                          >
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <line x1="18" y1="6" x2="6" y2="18" />
+                                              <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                          </button>
+                                        </div>
+
+                                        {/* Description */}
+                                        <div style={{ padding: '14px 18px', fontSize: '12.5px', color: '#666666', lineHeight: '1.45', textAlign: 'left', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                                          Draw attention or even redirect traffic to your most important link. Only one link can be prioritized at a time.
+                                        </div>
+
+                                        {/* Options */}
+                                        <div style={{ padding: '8px 0' }}>
+                                          
+                                          {/* Option 1: Animate */}
+                                          <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => handleUpdateLinkPrioritize(platform.id, 'animate', currentAnimationType)}>
+                                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                                <div style={{
+                                                  width: '18px',
+                                                  height: '18px',
+                                                  borderRadius: '50%',
+                                                  border: '2px solid ' + (currentPrioritizeType === 'animate' ? '#000000' : '#d1d1d6'),
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  marginTop: '2px',
+                                                  flexShrink: 0
+                                                }}>
+                                                  {currentPrioritizeType === 'animate' && (
+                                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000' }} />
+                                                  )}
+                                                </div>
+                                                <div style={{ textAlign: 'left' }}>
+                                                  <div style={{ fontWeight: '700', fontSize: '14px', color: '#1c1c1e' }}>Animate</div>
+                                                  <div style={{ fontSize: '11px', color: '#8e8e93', marginTop: '2px' }}>Apply a fun and engaging motion effect to this link.</div>
+                                                </div>
+                                              </div>
+                                              <div style={{
+                                                width: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: '#f2f2f7',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#8e8e93'
+                                              }}>
+                                                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                                  <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                              </div>
+                                            </div>
+
+                                            {/* Sub-options: Animation types */}
+                                            {currentPrioritizeType === 'animate' && (
+                                              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                                                {['buzz', 'wobble', 'pop', 'swipe'].map((anim) => {
+                                                  const isSelected = currentAnimationType === anim;
+                                                  return (
+                                                    <button
+                                                      key={anim}
+                                                      type="button"
+                                                      onClick={() => handleUpdateLinkPrioritize(platform.id, 'animate', anim)}
+                                                      style={{
+                                                        flex: 1,
+                                                        padding: '10px 4px',
+                                                        borderRadius: '8px',
+                                                        border: isSelected ? '1.5px solid #000000' : '1px solid #e5e5ea',
+                                                        background: '#ffffff',
+                                                        fontWeight: '700',
+                                                        fontSize: '10px',
+                                                        textTransform: 'uppercase',
+                                                        color: isSelected ? '#000000' : '#8e8e93',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s ease'
+                                                      }}
+                                                    >
+                                                      {anim}
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Option 2: Redirect */}
+                                          <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(0,0,0,0.03)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => handleUpdateLinkPrioritize(platform.id, 'redirect')}>
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                              <div style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                borderRadius: '50%',
+                                                border: '2px solid ' + (currentPrioritizeType === 'redirect' ? '#000000' : '#d1d1d6'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginTop: '2px',
+                                                flexShrink: 0
+                                              }}>
+                                                {currentPrioritizeType === 'redirect' && (
+                                                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000' }} />
+                                                )}
+                                              </div>
+                                              <div style={{ textAlign: 'left' }}>
+                                                <div style={{ fontWeight: '700', fontSize: '14px', color: '#1c1c1e' }}>Redirect</div>
+                                                <div style={{ fontSize: '11px', color: '#8e8e93', marginTop: '2px' }}>Temporarily send all visitors straight to this link instead of your Linktree. If a rule is configured to hide this link for some visitors, those visitors will not be redirected to this link.</div>
+                                              </div>
+                                            </div>
+                                            <div style={{
+                                              width: '24px',
+                                              height: '24px',
+                                              borderRadius: '50%',
+                                              background: '#f2f2f7',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              color: '#8e8e93'
+                                            }}>
+                                              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                              </svg>
+                                            </div>
+                                          </div>
+
+                                          {/* Option 3: Don't prioritize */}
+                                          <div style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => handleUpdateLinkPrioritize(platform.id, 'none')}>
+                                            <div style={{
+                                              width: '18px',
+                                              height: '18px',
+                                              borderRadius: '50%',
+                                              border: '2px solid ' + (currentPrioritizeType === 'none' ? '#000000' : '#d1d1d6'),
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              flexShrink: 0
+                                            }}>
+                                              {currentPrioritizeType === 'none' && (
+                                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000' }} />
+                                              )}
+                                            </div>
+                                            <div style={{ textAlign: 'left' }}>
+                                              <div style={{ fontWeight: '700', fontSize: '14px', color: '#1c1c1e' }}>Don't prioritize this link</div>
+                                            </div>
+                                          </div>
+
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+
+                                  return null;
+                                })()}
+                                 {savingLink === platform.id && (
+                                   <div style={{
+                                     position: 'absolute',
+                                     inset: 0,
+                                     background: 'rgba(255,255,255,0.7)',
+                                     backdropFilter: 'blur(3px)',
+                                     borderRadius: '20px',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     justifyContent: 'center',
+                                     zIndex: 5
+                                   }}>
+                                     <div className="dash-loading-spinner" style={{ width: '20px', height: '20px', border: '2.5px solid #000', borderTopColor: 'transparent' }} />
+                                   </div>
+                                 )}
+                               </div>
+                             );
+                          })}
+                        </div>
+
+                        {/* Get in Touch Section */}
+                        <div className="dash-profile-bio-section">
+                          <h3 className="dash-section-label">Get in Touch</h3>
+                          <div className="dash-contact-grid">
+                            <div className="dash-contact-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                <div className="dash-contact-icon">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                                </div>
+                                <div className="dash-contact-content">
+                                  <span className="dash-contact-label">Email</span>
+                                  <p className="dash-contact-value" style={{ margin: 0 }}>{artist.email || displayEmail || '—'}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 500 }}>Show</span>
+                                <PremiumToggle
+                                  checked={artist.showEmail !== false}
+                                  onChange={(e) => handleUpdateHeroField('showEmail', e.target.checked)}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="dash-contact-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', width: '100%', boxSizing: 'border-box' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                <div className="dash-contact-icon">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                                </div>
+                                <div className="dash-contact-content" style={{ flex: 1 }}>
+                                  <span className="dash-contact-label">Phone</span>
+                                  <div className="dash-hero-edit-row" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap' }}>
+                                    <PhoneINInput
+                                      wrapClassName="dash-hero-phone-in"
+                                      value={heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || '')}
+                                      onChange={(v) => setHeroUpdates((prev) => ({ ...prev, phone: v }))}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateHeroField('phone', heroUpdates.phone !== undefined ? heroUpdates.phone : (artist.phone || ''))}
+                                    >
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 500 }}>Show</span>
+                                <PremiumToggle
+                                  checked={artist.showPhone !== false}
+                                  onChange={(e) => handleUpdateHeroField('showPhone', e.target.checked)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── RIGHT: Live iframe Preview (desktop / laptop only) ── */}
+                      {!isMobileViewport && (
+                        <div className="dash-preview-panel">
+                          <div className="dash-full-preview-container">
+                            <iframe
+                              key={previewKey}
+                              title="Profile Preview"
+                              src={`${frontendBase}/artist/${artist.artistId}?no_redirect=1`}
+                              className="dash-preview-iframe"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </>
+            )
+          }
+          {artQrModal && (
+            <div
+              className="dash-qr-modal-overlay"
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000000, padding: '1.5rem', backdropFilter: 'blur(4px)' }}
+              onClick={() => setArtQrModal(null)}
+            >
+              <div
+                className="dash-qr-modal-card"
+                style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '380px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000' }}>{artQrModal.title}</h3>
+                  <button onClick={() => setArtQrModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#666' }}>✕</button>
+                </div>
+                <div style={{ padding: '2rem' }}>
+                  <img src={artQrModal.url} alt="QR" style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto', borderRadius: '12px' }} />
+                  <p style={{ marginTop: '1.25rem', fontSize: '0.9rem', color: '#666', lineHeight: 1.5 }}>Scan this code to visit the public page for this specific artwork.</p>
+                </div>
+                <div style={{ padding: '1.25rem', background: '#f9f9f9' }}>
+                  <a
+                    href={artQrModal.url}
+                    download={`qr-${artQrModal.title}.png`}
+                    style={{ display: 'block', background: '#000', color: '#fff', textDecoration: 'none', padding: '0.85rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.95rem' }}
+                  >
+                    Download QR Code
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mobileLinkEditPlatform && (
+            <div
+              className="dash-mobile-edit-overlay"
+              onClick={() => setMobileLinkEditPlatform(null)}
+            >
+              <div
+                className="dash-mobile-edit-modal"
+                aria-label={mobileLinkEditMode === 'title' ? `Edit ${mobileLinkEditLabel} Title` : `Edit ${mobileLinkEditLabel} Link`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="dash-mobile-edit-header">
+                  <div className="dash-mobile-edit-title">
+                    {mobileLinkEditMode === 'title' ? `Edit ${mobileLinkEditLabel} Title` : `Edit ${mobileLinkEditLabel} Link`}
+                  </div>
+                  <button
+                    type="button"
+                    className="dash-mobile-edit-close"
+                    onClick={() => setMobileLinkEditPlatform(null)}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="dash-mobile-edit-body">
+                  <input
+                    autoFocus
+                    className="dash-mobile-edit-input"
+                    value={mobileLinkEditValue}
+                    placeholder={
+                      mobileLinkEditMode === 'title' ? 'Enter title (e.g. My Instagram)' :
+                        mobileLinkEditPlatform === 'instagram' ? '@handle' :
+                          mobileLinkEditPlatform === 'whatsapp' ? 'Phone number' :
+                            'Enter URL / handle'
+                    }
+                    onChange={(e) => setMobileLinkEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setMobileLinkEditPlatform(null);
+                      if (e.key === 'Enter') saveMobileLinkField();
+                    }}
+                  />
+                  <div className="dash-mobile-edit-actions">
+                    <button
+                      type="button"
+                      className="dash-mobile-edit-btn ghost"
+                      onClick={() => setMobileLinkEditPlatform(null)}
+                      disabled={savingLink === mobileLinkEditPlatform}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="dash-mobile-edit-btn primary"
+                      onClick={saveMobileLinkField}
+                      disabled={savingLink === mobileLinkEditPlatform}
+                    >
+                      {savingLink === mobileLinkEditPlatform ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div >
+      </main >
+
+      {editingArtist && (
+        <div className="profile-edit-overlay" onClick={closeEdit}>
+          <div className="profile-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-edit-header">
+              <h3>Edit Profile</h3>
+              <button type="button" className="profile-edit-close" onClick={closeEdit} aria-label="Close">×</button>
+            </div>
+            <form onSubmit={handleSave} className="profile-edit-form">
+              <div className="profile-edit-body">
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Basic info</h4>
+                  <div className="profile-edit-field">
+                    <label>Name</label>
+                    <input name="name" value={formData.name} onChange={handleInputChange} required placeholder="Artist name" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Specialization</label>
+                    <input name="specialization" value={formData.specialization} onChange={handleInputChange} placeholder="e.g. Visual Artist" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Experience</label>
+                    <input name="experience" value={formData.experience} onChange={handleInputChange} placeholder="e.g. 2 years" />
+                  </div>
+                  <div className="profile-edit-field profile-edit-field-row">
+                    <div className="profile-edit-field">
+                      <label>City</label>
+                      <input name="city" value={formData.city || ''} onChange={handleInputChange} placeholder="e.g. Mumbai" />
+                    </div>
+                    <div className="profile-edit-field">
+                      <label>State</label>
+                      <input name="state" value={formData.state || ''} onChange={handleInputChange} placeholder="e.g. Maharashtra" />
+                    </div>
+                    <div className="profile-edit-field">
+                      <label>Country</label>
+                      <input value="India" readOnly disabled style={{ background: '#f5f5f5', color: '#888', cursor: 'not-allowed' }} />
+                    </div>
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Bio</label>
+                    <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={3} placeholder="Short bio" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Profile theme</label>
+                    <div className="theme-choices-row">
+                      {GENERAL_THEMES.map((theme) => (
+                        <button
+                          key={theme.id}
+                          type="button"
+                          className={`theme-pill ${formData.profileTheme === theme.id ? 'selected' : ''}`}
+                          onClick={() => setFormData((prev) => ({ ...prev, profileTheme: theme.id }))}
+                          style={formData.profileTheme === theme.id ? { background: theme.bg, color: theme.text } : {}}
+                        >
+                          <span className="theme-pill-label">{theme.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="profile-edit-field">
+                    <label>Profile font</label>
+                    <div className="theme-choices-row">
+                      {[
+                        { id: 'outfit', label: 'Outfit' },
+                        { id: 'playfair', label: 'Playfair Display' },
+                        { id: 'caveat', label: 'Caveat' },
+                        { id: 'mono-font', label: 'Roboto Mono' }
+                      ].map((fnt) => (
+                        <button
+                          key={fnt.id}
+                          type="button"
+                          className={`theme-pill ${formData.profileFont === fnt.id ? 'selected' : ''}`}
+                          onClick={() => setFormData((prev) => ({ ...prev, profileFont: fnt.id }))}
+                        >
+                          <style>{`
+                            .font-preview-${fnt.id} { font-family: ${fnt.id === 'playfair' ? "'Playfair Display', serif" :
+                              fnt.id === 'caveat' ? "'Caveat', cursive" :
+                                fnt.id === 'mono-font' ? "'Roboto Mono', monospace" :
+                                  "'Outfit', sans-serif"
+                            }; }
+                          `}</style>
+                          <span className={`theme-pill-label font-preview-${fnt.id}`}>{fnt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Photos</h4>
+                  <div className="profile-edit-field profile-edit-photo-field">
+                    <label>Profile photo</label>
+                    <div className="profile-edit-photo-box">
+                      {(formData.photo && !photoFile) && (
+                        <div className="profile-edit-photo-current">
+                          <img src={formData.photo} alt="" className="profile-edit-photo-preview" />
+                          <span className="profile-edit-photo-caption">Current</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="profile-edit-file-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistProfilePhotoInputRef.current) { artistProfilePhotoInputRef.current.value = ''; artistProfilePhotoInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistProfilePhotoInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 1, (file) => setPhotoFile(file))}
+                        />
+                        {photoFile ? 'New image chosen' : 'Choose photo'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="profile-edit-field profile-edit-photo-field">
+                    <label>Background photo</label>
+                    <div className="profile-edit-photo-box">
+                      {(formData.backgroundPhoto && !bgFile) && (
+                        <div className="profile-edit-photo-current">
+                          <img src={formData.backgroundPhoto} alt="" className="profile-edit-photo-preview profile-edit-bg-preview" />
+                          <span className="profile-edit-photo-caption">Current</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="profile-edit-file-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistBannerPhotoInputRef.current) { artistBannerPhotoInputRef.current.value = ''; artistBannerPhotoInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistBannerPhotoInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 16 / 9, (file) => setBgFile(file))}
+                        />
+                        {bgFile ? 'New image chosen' : 'Choose photo'}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Contact</h4>
+                  <div className="profile-edit-field">
+                    <label>Email</label>
+                    <input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="email@example.com" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Phone</label>
+                    <PhoneINInput
+                      value={formData.phone}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, phone: v }))}
+                    />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Website</label>
+                    <input name="website" type="url" value={formData.website} onChange={handleInputChange} placeholder="https://" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>WhatsApp</label>
+                    <PhoneINInput
+                      value={toINFullPhone(getINDisplayDigitsFromWhatsAppStored(formData.whatsapp))}
+                      onChange={(v) =>
+                        setFormData((prev) => ({ ...prev, whatsapp: toWhatsAppUrlFromINPhone(v) }))
+                      }
+                      placeholder="10-digit mobile"
+                    />
+                  </div>
+                </section>
+
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Social links</h4>
+                  <div className="profile-edit-field">
+                    <label>Instagram</label>
+                    <input name="instagram" value={formData.instagram} onChange={handleInputChange} placeholder="@handle" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Facebook</label>
+                    <input name="facebook" value={formData.facebook} onChange={handleInputChange} />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Twitter</label>
+                    <input name="twitter" value={formData.twitter} onChange={handleInputChange} placeholder="@handle" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>LinkedIn</label>
+                    <input name="linkedin" value={formData.linkedin} onChange={handleInputChange} />
+                  </div>
+                </section>
+
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Details</h4>
+                  <div className="profile-edit-field">
+                    <label>Artwork count</label>
+                    <input name="artworkCount" type="number" min={0} value={formData.artworkCount} onChange={handleInputChange} placeholder="0" />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Instagram name</label>
+                    <input name="instagramName" value={formData.instagramName} onChange={handleInputChange} />
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Instagram category</label>
+                    <input name="instagramCategory" value={formData.instagramCategory} onChange={handleInputChange} />
+                  </div>
+                  <div className="profile-edit-field profile-edit-field-row">
+                    <div className="profile-edit-field">
+                      <label>Instagram posts</label>
+                      <input name="instagramPosts" value={formData.instagramPosts} onChange={handleInputChange} />
+                    </div>
+                    <div className="profile-edit-field">
+                      <label>Followers</label>
+                      <input name="instagramFollowers" value={formData.instagramFollowers} onChange={handleInputChange} />
+                    </div>
+                    <div className="profile-edit-field">
+                      <label>Following</label>
+                      <input name="instagramFollowing" value={formData.instagramFollowing} onChange={handleInputChange} />
+                    </div>
+                  </div>
+                  <div className="profile-edit-field">
+                    <label>Instagram bio</label>
+                    <textarea name="instagramAccountBio" value={formData.instagramAccountBio} onChange={handleInputChange} rows={2} placeholder="Account bio" />
+                  </div>
+                </section>
+
+                <section className="profile-edit-section">
+                  <h4 className="profile-edit-section-title">Slideshow / Gallery</h4>
+                  <div className="profile-edit-gallery-wrap">
+                    {formData.gallery.length > 0 && (
+                      <ul className="profile-edit-gallery-list">
+                        {formData.gallery.map((item, idx) => (
+                          <li key={idx} className="profile-edit-gallery-item">
+                            <img src={item.url} alt="" className="profile-edit-gallery-thumb" />
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => setGalleryItemName(idx, e.target.value)}
+                              placeholder="Title"
+                              className="profile-edit-gallery-name"
+                            />
+                            <button type="button" onClick={() => removeGalleryItem(idx)} className="profile-edit-gallery-remove" aria-label="Remove">×</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="profile-edit-gallery-add">
+                      <input
+                        type="text"
+                        value={newGalleryName}
+                        onChange={(e) => setNewGalleryName(e.target.value)}
+                        placeholder="Slide title (optional)"
+                        className="profile-edit-gallery-name-in"
+                      />
+                      <button
+                        type="button"
+                        className="profile-edit-gallery-add-btn upload-trigger-btn"
+                        style={{ width: 'auto' }}
+                        onClick={() => { if (artistGalleryAddInputRef.current) { artistGalleryAddInputRef.current.value = ''; artistGalleryAddInputRef.current.click(); } }}
+                      >
+                        <input
+                          ref={artistGalleryAddInputRef}
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                          onChange={(e) => handlePickAndCrop(e, 2, (file) => setNewGalleryFile(file))}
+                        />
+                        {galleryUploading ? 'Uploading…' : (newGalleryFile ? 'Image ready' : 'Pick Image')}
+                      </button>
+                      <button type="button" onClick={addGalleryItem} disabled={!newGalleryFile || galleryUploading} className="profile-edit-gallery-add-btn">
+                        Add to slideshow
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div className="profile-edit-footer">
+                <button type="button" onClick={closeEdit}>Cancel</button>
+                <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Art Gallery Popup */}
+      {showArtGallery && myArtists[0] && (() => {
+        const artItems = myArtists[0].artLinks || [];
+        const selected = artGallerySelectedItem;
+        return (
+          <div className="art-gallery-overlay" onClick={() => { setShowArtGallery(false); setArtGallerySelectedItem(null); }}>
+            <div className="art-gallery-modal" onClick={e => e.stopPropagation()}>
+              <div className="art-gallery-header">
+                <h2>My Art Collection</h2>
+                <span className="art-gallery-count">{artItems.length} pieces</span>
+                <button className="art-gallery-close" onClick={() => { setShowArtGallery(false); setArtGallerySelectedItem(null); }}>✕</button>
+              </div>
+              <div className="art-gallery-scroll">
+                <div className="art-gallery-masonry">
+                  {artItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="art-gallery-card"
+                      onClick={() => setArtGallerySelectedItem(item)}
+                    >
+                      {item.images && item.images[0] ? (
+                        <img src={item.images[0]} alt={item.title} className="art-gallery-card-img" loading="lazy" />
+                      ) : (
+                        <div className="art-gallery-card-placeholder">
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(0,0,0,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.theme || 'Art'}</span>
+                        </div>
+                      )}
+                      <div className="art-gallery-card-info">
+                        <h4>{item.title}</h4>
+                        {item.description && <p>{item.description}</p>}
+                        <span className="art-gallery-card-theme">{item.theme}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {selected && (
+              <div className="art-lightbox-overlay" onClick={(e) => { e.stopPropagation(); setArtGallerySelectedItem(null); }}>
+                <div className="art-lightbox" onClick={e => e.stopPropagation()}>
+                  <button className="art-lightbox-close" onClick={() => setArtGallerySelectedItem(null)}>✕</button>
+                  <div className="art-lightbox-images">
+                    {(selected.images || []).slice(0, 3).map((img, i) => (
+                      <img key={i} src={img} alt={`${selected.title} ${i + 1}`} className="art-lightbox-img" />
+                    ))}
+                  </div>
+                  <div className="art-lightbox-info">
+                    <h3>{selected.title}</h3>
+                    {selected.description && <p>{selected.description}</p>}
+                    <span className="art-lightbox-theme">{selected.theme}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Platform Selector Modal */}
+      {
+        isSelectorOpen && (
+          <div className="dash-selector-overlay">
+            <div className="dash-selector-modal">
+              <div className="dash-selector-header">
+                <h3>Add Platforms</h3>
+                <p>Select multiple platforms to add them to your profile</p>
+              </div>
+              <div className="dash-selector-grid">
+                {ALL_PLATFORMS.map((p) => {
+                  const isActive = tempPlatforms.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`dash-selector-item ${isActive ? 'is-active' : ''}`}
+                      onClick={() => togglePlatformInSelector(p.id)}
+                    >
+                      <div className="dash-selector-icon">
+                        {getLinkIcon({ platform: p.id })}
+                      </div>
+                      <span className="dash-selector-label">{p.label}</span>
+                      {isActive && <div className="dash-selector-check">✓</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="dash-selector-actions">
+                <button
+                  type="button"
+                  className="dash-selector-btn-cancel"
+                  onClick={() => setIsSelectorOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="dash-selector-btn-done"
+                  onClick={handlePlatformDone}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Mobile-only bottom nav: Profile, Preview, Design — show on all tabs including Design */}
+      {isMobileViewport && (
+        <div className="dash-mobile-bottom-nav">
+          <div className="dash-mobile-bottom-nav-inner">
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'profiles' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('profiles')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c0-3.2 2.4-5.5 7-5.5s7 2.3 7 5.5" />
+                </svg>
+              </div>
+              <span>Profile</span>
+            </button>
+
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'preview' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('preview')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z" />
+                </svg>
+              </div>
+              <span>Preview</span>
+            </button>
+
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'link-art' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('link-art')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </div>
+              <span>Art</span>
+            </button>
+
+            <button
+              type="button"
+              className={`dash-mobile-bottom-btn ${activeTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
+              onClick={() => setActiveTab('design')}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </div>
+              <span>Design</span>
+            </button>
+            <button
+              type="button"
+              className="dash-mobile-bottom-btn"
+              onClick={handleLogout}
+            >
+              <div className="dash-mobile-bottom-btn-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 17l5-5-5-5" />
+                  <path d="M21 12H9" />
+                  <path d="M12 19a7 7 0 1 1 0-14" />
+                </svg>
+              </div>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {cropper.open && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+          <ImageCropperModal
+            image={cropper.image}
+            aspect={cropper.aspect}
+            onSave={cropper.onComplete}
+            onCancel={cropper.onCancel}
+          />
+        </div>
+      )}
+    </div >
+  );
+}
+
+export default Profile;
+

@@ -1,0 +1,957 @@
+  // General Profile: home dashboard (full sidebar layout like artist)
+  if (isLoggedIn && isGeneralMode && generalStep === 'home' && !generalProfileLoading && generalProfile) {
+    const gProfileLink = getProfileLink();
+    return (
+      <div className={`dash-root dash-theme-${dashTheme} dash-font-${dashFont} dash-tab-${generalActiveTab}`}>
+        {generalSuccess && (
+          <div className="profile-success-overlay" role="dialog" aria-live="polite" onClick={() => setGeneralSuccess('')}>
+            <div className="profile-success-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="profile-success-icon-wrap">
+                <svg className="profile-success-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+              <h2 className="profile-success-title">Saved</h2>
+              <p className="profile-success-message">{generalSuccess}</p>
+              <button type="button" className="profile-success-ok" onClick={() => setGeneralSuccess('')}>OK</button>
+            </div>
+          </div>
+        )}
+
+        <aside className="dash-sidebar">
+          <div className="dash-sidebar-brand">
+            <div className="dash-sidebar-top-avatar">
+              {generalProfile.photo
+                ? <img src={generalProfile.photo} alt={generalProfile.name} />
+                : user?.photoURL
+                  ? <img src={user.photoURL} alt={displayName} />
+                  : <span>{(generalProfile.name || displayName || '?')[0].toUpperCase()}</span>
+              }
+            </div>
+            <span className="dash-brand-email-main">{displayEmail}</span>
+          </div>
+
+          <nav className="dash-nav">
+            <div className="dash-nav-section">
+              <span className="dash-nav-label">Management</span>
+              <button className={`dash-nav-item ${generalActiveTab === 'profile' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('profile')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                General Profile
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'design' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('design')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                Design
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'links' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('links')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                Links
+              </button>
+              <button className={`dash-nav-item ${generalActiveTab === 'suggestions' ? 'dash-nav-active' : ''}`} onClick={() => setGeneralActiveTab('suggestions')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                What I Do
+              </button>
+            </div>
+          </nav>
+
+          <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            <button className="dash-sidebar-signout-btn" onClick={handleLogout}>
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        <main className="dash-main">
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
+              <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
+                {generalActiveTab === 'profile' ? 'General Profile' : generalActiveTab === 'design' ? 'Profile Design' : generalActiveTab === 'suggestions' ? 'What I Do' : 'Manage Links'}
+              </h1>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {generalActiveTab === 'profile' && (
+                  <div className="dash-profile-link-iconbar" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button
+                      type="button"
+                      className="dash-icon-pill"
+                      style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(gProfileLink);
+                        setLinkCopiedGeneral(true);
+                        setTimeout(() => setLinkCopiedGeneral(false), 2000);
+                      }}
+                      aria-label={linkCopiedGeneral ? 'Copied' : 'Copy profile link'}
+                    >
+                      {linkCopiedGeneral ? (
+                        <>
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                          <span style={{ fontSize: '0.7rem' }}>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                          <span style={{ fontSize: '0.7rem' }}>Copy</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      className="dash-icon-pill"
+                      style={{ height: '36px', minWidth: '36px', padding: '0 12px' }}
+                      href={gProfileLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label="Open profile link"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                      </svg>
+                      <span style={{ fontSize: '0.7rem' }}>Visit</span>
+                    </a>
+                  </div>
+                )}
+
+                {generalActiveTab === 'profile' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: profileChanged ? '#0070f3' : '#ffffff',
+                      color: profileChanged ? '#ffffff' : '#000000',
+                      border: profileChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: profileChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save Profile'}
+                  </button>
+                )}
+
+                {generalActiveTab === 'links' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: linksChanged ? '#0070f3' : '#ffffff',
+                      color: linksChanged ? '#ffffff' : '#000000',
+                      border: linksChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: linksChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save Links'}
+                  </button>
+                )}
+
+                {generalActiveTab === 'suggestions' && (
+                  <button
+                    onClick={handleGeneralSaveAll}
+                    disabled={generalSaving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      background: suggestionsChanged ? '#0070f3' : '#ffffff',
+                      color: suggestionsChanged ? '#ffffff' : '#000000',
+                      border: suggestionsChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                      cursor: generalSaving ? 'wait' : 'pointer',
+                      opacity: generalSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                      boxShadow: suggestionsChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {generalSaving ? '...' : 'Save What I Do'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
+              {generalActiveTab === 'profile'
+                ? 'Edit your personal information and profile details'
+                : generalActiveTab === 'design'
+                  ? 'Customize the visual theme and typography of your public page'
+                  : generalActiveTab === 'suggestions'
+                    ? 'Add up to 4 items showcasing what you do, with images, captions, and links'
+                    : 'Add and manage your links, social media, and more'}
+            </p>
+
+            {error && (
+              <div style={{ padding: '0.6rem 1rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '10px', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                {error}
+              </div>
+            )}
+            {generalSuccess && (
+              <div style={{ padding: '0.6rem 1rem', background: '#f0fdf4', color: '#166534', border: '1px solid #4ade80', borderRadius: '10px', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                {generalSuccess}
+              </div>
+            )}
+          </header>
+
+          <div className="dash-content">
+            {/* Profile Tab */}
+            {generalActiveTab === 'profile' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
+
+                  {/* Re-designed General Profile Hero (matches Artist style) */}
+                  <div className="dash-profile-hero" style={{ minHeight: 'auto', padding: '2rem', position: 'relative', overflow: 'visible', marginBottom: '40px' }}>
+                    {/* Banner Image Background */}
+                    {(generalForm.banner || generalBannerFile) && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `url(${generalBannerPreviewUrl || generalForm.banner})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        zIndex: 0
+                      }} />
+                    )}
+                    {/* Dark overlay if banner exists */}
+                    {(generalForm.banner || generalBannerFile) && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                        zIndex: 1
+                      }} />
+                    )}
+
+                    <div className="dash-profile-hero-content" style={{ alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                      <div className="dash-profile-hero-avatar" style={{ width: '110px', height: '110px', borderRadius: '0', marginBottom: '-40px', border: '4px solid #fff', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                        <button
+                          type="button"
+                          className="dash-avatar-trigger upload-trigger-btn"
+                          style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
+                          onClick={() => { if (genDashPhotoInputRef.current) { genDashPhotoInputRef.current.value = ''; genDashPhotoInputRef.current.click(); } }}
+                          aria-label="Change profile photo"
+                        >
+                          <input
+                            ref={genDashPhotoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                            style={{ display: 'none' }}
+                            onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                              setGeneralPhotoFile(file);
+                              handleGeneralPhotoSave(file);
+                            })}
+                          />
+                          {(generalForm.photo || generalPhotoFile) ? (
+                            <img src={generalPhotoPreviewUrl || generalForm.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>
+                              {(generalProfile.name || '?')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div className="dash-avatar-overlay">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" style={{ color: '#fff' }}>
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                              <circle cx="12" cy="13" r="4" />
+                            </svg>
+                          </div>
+                          {generalSaving && <div className="dash-avatar-uploading-spinner" style={{ position: 'absolute', inset: 0, border: '3px solid rgba(99, 102, 241, 0.4)', borderTopColor: '#6366f1', borderRadius: '0', animation: 'rotate 1s linear infinite' }} />}
+                        </button>
+                      </div>
+                      <div className="dash-profile-hero-info" style={{ marginTop: '45px', paddingTop: '5px' }}>
+                        <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px', lineHeight: '1.3', paddingBottom: '4px' }}>
+                          {generalProfile.name && generalProfile.name.length > 16
+                            ? generalProfile.name.substring(0, 16) + '..'
+                            : (generalProfile.name || 'Unnamed')}
+                        </h2>
+                        <p style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                          @{generalProfile.username}
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{
+                              padding: '10px 20px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
+                              color: '#fff',
+                              background: '#000',
+                              transition: 'all 0.2s ease',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              lineHeight: 1,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}
+                            onClick={() => { if (genDashChangePhotoInputRef.current) { genDashChangePhotoInputRef.current.value = ''; genDashChangePhotoInputRef.current.click(); } }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Photo
+                            <input
+                              ref={genDashChangePhotoInputRef}
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handlePickAndCrop(e, 1, (file) => {
+                                setGeneralPhotoFile(file);
+                                handleGeneralPhotoSave(file);
+                              })}
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="dash-icon-pill upload-trigger-btn"
+                            style={{
+                              padding: '10px 20px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
+                              color: '#fff',
+                              background: '#000',
+                              transition: 'all 0.2s ease',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              lineHeight: 1,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}
+                            onClick={() => { if (genDashBannerInputRef.current) { genDashBannerInputRef.current.value = ''; genDashBannerInputRef.current.click(); } }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Change Banner
+                            <input
+                              ref={genDashBannerInputRef}
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/avif,image/heic,image/heif,image/svg+xml"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handlePickAndCrop(e, 25 / 7, (file) => {
+                                setGeneralBannerFile(file);
+                                handleGeneralBannerSave(file);
+                              })}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1.25rem' }}>
+                    {[
+                      { key: 'name', label: 'Display Name', placeholder: 'Your full name', type: 'text' },
+                      { key: 'username', label: 'Username', placeholder: 'your_username', type: 'text', disabled: true },
+                      { key: 'title', label: 'Title / Tagline', placeholder: 'e.g. Company Owner, Digital Creator', type: 'text' },
+                      { key: 'bio', label: 'Bio', placeholder: 'Tell people about yourself...', type: 'textarea' }
+                    ].map(field => (
+                      <div key={field.key} style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{field.label}</label>
+                        {field.type === 'textarea' ? (
+                          <textarea
+                            value={generalForm[field.key] || ''}
+                            onChange={(e) => {
+                              setProfileChanged(true);
+                              setGeneralForm(prev => ({ ...prev, [field.key]: e.target.value }));
+                            }}
+                            placeholder={field.placeholder}
+                            rows={3}
+                            style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={generalForm[field.key] || ''}
+                            onChange={(e) => {
+                              if (!field.disabled) {
+                                setProfileChanged(true);
+                                setGeneralForm(prev => ({ ...prev, [field.key]: field.key === 'username' ? e.target.value.toLowerCase().replace(/\s+/g, '_') : e.target.value }));
+                              }
+                            }}
+                            placeholder={field.placeholder}
+                            disabled={field.disabled}
+                            style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: field.disabled ? 'var(--dash-border)' : 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box', opacity: field.disabled ? 0.6 : 1 }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1.25rem', marginTop: '1.25rem' }}>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Phone</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--dash-subtext)', fontWeight: 500 }}>Show on Profile</span>
+                          <PremiumToggle
+                            checked={generalForm.showPhone !== false}
+                            onChange={(e) => {
+                              setProfileChanged(true);
+                              setGeneralForm(prev => ({ ...prev, showPhone: e.target.checked }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                          <PhoneINInput
+                            wrapClassName="dash-hero-phone-in"
+                            value={generalForm.phone || ''}
+                            onChange={(v) => setGeneralForm(prev => ({ ...prev, phone: v }))}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleGeneralSaveAll}
+                          disabled={generalSaving}
+                          style={{
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '12px',
+                            border: 'none',
+                            background: '#4f46e5',
+                            color: '#fff',
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            height: '52px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#4338ca'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#4f46e5'}
+                        >
+                          {generalSaving ? '...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Email</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--dash-subtext)', fontWeight: 500 }}>Show on Profile</span>
+                          <PremiumToggle
+                            checked={generalForm.showEmail !== false}
+                            onChange={(e) => {
+                              setProfileChanged(true);
+                              setGeneralForm(prev => ({ ...prev, showEmail: e.target.checked }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--dash-text)', fontWeight: 600, wordBreak: 'break-word' }}>
+                        {generalForm.email || displayEmail || '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-${generalProfile.username}-${generalProfile.theme}-${previewKey}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+
+            {/* Design Tab */}
+            {generalActiveTab === 'design' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {/* Toggle between Theme / Font for General profile */}
+                  <div className="dash-design-subnav">
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${generalDesignSubTab === 'theme' ? 'active' : ''}`}
+                      onClick={() => setGeneralDesignSubTab('theme')}
+                    >
+                      <span className="dash-design-subnav-icon">🎨</span>
+                      <span>Theme</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dash-design-subnav-btn ${generalDesignSubTab === 'font' ? 'active' : ''}`}
+                      onClick={() => setGeneralDesignSubTab('font')}
+                    >
+                      <span className="dash-design-subnav-icon">Aa</span>
+                      <span>Font</span>
+                    </button>
+                  </div>
+
+                  {generalDesignSubTab === 'theme' && (
+                    <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a look for your public page</p>
+                      <div className="dash-design-grid dash-themes-grid">
+                        {GENERAL_THEMES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setGeneralForm(prev => ({ ...prev, theme: t.id }));
+                              handleGeneralFieldSave('theme', t.id);
+                            }}
+                            className={`dash-design-card ${generalProfile.theme === t.id ? 'active' : ''}`}
+                            style={{
+                              border: '2px solid ' + (generalProfile.theme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
+                              boxShadow: generalProfile.theme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                          >
+                            <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
+                            <h3 className="dash-design-card-label">{t.label}</h3>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {generalDesignSubTab === 'font' && (
+                    <section className="dash-design-section">
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Typography</h2>
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select a font that matches your style</p>
+                      <div className="dash-design-grid dash-fonts-grid">
+                        {AVAILABLE_FONTS.map(f => (
+                          <button
+                            key={`gf-${f.id}`}
+                            onClick={() => {
+                              setGeneralForm(prev => ({ ...prev, font: f.id }));
+                              handleGeneralFieldSave('font', f.id);
+                            }}
+                            className={`dash-design-card ${generalProfile.font === f.id ? 'active' : ''}`}
+                            style={{ border: '2px solid ' + (generalProfile.font === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
+                          >
+                            <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
+                            <h3 className="dash-design-card-label">{f.label}</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-design-${generalProfile.theme}-${generalProfile.font}-${previewKey}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Links Tab */}
+            {generalActiveTab === 'links' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                  {error && <div className="profile-error-msg" style={{ marginBottom: '1rem' }}>{error}</div>}
+
+                  <section style={{ marginBottom: '2.5rem' }}>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                      {generalForm.links.map((link, idx) => (
+                        <div
+                          key={idx}
+                          className="profile-general-link-card"
+                          style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            alignItems: 'flex-start',
+                            padding: '1rem 1.25rem',
+                            background: 'var(--dash-bg-card)',
+                            borderRadius: '14px',
+                            border: '1px solid var(--dash-border)',
+                            position: 'relative',
+                            marginLeft: '0',
+                            marginRight: 'auto'
+                          }}
+                        >
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
+                              <input
+                                placeholder="Title (e.g. My Website)"
+                                value={link.title || ''}
+                                onChange={(e) => updateLink(idx, 'title', e.target.value)}
+                                style={{ flex: 1, padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.9rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                              />
+                            </div>
+                            <input
+                              placeholder="https://..."
+                              value={link.url || ''}
+                              onChange={(e) => updateLink(idx, 'url', e.target.value)}
+                              style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.9rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="profile-general-link-remove"
+                            onClick={() => removeLink(idx)}
+                            style={{
+                              position: 'absolute',
+                              top: '-10px',
+                              right: '-10px',
+                              background: 'transparent',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '999px',
+                              width: '30px',
+                              height: '30px',
+                              cursor: 'pointer',
+                              fontSize: '1.05rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              fontWeight: 700,
+                              lineHeight: 1,
+                              boxShadow: 'none',
+                              outline: 'none'
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addLink}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '12px',
+                        border: '2px dashed var(--dash-border)',
+                        background: 'transparent',
+                        color: 'var(--dash-accent)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        width: '100%',
+                        maxWidth: '380px',
+                        marginLeft: '0',
+                        marginRight: 'auto'
+                      }}
+                    >
+                      + Add Link
+                    </button>
+                  </section>
+
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-links-${generalProfile.username}-${previewKey}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Suggestions Tab */}
+            {generalActiveTab === 'suggestions' && (
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+
+                  <section style={{ marginBottom: '2.5rem' }}>
+                    <div style={{ background: 'var(--dash-bg-card)', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--dash-border)', marginBottom: '1.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--dash-subtext)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Section Title</label>
+                      <input
+                        type="text"
+                        value={generalForm.suggestionsTitle || ''}
+                        onChange={(e) => {
+                          setSuggestionsChanged(true);
+                          setGeneralForm(prev => ({ ...prev, suggestionsTitle: e.target.value }));
+                        }}
+                        placeholder="What I Do"
+                        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.95rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                      {generalForm.suggestions.map((sug, idx) => (
+                        <div
+                          key={idx}
+                          className="profile-general-suggestion-card"
+                          style={{
+                            background: 'var(--dash-bg-card)',
+                            padding: '0.85rem',
+                            borderRadius: '16px',
+                            border: '1px solid var(--dash-border)',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{ marginBottom: '0.75rem' }}>
+                            <div
+                              onClick={() => document.getElementById(`suggestion-file-${idx}`).click()}
+                              style={{
+                                width: '100%',
+                                aspectRatio: '1',
+                                borderRadius: '12px',
+                                background: 'var(--dash-bg)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                overflow: 'hidden',
+                                border: '1.5px dashed var(--dash-border)'
+                              }}
+                            >
+                              {sug.url ? (
+                                <img src={sug.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <span style={{ color: 'var(--dash-subtext)', fontSize: '0.85rem' }}>+ Add Image</span>
+                              )}
+                            </div>
+                            <input
+                              id={`suggestion-file-${idx}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) handleSuggestionImageUpload(idx, e.target.files[0]);
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <input
+                              placeholder="Caption (e.g. My Latest Work)"
+                              value={sug.caption || ''}
+                              onChange={(e) => updateSuggestion(idx, 'caption', e.target.value)}
+                              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.85rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                            <input
+                              placeholder="Link (https://...)"
+                              value={sug.link || ''}
+                              onChange={(e) => updateSuggestion(idx, 'link', e.target.value)}
+                              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '10px', border: '1.5px solid var(--dash-border)', fontSize: '0.85rem', background: 'var(--dash-bg)', color: 'var(--dash-text)', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeSuggestion(idx)}
+                            style={{
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: 'rgba(0,0,0,0.5)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '24px',
+                              height: '24px',
+                              minWidth: '24px',
+                              cursor: 'pointer',
+                              display: 'grid',
+                              placeItems: 'center',
+                              fontSize: '12px',
+                              padding: 0,
+                              lineHeight: 1
+                            }}
+                          >✕</button>
+                        </div>
+                      ))}
+
+                      {generalForm.suggestions.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={addSuggestion}
+                          style={{
+                            aspectRatio: '1',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            background: 'transparent',
+                            borderRadius: '16px',
+                            border: '2px dashed var(--dash-border)',
+                            color: 'var(--dash-accent)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          <span style={{ fontSize: '1.2rem' }}>+</span>
+                          <span>Add Suggestion</span>
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                </div>
+
+                {!isMobileViewport && (
+                  <div className="dash-preview-panel">
+                    <div className="dash-full-preview-container">
+                      <iframe
+                        key={`gp-suggestions-${previewKey}`}
+                        title="General Profile Preview"
+                        src={gProfileLink}
+                        className="dash-preview-iframe"
+
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+
+
+            {/* Preview Tab */}
+            {generalActiveTab === 'preview' && (
+              <div className="dash-mobile-preview-page">
+                <div className="dash-mobile-preview-frame-wrap">
+                  <iframe
+                    key={`gp-preview-${generalProfile.username}-${generalProfile.theme}-${previewKey}`}
+                    title="General Profile Preview"
+                    src={gProfileLink}
+                    className="dash-mobile-preview-iframe"
+
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Mobile bottom nav — same style as Artist dashboard (centered pill) */}
+        {isMobileViewport && (
+          <div className="dash-mobile-bottom-nav">
+            <div className="dash-mobile-bottom-nav-inner">
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'profile' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('profile')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 20c0-3.2 2.4-5.5 7-5.5s7 2.3 7 5.5" />
+                  </svg>
+                </div>
+                <span>Profile</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('design')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </div>
+                <span>Design</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'links' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('links')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                </div>
+                <span>Links</span>
+              </button>
+              <button
+                type="button"
+                className={`dash-mobile-bottom-btn ${generalActiveTab === 'suggestions' ? 'dash-mobile-bottom-btn-active' : ''}`}
+                onClick={() => setGeneralActiveTab('suggestions')}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <span>Suggestions</span>
+              </button>
+              <button
+                type="button"
+                className="dash-mobile-bottom-btn"
+                onClick={handleLogout}
+              >
+                <div className="dash-mobile-bottom-btn-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 17l5-5-5-5" />
+                    <path d="M21 12H9" />
+                    <path d="M12 19a7 7 0 1 1 0-14" />
+                  </svg>
+                </div>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        )}
+        {cropper.open && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }

@@ -1,0 +1,931 @@
+.dash-link-card--inline .dash-link-inline-input {
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 999px !important;
+  min-height: 0 !important;
+  width: 100%;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-link-card,
+.dash-link-inline-input {
+  background: #ffffff !important;
+}
+
+.dash-link-card-main,
+.dash-profile-hero-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dash-link-card.dash-link-card,
+.dash-link-card--inline.dash-link-card--inline,
+.dash-profile-hero.dash-profile-hero,
+.dash-profile-bio-section.dash-profile-bio-section,
+.dash-info-card.dash-info-card {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Fix for invisible text in Bio textarea */
+.dash-profile-bio-section .dash-hero-inline-textarea,
+.dash-hero-inline-textarea {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: rgba(192, 132, 252, 0.6) !important;
+}
+
+.dash-link-card--inline .dash-link-icon-circle {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 10px !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-link-title,
+.dash-link-save-btn {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.dash-link-save-btn.active {
+  color: #2563eb !important;
+}
+
+.dash-link-card--inline .dash-link-icon-circle svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.dash-link-card--inline .dash-link-controls {
+  gap: 0.35rem !important;
+  flex-shrink: 0;
+  margin-top: 0 !important;
+}
+
+.dash-link-card--inline .dash-link-remove-icon-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  margin-right: 0 !important;
+}
+
+/* Banner / cover upload: dim preview + hero until live page catches up */
+.dash-mobile-preview-frame-wrap--relative,
+.dash-design-mobile-preview-wrap--relative {
+  position: relative;
+}
+
+.dash-preview-sync-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: inherit;
+  pointer-events: auto;
+}
+
+.dash-profile-hero>.dash-preview-sync-overlay {
+  border-radius: 24px;
+}
+
+.dash-preview-sync-overlay__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  max-width: 14rem;
+  pointer-events: none;
+}
+
+.dash-preview-sync-overlay__text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+}
+
+.dash-preview-sync-overlay__hint {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(248, 250, 252, 0.72);
+  line-height: 1.4;
+}
+
+
+/* Artist Profile: Custom Layout for Profile Pic and Text 
+   - Move profile pic to the left side
+   - Position name/tag directly next to the pic with minimal gap
+   - Name starts below the banner level
+*/
+/* Desktop/Table: Row layout with circle next to name */
+@media (min-width: 481px) {
+
+  .gp-artist-themed-card .gp-avatar-row,
+  .gp-student-themed-card .gp-avatar-row {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    padding: 0 1.5rem 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  .gp-artist-themed-card .gp-avatar-text,
+  .gp-student-themed-card .gp-avatar-text {
+    margin-top: 60px !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+  }
+
+  .gp-artist-themed-card .gp-name,
+  .gp-student-themed-card .gp-name {
+    text-align: left !important;
+  }
+}
+
+/* Base/Mobile behavior: ensure centered and aligned */
+.gp-artist-themed-card .gp-avatar-row,
+.gp-student-themed-card .gp-avatar-row {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  margin-top: -60px !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.gp-artist-themed-card .gp-avatar-text,
+.gp-student-themed-card .gp-avatar-text {
+  position: static !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  margin-top: 0.75rem !important;
+  padding: 12px !important;
+  margin-left: 0 !important;
+  pointer-events: auto !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-radius: 20px !important;
+}
+
+.gp-photo-overlay {
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+}
+
+/* Stylize the name - aligned left close to pic with multi-line truncation */
+.gp-artist-themed-card .gp-name,
+.gp-student-themed-card .gp-name {
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+  margin: 0 0 0.15rem 0 !important;
+  text-shadow: none !important;
+  display: -webkit-box !important;
+  line-clamp: 2 !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  width: 100% !important;
+  text-align: center !important;
+  color: #0f172a !important;
+  max-width: 100% !important;
+}
+
+/* 2. Redesigned Specialization + Experience Badge (Uiverse-inspired) */
+.gp-artist-badge-wrapper {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  max-width: 100%;
+}
+
+.Btn {
+  min-width: 140px;
+  width: fit-content;
+  max-width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: stretch;
+  /* Stretch children to full height exactly */
+  justify-content: flex-start;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--artist-glass-pill-border, rgba(255, 255, 255, 0.18)), 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: default;
+  background-color: transparent;
+  font-family: inherit;
+  position: relative;
+  isolation: isolate;
+  /* Ultimate clip fix for Chrome/Safari rounded corners with backdrop-filter */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  font-variant-numeric: lining-nums;
+}
+
+.leftContainer {
+  padding: 0 0.95rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0f172a !important;
+  z-index: 2;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.leftContainer .like {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  /* Limit badge text width */
+}
+
+.likeCount {
+  padding: 0 0.8rem 0 1rem;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a !important;
+  font-weight: 700;
+  font-size: 0.68rem;
+  position: relative;
+  background-color: #f1f5f9 !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.likeCount::before {
+  height: 10px;
+  width: 10px;
+  position: absolute;
+  content: "";
+  background-color: #0f172a !important;
+  transform: rotate(45deg);
+  left: -5px;
+  z-index: 1;
+}
+
+/* Hover effect only if there's interaction, but these are tags */
+/* .Btn:hover .leftContainer { background-color: rgb(219, 0, 0); } */
+
+.dash-nav-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 1px solid transparent !important;
+}
+
+.dash-nav-item:hover:not(.dash-nav-active) {
+  background: rgba(37, 99, 235, 0.05) !important;
+  border-color: rgba(37, 99, 235, 0.1) !important;
+  color: #2563eb !important;
+  transform: translateX(4px);
+}
+
+.dash-nav-item.dash-nav-active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25) !important;
+  border: none !important;
+  transform: translateX(2px);
+}
+
+.dash-nav-item.dash-nav-active svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dash-nav-item.dash-nav-active span {
+  color: #ffffff !important;
+}
+
+/* Top-right Profile Actions Bar */
+.dash-profile-link-iconbar {
+  display: flex !important;
+  gap: 0.85rem !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill {
+  height: 40px !important;
+  padding: 0 1.25rem !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  border: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill:hover {
+  background: #1e293b !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15) !important;
+}
+
+.dash-profile-link-iconbar .dash-icon-pill svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2.5px !important;
+}
+
+@media (max-width: 768px) {
+  .dash-main-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1.25rem !important;
+    padding: 1.5rem !important;
+  }
+
+  .dash-profile-link-iconbar {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .dash-profile-link-iconbar .dash-icon-pill {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+}
+
+/* Premium Theme/Font Toggle - Minimalist Light Version */
+.dash-premium-toggle-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  /* Align to left */
+  width: 100% !important;
+  margin-bottom: 2rem !important;
+  margin-top: 1rem !important;
+}
+
+.dash-premium-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.35rem !important;
+  background: #f1f5f9 !important;
+  /* Light slate background */
+  border-radius: 14px !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-premium-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.65rem 1.5rem !important;
+  border: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  /* Muted slate text */
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dash-premium-toggle-btn:hover:not(.active) {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-premium-toggle-btn.active {
+  background: #ffffff !important;
+  /* White active state */
+  color: #2563eb !important;
+  /* Primary blue text */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-premium-toggle-btn .toggle-icon {
+  font-size: 1.1rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-premium-toggle {
+    width: 100% !important;
+    display: flex !important;
+  }
+
+  .dash-premium-toggle-btn {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 0.85rem 0.5rem !important;
+  }
+}
+
+.dash-design-section,
+.dash-design-grid,
+.dash-themes-grid,
+.dash-fonts-grid,
+.dash-design-mobile-body,
+.dash-profile-layout,
+.dash-single-profile {
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: 100% !important;
+}
+
+.dash-design-mobile-header,
+.dash-design-mobile-sheet {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dash-theme-indicator {
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  height: 48px !important;
+  width: 48px !important;
+  margin: 0 auto 1.25rem !important;
+  border-radius: 50% !important;
+  transition: transform 0.3s ease !important;
+}
+
+.dash-design-card:hover .dash-theme-indicator {
+  transform: scale(1.1);
+}
+
+.dash-design-card {
+  padding: 1rem !important;
+  justify-content: center !important;
+  min-height: 110px !important;
+  max-width: 180px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.dash-themes-grid,
+.dash-fonts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 1.25rem !important;
+  max-width: 100% !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  justify-items: center !important;
+}
+
+.dash-theme-indicator {
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+  height: 40px !important;
+  width: 40px !important;
+  margin: 0 auto 1rem !important;
+  border-radius: 50% !important;
+}
+
+@media (max-width: 580px) {
+  .dash-themes-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.85rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .dash-design-card {
+    max-width: none !important;
+    padding: 0.85rem 0.5rem !important;
+    min-height: 90px !important;
+  }
+
+  .dash-theme-indicator {
+    margin-bottom: 0.6rem !important;
+    height: 36px !important;
+    width: 36px !important;
+  }
+
+  .dash-design-card-label {
+    font-size: 0.8rem !important;
+  }
+}
+
+
+.dash-root .dash-design-section h2,
+.dash-root .dash-design-section h3,
+.dash-root .dash-design-section p,
+.dash-root .dash-main-title,
+.dash-root .dash-main-subtitle {
+  color: #0f172a !important;
+  background: transparent !important;
+}
+
+.dash-root .dash-design-card-label {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.dash-root .dash-design-mobile-header h2,
+.dash-root .dash-design-mobile-header p {
+  color: #0f172a !important;
+}
+
+/* Sidebar user footer: light theme adjustment */
+/* Desktop layout adjustment - centered if name is centered */
+@media (min-width: 769px) {
+  .gp-artist-badge-wrapper {
+    justify-content: flex-start;
+  }
+}
+
+/* Redesigned specialization tag: Hide the old one */
+.gp-artist-themed-card .gp-title-overlay,
+.gp-student-themed-card .gp-title-overlay {
+  display: none !important;
+}
+
+/* Hidden artist ID/Username as it's not necessary */
+.gp-artist-themed-card .gp-username {
+  display: none !important;
+}
+
+/* Dramatically reduce section spacing for artist profiles */
+.gp-artist-themed-card .gp-section {
+  padding-top: 0.15rem !important;
+}
+
+/* Hide the pagination dots for the gallery/events slideshow */
+.gp-artist-themed-card .gp-events-dots {
+  display: none !important;
+}
+
+/* 2. Profile Pic on the left side, keeping vertical overlap */
+.gp-artist-themed-card .gp-avatar-circle {
+  align-self: flex-start !important;
+  margin: 0 !important;
+  width: 110px !important;
+  height: 110px !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
+  background: #f1f5f9 !important;
+  flex-shrink: 0 !important;
+  z-index: 15 !important;
+}
+
+/* Reduce banner height for artist profiles */
+.gp-artist-themed-card .gp-cover-img {
+  height: 170px !important;
+}
+
+@media (max-width: 420px) {
+  .gp-artist-themed-card .gp-cover-img {
+    height: 150px !important;
+  }
+
+  .gp-artist-themed-card .gp-avatar-row {
+    margin-top: -55px !important;
+    /* Adjust overlap for shorter banner */
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    gap: 0.6rem !important;
+  }
+
+  .gp-artist-themed-card .gp-name {
+    font-size: 1.6rem !important;
+  }
+
+  .gp-artist-themed-card .gp-avatar-circle {
+    width: 95px !important;
+    height: 95px !important;
+  }
+
+  .gp-artist-themed-card .gp-avatar-text {
+    margin-top: 55px !important;
+    /* Match mobile overlap */
+  }
+
+  /* Reduce gap between profile header and bio sections for artist profiles */
+  .gp-artist-themed-card .gp-section {
+    padding-top: 0.15rem !important;
+  }
+}
+
+/* --- ADD PLATFORMS MODAL LIGHT THEME FIX --- */
+.dash-selector-overlay {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dash-selector-modal {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+.dash-selector-header h3 {
+  color: #0f172a !important;
+}
+
+.dash-selector-header p {
+  color: #64748b !important;
+}
+
+.dash-selector-item {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #334155 !important;
+}
+
+.dash-selector-item:hover {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.dash-selector-item.is-active {
+  background: #f1f5f9 !important;
+  border-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+.dash-selector-label {
+  color: #334155 !important;
+}
+
+.dash-selector-item.is-active .dash-selector-label {
+  color: #0f172a !important;
+}
+
+.dash-selector-check {
+  color: #0f172a !important;
+}
+
+.dash-selector-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.dash-selector-btn-cancel {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #334155 !important;
+}
+
+.dash-selector-btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+/* --- LAPTOP PREVIEW ENHANCEMENT --- */
+.dash-preview-panel {
+  background: #ffffff !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+  width: 520px !important;
+}
+
+.dash-full-preview-container {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #ffffff !important;
+}
+
+.dash-preview-iframe {
+  min-height: 100% !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+}
+
+.dash-preview-panel {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+}
+
+.onboarding-field-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  font-weight: 500;
+  display: block;
+}
+
+.onboarding-suggestions {
+  margin-top: 0.2rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.onboarding-suggestions span {
+  color: #6b7280;
+  margin-right: 2px;
+}
+
+.onboarding-suggestion-btn {
+  width: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 3px 10px !important;
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block !important;
+  line-height: 1.4 !important;
+}
+
+.onboarding-suggestion-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #9ca3af !important;
+}
+
+@media (max-width: 768px) {
+
+  .dash-section-header,
+  .dash-art-header {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Art Showcase Layout Fixes */
+.dash-art-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+  gap: 1.25rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-art-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.dash-art-add-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-bottom: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-art-add-card {
+    padding: 0 !important;
+  }
+}
+
+/* Ensure perfect vertical alignment for all dashboard sections, forms, grids, and list rows */
+.dash-art-add-card,
+.dash-art-header,
+.dash-art-grid,
+.dash-what-i-do-item-row,
+.profile-general-link-card,
+.profile-general-suggestion-card {
+  margin-left: 2rem !important;
+  margin-right: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .dash-art-add-card,
+  .dash-art-header,
+  .dash-art-grid,
+  .dash-what-i-do-item-row,
+  .profile-general-link-card,
+  .profile-general-suggestion-card {
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+  }
+}
+
+/* --- REMOVE CONTAINER BORDERS & BACKGROUNDS AROUND DASHBOARD SECTIONS --- */
+.dash-root .dash-profile-hero,
+.dash-root .dash-profile-bio-section,
+.dash-profile-hero,
+.dash-profile-bio-section {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 1.5rem 2rem !important; /* Indent by 2rem to align perfectly with Links and Gallery on desktop */
+}
+
+@media (max-width: 768px) {
+  .dash-root .dash-profile-hero,
+  .dash-root .dash-profile-bio-section,
+  .dash-profile-hero,
+  .dash-profile-bio-section {
+    padding: 1.25rem 1rem !important; /* Indent by 1rem on mobile to align with headers */
+  }
+}
+
+/* Eliminate top gap from the hero banner container and center the avatar and info elements */
+.dash-root .dash-profile-hero,
+.dash-profile-hero {
+  min-height: auto !important;
+  aspect-ratio: auto !important;
+}
+
+.dash-root .dash-profile-hero-content,
+.dash-profile-hero-content {
+  align-items: center !important;
+}
+
+/* Also remove background/borders around the editable artist name container to keep it completely flat and clean */
+.dash-root .dash-profile-hero-name,
+.dash-profile-hero-name {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Remove separate containers around general link cards, suggestion cards, what-i-do list rows, and contact items to keep them flat and elegant */
+.profile-general-link-card,
+.profile-general-suggestion-card,
+.dash-what-i-do-item-row,
+.dash-contact-item {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 1rem 0 !important;
+}
+
+.dash-what-i-do-item-row:last-child,
+.dash-contact-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Hover effects for Linktree-style dashboard cards */
+.dash-link-action-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #1d4ed8 !important;
+}
+
+.dash-link-delete-trash-btn {
+  transition: color 0.2s ease !important;
+}
+
+.dash-link-delete-trash-btn:hover {
+  color: #ef4444 !important;
+}
+
+

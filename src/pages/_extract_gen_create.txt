@@ -1,0 +1,282 @@
+  // General Profile: create form (first-time setup only)
+  if (isLoggedIn && isGeneralMode && (generalStep === 'create') && !generalProfileLoading) {
+    return (
+      <div className="profile-page profile-view-wrap">
+        <div className="profile-view-card profile-view-card-wide profile-general-card">
+          <div className="profile-view-header profile-edit-view-header">
+            <h1 className="profile-edit-main-title">Create your profile</h1>
+          </div>
+          {generalSuccess && (
+            <div className="profile-success-overlay" role="dialog" aria-labelledby="profile-success-title" aria-live="polite" onClick={() => setGeneralSuccess('')}>
+              <div className="profile-success-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="profile-success-icon-wrap">
+                  <svg className="profile-success-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h2 id="profile-success-title" className="profile-success-title">Success</h2>
+                <p className="profile-success-message">Your profile has been created successfully.</p>
+                <button type="button" className="profile-success-ok" onClick={() => setGeneralSuccess('')}>OK</button>
+              </div>
+            </div>
+          )}
+          <form onSubmit={handleGeneralCreate} className="profile-edit-form">
+            {error && <div className="profile-error-msg">{error}</div>}
+            <div className="profile-edit-body">
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Theme</h4>
+                <div className="profile-edit-theme-grid">
+                  {GENERAL_THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`profile-edit-theme-btn ${generalForm.theme === t.id ? 'selected' : ''}`}
+                      onClick={() => setGeneralForm(prev => ({ ...prev, theme: t.id }))}
+                      style={{ background: t.bg, color: t.text }}
+                      title={t.label}
+                    >
+                      <span className="profile-edit-theme-label">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Font</h4>
+                <div className="theme-choices-row" style={{ marginTop: '0.5rem' }}>
+                  {AVAILABLE_FONTS.slice(0, 4).map((fnt) => (
+                    <button
+                      key={fnt.id}
+                      type="button"
+                      className={`theme-pill ${generalForm.font === fnt.id ? 'selected' : ''}`}
+                      onClick={() => setGeneralForm(prev => ({ ...prev, font: fnt.id }))}
+                    >
+                      <span className="theme-pill-label" style={{ fontFamily: resolveFontFamily(fnt.id) }}>{fnt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="profile-edit-field">
+                <label>Username (for your link)</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    name="username"
+                    value={generalForm.username}
+                    style={{
+                      paddingRight: '2.5rem',
+                      borderColor: usernameCheck.status === 'available' ? '#10b981' : usernameCheck.status === 'taken' || usernameCheck.status === 'invalid' ? '#ef4444' : undefined
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                      setGeneralForm(prev => ({ ...prev, username: val }));
+                      clearTimeout(usernameCheckTimer.current);
+                      if (!val || val.length < 3) {
+                        setUsernameCheck(val ? { status: 'invalid', msg: 'At least 3 characters' } : { status: 'idle', msg: '' });
+                        return;
+                      }
+                      if (val === generalProfile?.username) {
+                        setUsernameCheck({ status: 'available', msg: 'Current username' });
+                        return;
+                      }
+                      setUsernameCheck({ status: 'checking', msg: '' });
+                      usernameCheckTimer.current = setTimeout(async () => {
+                        try {
+                          await generalProfileAPI.getByUsername(val);
+                          setUsernameCheck({ status: 'taken', msg: 'Username already taken' });
+                        } catch {
+                          setUsernameCheck({ status: 'available', msg: 'Available!' });
+                        }
+                      }, 500);
+                    }}
+                    placeholder="myprofile"
+                    required
+                  />
+                  {usernameCheck.status === 'checking' && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#94a3b8' }}>...</span>
+                  )}
+                  {usernameCheck.status === 'available' && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#10b981' }}>✓</span>
+                  )}
+                  {(usernameCheck.status === 'taken' || usernameCheck.status === 'invalid') && (
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#ef4444' }}>✕</span>
+                  )}
+                </div>
+                {usernameCheck.msg && usernameCheck.status !== 'idle' && usernameCheck.status !== 'checking' && (
+                  <small style={{ color: usernameCheck.status === 'available' ? '#10b981' : '#ef4444', fontSize: '0.8rem', marginTop: '0.3rem', display: 'block' }}>{usernameCheck.msg}</small>
+                )}
+              </div>
+              <div className="profile-edit-field">
+                <label>Name</label>
+                <input name="name" value={generalForm.name} onChange={(e) => setGeneralForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Your name" />
+              </div>
+              <div className="profile-edit-field">
+                <label>Title / Tagline</label>
+                <input name="title" value={generalForm.title} onChange={(e) => setGeneralForm(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g. Company owner" />
+              </div>
+              <div className="profile-edit-field">
+                <label>Bio</label>
+                <textarea name="bio" value={generalForm.bio} onChange={(e) => setGeneralForm(prev => ({ ...prev, bio: e.target.value }))} rows={2} placeholder="Short bio" />
+              </div>
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Links</h4>
+                {generalForm.links.map((link, idx) => (
+                  <div key={idx} className="profile-edit-field profile-edit-link-block">
+                    <div className="profile-edit-link-header">
+                      <PlatformIconSelect value={link.platform || 'website'} onChange={(val) => updateLink(idx, 'platform', val)} />
+                      <button
+                        type="button"
+                        onClick={() => removeLink(idx)}
+                        className="profile-edit-remove"
+                        title="Remove link"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          boxShadow: 'none',
+                          outline: 'none',
+                          color: '#ffffff',
+                          width: 22,
+                          height: 22,
+                          padding: 0,
+                          borderRadius: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.color = '#ffffff';
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.outline = 'none';
+                          e.currentTarget.style.color = '#ffffff';
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="profile-edit-link-fields">
+                      <input placeholder="Title (e.g. My Website)" value={link.title || ''} onChange={(e) => updateLink(idx, 'title', e.target.value)} className="profile-edit-link-title" />
+                      {link.platform === 'whatsapp' && (
+                        <>
+                          <PhoneINInput
+                            wrapClassName="profile-edit-phone-in"
+                            value={toINFullPhone(getINDisplayDigits(link.waPhone || ''))}
+                            onChange={(v) => updateLink(idx, 'waPhone', v)}
+                          />
+                          <input placeholder="Pre-filled message (optional)" value={link.waMessage || ''} onChange={(e) => updateLink(idx, 'waMessage', e.target.value)} className="profile-edit-link-url" />
+                        </>
+                      )}
+                      {(link.platform === 'instagram' || link.platform === 'twitter' || link.platform === 'tiktok' || link.platform === 'snapchat' || link.platform === 'threads') && (
+                        <input placeholder="Username only (no @ or link)" value={link.platformUsername || ''} onChange={(e) => updateLink(idx, 'platformUsername', e.target.value)} className="profile-edit-link-url" />
+                      )}
+                      {link.platform === 'telegram' && (
+                        <input placeholder="Username or phone (e.g. johndoe or 919876543210)" value={link.platformUsername || ''} onChange={(e) => updateLink(idx, 'platformUsername', e.target.value)} className="profile-edit-link-url" />
+                      )}
+                      {!SMART_PLATFORMS.includes(link.platform || '') && (
+                        <input placeholder="https://..." value={link.url || ''} onChange={(e) => updateLink(idx, 'url', e.target.value)} className="profile-edit-link-url" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={addLink} className="profile-edit-add-link">+ Add link</button>
+              </div>
+
+              <div className="profile-edit-section">
+                <h4 className="profile-edit-section-title">Gallery</h4>
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>Upload up to 4 images or showcase videos (max 30s).</p>
+                <div className="profile-edit-photo-row" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                  <button
+                    type="button"
+                    className="profile-edit-file-btn upload-trigger-btn"
+                    style={{ width: 'auto' }}
+                    onClick={() => { if (genGalleryInputRef.current) { genGalleryInputRef.current.value = ''; genGalleryInputRef.current.click(); } }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>Add Media</span>
+                    <input
+                      ref={genGalleryInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        const currentCount = generalForm.gallery.length;
+                        const available = 4 - currentCount;
+                        const toAdd = files.slice(0, available);
+
+                        for (const file of toAdd) {
+                          try {
+                            if (file.type.startsWith('video/')) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setGeneralForm(prev => ({
+                                  ...prev,
+                                  gallery: [...prev.gallery, { url: ev.target.result, name: file.name, type: 'video' }].slice(0, 4)
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            } else {
+                              const cropped = await getFileAfterCropOrPassThrough(file, 1);
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setGeneralForm(prev => ({
+                                  ...prev,
+                                  gallery: [...prev.gallery, { url: ev.target.result, name: file.name, type: 'image' }].slice(0, 4)
+                                }));
+                              };
+                              reader.readAsDataURL(cropped);
+                            }
+                          } catch (err) {
+                            if (err.message !== 'CROP_CANCEL') console.error('Gallery crop failed:', err);
+                          }
+                        }
+                      }}
+                    />
+                  </button>
+                </div>
+                <div className="dash-gallery-grid" style={{ marginTop: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
+                  {generalForm.gallery.map((item, idx) => (
+                    <div key={idx} className="dash-gallery-item" style={{ height: '100px' }}>
+                      {item.type === 'video' || item.url.includes('video') ? (
+                        <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      )}
+                      <div className="dash-gallery-item-overlay">
+                        <button
+                          type="button"
+                          className="dash-gallery-remove-btn"
+                          onClick={() => setGeneralForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }))}
+                        >✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+            <div className="profile-edit-footer">
+              <button type="submit" disabled={generalSaving}>{generalSaving ? 'Saving…' : 'Create profile'}</button>
+            </div>
+          </form>
+        </div>
+        {cropper.open && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000000 }}>
+            <ImageCropperModal
+              image={cropper.image}
+              aspect={cropper.aspect}
+              onSave={cropper.onComplete}
+              onCancel={cropper.onCancel}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }

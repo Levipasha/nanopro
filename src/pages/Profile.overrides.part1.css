@@ -1,0 +1,900 @@
+﻿/* Must be imported LAST (after Profile.part*.css).
+   Forces black/white dashboard and removes gradient layers everywhere. */
+
+/* Remove gradients only from dashboard â€œboxesâ€, not from theme preview swatches. */
+
+.dash-info-card::after,
+.dash-link-card::before,
+.dash-mobile-edit-modal::before {
+  content: none !important;
+}
+
+/* Section â€œboxesâ€ used across Artist dashboard:
+   Get in Touch, Events, Show My Art, link cards, etc. */
+.dash-info-card,
+.dash-link-card,
+.dash-gallery-item,
+.dash-art-card,
+.dash-selector-modal,
+.dash-selector-item,
+.dash-mobile-edit-modal,
+.dash-single-profile section,
+.dash-profile-bio-section,
+.dash-profile-hero,
+.dash-profile-hero-content,
+.dash-single-profile,
+.dash-profile-layout,
+.dash-content {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-single-profile section {
+  padding: 1.5rem !important;
+  border-radius: 14px !important;
+}
+
+@media (max-width: 768px) {
+  .dash-single-profile section {
+    padding: 1.25rem !important;
+  }
+}
+
+.dash-design-subnav {
+  display: flex !important;
+  width: fit-content !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+
+.dash-profile-hero-bg,
+.dash-profile-hero-overlay,
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Theme preview swatches: do not override backgrounds */
+
+/* Keep the mobile bottom nav visible (white pill) */
+.dash-mobile-bottom-nav,
+.dash-mobile-bottom-nav-inner {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #020617 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-mobile-bottom-nav {
+  height: 68px !important;
+  max-width: 440px !important;
+}
+
+.dash-mobile-bottom-nav-inner {
+  padding: 0 14px !important;
+}
+
+.dash-mobile-bottom-btn {
+  color: #020617 !important;
+}
+
+.dash-mobile-bottom-btn svg,
+.dash-mobile-bottom-btn svg * {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+/* Mobile bottom pill icons: normalize size/weight so all look similar */
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg,
+.dash-mobile-bottom-btn .dash-mobile-bottom-btn-icon svg * {
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Center platform picker cards in General + Restaurant dashboards */
+.dash-selector-modal .dash-selector-grid {
+  justify-items: center !important;
+  align-items: stretch !important;
+}
+
+.dash-selector-modal .dash-selector-item {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+}
+
+.dash-selector-modal .dash-selector-item .dash-selector-label {
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.dash-mobile-bottom-btn-active {
+  color: #000 !important;
+}
+
+/* Artist/General/Restaurant hero background: remove linear-gradient */
+.dash-profile-hero {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  aspect-ratio: 25 / 7 !important;
+}
+
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  display: none !important;
+}
+
+.dash-profile-hero-bg {
+  z-index: 1;
+}
+
+.dash-profile-hero-overlay {
+  background: rgba(255, 255, 255, 0.3) !important;
+  background-image: none !important;
+  pointer-events: none !important;
+}
+
+/* Restaurant hero: 16:9 banner (matches public page + cropper); Edit Banner visible without hover (touch) */
+.dash-profile-hero--restaurant {
+  aspect-ratio: 16 / 9 !important;
+  min-height: 0 !important;
+  max-height: min(420px, 50vh) !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dash-profile-hero--restaurant .dash-profile-hero-content {
+  padding: 1.25rem 1.5rem 1.5rem !important;
+}
+
+.dash-profile-hero--restaurant .dash-hero-bg-trigger {
+  opacity: 1 !important;
+  z-index: 30 !important;
+  pointer-events: auto !important;
+}
+
+.dash-profile-hero--restaurant .dash-hero-bg-trigger--busy {
+  pointer-events: none !important;
+}
+
+.dash-restaurant-hero-name {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  color: #fff !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Redesigned Sidebar and Navigation for Light Mode */
+.dash-sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dash-nav-item,
+.dash-sidebar .dash-nav-item {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-nav-item:hover,
+.dash-sidebar .dash-nav-item:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-nav-active {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-nav-active svg {
+  color: #0f172a !important;
+}
+
+/* Fix sidebar bottom buttons */
+.dash-sidebar-signout-btn {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dash-sidebar-signout-btn:hover {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border-color: #fca5a5 !important;
+}
+
+.dash-sidebar-home-btn {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Contact cards used overflow:hidden; it clips the phone field caret and can block taps */
+.dash-root .dash-contact-item {
+  overflow: visible !important;
+}
+
+/* If the base dashboard uses ::before/::after overlays, don't block clicks */
+.dash-profile-hero::before,
+.dash-profile-hero::after,
+.dash-profile-bio-section::before,
+.dash-profile-bio-section::after {
+  pointer-events: none !important;
+}
+
+/* Dashboard background: remove remaining gradients/patterns */
+.dash-root,
+.dash-root.dash-theme-aura,
+.dash-main.dash-main,
+.dash-root.dash-root,
+.dash-content.dash-content,
+.dash-profile-layout.dash-profile-layout,
+.dash-single-profile.dash-single-profile,
+.dash-design-mobile-sheet {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.dash-root.dash-root,
+.dash-root.dash-theme-aura,
+.dash-root.dash-theme-midnight,
+.dash-root.dash-theme-glass {
+  --dash-bg: #ffffff !important;
+  --dash-sidebar-bg: #ffffff !important;
+  --dash-text: #0f172a !important;
+  --dash-subtext: #64748b !important;
+  --dash-border: rgba(0, 0, 0, 0.08) !important;
+  --dash-card-bg: #ffffff !important;
+  --dash-header-bg: #ffffff !important;
+  --dash-accent: #0f172a !important;
+  --dash-bg-card: #ffffff !important;
+
+  --artist-bg: #ffffff !important;
+  --artist-text: #0f172a !important;
+  --artist-accent: #0f172a !important;
+  --artist-link-bg: rgba(0, 0, 0, 0.05) !important;
+  --artist-bg-contrast: #ffffff !important;
+  --artist-glass-pill-bg: rgba(0, 0, 0, 0.04) !important;
+  --artist-glass-pill-border: rgba(0, 0, 0, 0.1) !important;
+
+  background: #ffffff !important;
+}
+
+.dash-root .profile-login-header h1,
+.dash-root .profile-header-email,
+.dash-root .profile-header-sub,
+.dash-root .onboarding-step h2,
+.dash-root .onboarding-step p,
+.dash-root .gp-name,
+.dash-root .gp-bio,
+.dash-root .gp-section-title,
+.dash-root .gp-contact-label,
+.dash-root .gp-contact-value,
+.dash-root .dash-profile-hero-name,
+.dash-root .dash-profile-hero-name span,
+.dash-root .dash-hero-inline-input,
+.dash-root .dash-profile-bio,
+.dash-root .dash-profile-bio p,
+.dash-root .dash-section-label,
+.dash-root .dash-contact-value,
+.dash-root .dash-contact-label,
+.dash-root .dash-main-title,
+.dash-root .dash-main-subtitle {
+  color: #0f172a !important;
+}
+
+.dash-root .dash-profile-hero-name {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dash-main-header {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+
+
+.dash-sidebar {
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.dash-brand-name {
+  color: #0f172a !important;
+}
+
+.dash-sidebar-top-avatar {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* Also kill any dotted/gradient pseudo layers (if any exist) */
+.dash-root::before,
+.dash-root::after,
+.dash-profile-layout::before,
+.dash-profile-layout::after,
+.dash-single-profile::before,
+.dash-single-profile::after,
+.dash-profile-hero::before,
+.dash-profile-hero::after {
+  content: none !important;
+  background: none !important;
+  background-image: none !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+
+/* Mobile: keep "Copy your link / Open your link" on one row with equal sizing */
+@media (max-width: 768px) {
+  .dash-profile-link-actions {
+    flex-wrap: nowrap !important;
+    gap: 0.45rem !important;
+  }
+
+  .dash-profile-link-actions .dash-link-btn {
+    white-space: nowrap;
+  }
+}
+
+/* Icon-only profile link actions (Artist + General headers) */
+.dash-profile-link-iconbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.dash-icon-pill {
+  width: auto !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  padding: 0 16px !important;
+  border-radius: 22px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+  text-decoration: none !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.dash-icon-pill svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .dash-profile-link-iconbar {
+    gap: 12px !important;
+    padding: 8px 10px !important;
+  }
+
+  .dash-icon-pill {
+    width: auto !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    padding: 0 12px !important;
+    border-radius: 20px !important;
+  }
+}
+
+/* Dashboard header: gap between subtitle (e.g. â€œManage your artist profilesâ€¦â€) and copy/open pill bar; center the pill */
+/* Removed column override to allow side-by-side buttons */
+.dash-main-header>div:first-child {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.dash-main-header .dash-main-subtitle+.dash-profile-link-iconbar {
+  margin-top: 1rem !important;
+  align-self: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .dash-main-header .dash-main-subtitle+.dash-profile-link-iconbar {
+    margin-top: 0.875rem !important;
+  }
+}
+
+/* General onboarding step 4 links: keep fields inside card on phones */
+@media (max-width: 768px) {
+  .general-onboarding-card .profile-edit-link-block {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block>div:first-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block>div:first-child>* {
+    min-width: 0 !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .general-onboarding-card .profile-edit-link-block .onboarding-input,
+  .general-onboarding-card .profile-edit-link-block select.onboarding-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Artist dashboard events/showcase cards: use 'cover' to fill and crop for a cleaner look */
+.dash-gallery-grid .dash-gallery-item>img,
+.dash-gallery-item>img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Buttons inside those boxes */
+.dash-selector-btn-done,
+.dash-selector-btn-cancel,
+.dash-mobile-edit-btn,
+.dash-add-platform-btn,
+.show-art-btn,
+.show-my-art-btn,
+.dash-link-btn,
+.dash-art-btn-copy,
+.dash-art-btn-secondary,
+.dash-icon-pill,
+.onboarding-btn-complete,
+.profile-success-ok {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid #0f172a !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+  font-weight: 700 !important;
+}
+
+.dash-art-btn-secondary {
+  background: transparent !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
+}
+
+.dash-art-add-card button {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* Force text visibility in select headers */
+.dash-main-title,
+.dash-main-subtitle,
+.onboarding-selector-view .selector-header h3,
+.onboarding-selector-view .selector-subtitle {
+  color: #0f172a !important;
+}
+
+.onboarding-selector-view .selector-close-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.onboarding-selector-view .dash-selector-item {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.onboarding-selector-view .dash-selector-item:hover {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.onboarding-selector-view .dash-selector-item.is-active {
+  background: #f1f5f9 !important;
+  border-color: #0f172a !important;
+  color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Show my art count badge */
+.show-my-art-count {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #0f172a !important;
+  backdrop-filter: none !important;
+}
+
+/* Icon visibility: some SVGs use stroke-only, some fill-only. Force both to white. */
+/* --- Link Editor Improvements --- */
+.dash-link-card--inline {
+  transition: all 0.3s ease !important;
+  overflow: visible !important;
+}
+
+.dash-link-card--inline:focus-within {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px);
+  z-index: 10;
+}
+
+.dash-link-content--inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.dash-link-title {
+  transition: all 0.3s ease !important;
+  flex-shrink: 0 !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+
+.dash-link-card--inline:focus-within .dash-link-title {
+  opacity: 0.4 !important;
+  font-size: 0.8rem !important;
+  max-width: 60px !important;
+}
+
+.dash-link-url {
+  flex: 1 !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: 0 !important;
+}
+
+.dash-link-card--inline:focus-within .dash-link-url {
+  flex: 5 !important;
+}
+
+.dash-link-inline-input {
+  width: 100% !important;
+  transition: all 0.3s ease !important;
+  background: #f8fafc !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+}
+
+.dash-link-inline-input:focus {
+  background: #ffffff !important;
+  border-color: #8b5cf6 !important;
+  padding: 10px 16px !important;
+  font-size: 1rem !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1) !important;
+}
+
+.dash-link-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-left: 0.5rem !important;
+}
+
+.clickable-link-field {
+  cursor: pointer !important;
+  caret-color: transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.clickable-link-field:hover {
+  background: rgba(139, 92, 246, 0.04) !important;
+  border-color: #8b5cf6 !important;
+}
+
+/* --- Glassmorphism for Mobile Edit Modal (Global) --- */
+.dash-mobile-edit-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+}
+
+.dash-mobile-edit-modal {
+  position: relative !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  /* Elegant dark blue-gray glass */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border-radius: 28px !important;
+  padding: 1.75rem !important;
+  color: #ffffff !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: auto !important;
+}
+
+.dash-mobile-edit-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.dash-mobile-edit-title {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 1.3rem !important;
+  font-family: 'Outfit', sans-serif !important;
+  letter-spacing: -0.02em !important;
+}
+
+.dash-mobile-edit-close {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+}
+
+.dash-mobile-edit-modal input {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  font-size: 1.05rem !important;
+  margin-bottom: 1.75rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.dash-mobile-edit-modal input:focus {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
+}
+
+.dash-mobile-edit-actions {
+  display: flex !important;
+  gap: 1rem !important;
+}
+
+.dash-mobile-edit-btn {
+  flex: 1 !important;
+  height: 52px !important;
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.dash-mobile-edit-btn.ghost {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dash-mobile-edit-btn.primary {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: none !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dash-mobile-edit-btn.primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dash-link-icon-circle,
+.dash-selector-icon,
+.dash-selector-item,
+.dash-selector-item .dash-selector-label,
+.gp-link-icon-only,
+.gp-link-icon-only-inner {
+  color: #0f172a !important;
+}
+
+.dash-link-icon-circle svg,
+.dash-selector-icon svg,
+.dash-selector-icon svg *,
+.dash-link-icon-circle svg *,
+.gp-link-icon-only-inner svg,
+.gp-link-icon-only-inner svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* General profile: platform remove "X" should be minimal white (no heavy red circle) */
+.dash-link-remove-icon-btn {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  color: #0f172a !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-right: 0 !important;
+  transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 900 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.dash-link-remove-icon-btn:hover {
+  background: transparent !important;
+  background-image: none !important;
+  color: #000000 !important;
+  transform: none !important;
+}
+
+.dash-link-remove-icon-btn:focus,
+.dash-link-remove-icon-btn:active,
+.dash-link-remove-icon-btn:focus-visible {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  color: #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* General profile: links editor remove "Ã—" (currently shows heavy red ring) */
+.profile-edit-remove {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  color: #0f172a !important;
+  outline: none !important;
+  box-shadow: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 900 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.profile-edit-remove:hover,
+.profile-edit-remove:active,
+.profile-edit-remove:focus {
+  background: transparent !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.profile-edit-remove:focus-visible {
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: #0f172a !important;
+}
+
+/* Ensure labels and titles in sections are dark */
+.dash-art-form-title,
+.dash-art-title,
+.dash-art-header,
+.dash-section-label,
+.dash-art-subtitle,
+.dash-section-header h3,
+.dash-section-header span,
+.dash-contact-label,
+.dash-contact-value {
+  color: #0f172a !important;
+}
+
+.dash-section-header,
+.dash-art-header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  padding-bottom: 1rem !important;
+  margin-bottom: 1rem !important;
+  margin-top: 1rem !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}

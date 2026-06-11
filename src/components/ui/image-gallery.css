@@ -3,14 +3,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  /* Updated Background with user requested color #c0a080 */
-  background-color: #1a1512;
-  background-image: 
-    radial-gradient(at 0% 0%, #2c2420 0, transparent 50%), 
-    radial-gradient(at 50% 0%, #c0a080 0, transparent 70%), 
-    radial-gradient(at 100% 0%, #4a3b2b 0, transparent 50%),
-    radial-gradient(at 50% 100%, #1a1512 0, transparent 50%);
-  background-attachment: fixed;
+  background-color: #F7F3EE;
   padding: 3rem 1.5rem;
   width: 100%;
   box-sizing: border-box;
@@ -40,23 +33,20 @@
 .gallery-title {
   font-size: clamp(2.5rem, 8vw, 4rem);
   font-weight: 700;
-  color: #fff;
+  color: #0A0A0A;
   margin-bottom: 1.5rem;
   letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  text-shadow: none;
 }
 
 
 .gallery-desc {
   font-size: clamp(1rem, 3vw, 1.25rem);
-  color: #94a3b8;
+  color: #C8001A;
   max-width: 38rem;
   margin: 0 auto;
   line-height: 1.6;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .gallery-grid {
@@ -123,8 +113,8 @@
 }
 
 .gallery-back-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #0A0A0A;
+  border: 1px solid #0A0A0A;
   color: #fff;
   padding: 8px 16px;
   border-radius: 100px;
@@ -140,8 +130,9 @@
 }
 
 .gallery-back-btn:hover {
-  background: #fff;
-  color: #000;
+  background: #C8001A;
+  border-color: #C8001A;
+  color: #fff;
   transform: translateX(-5px);
 }
 
@@ -202,27 +193,53 @@
 
 .zigzag-image-wrap {
   flex: 1;
-  max-width: 300px; /* Further reduced to match paragraph weight */
+  max-width: 420px;
+  width: 100%;
   perspective: 1000px;
   display: flex;
   justify-content: center;
 }
 
+.zigzag-image-wrap .gallery-polaroid-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .zigzag-content {
-  flex: 1.2; /* Give slightly more room to content but keep it balanced */
+  flex: 1;
+  max-width: 420px;
+  width: 100%;
   text-align: left;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  max-height: 440px; /* Safeguard: Match the polaroid height */
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+/* Styled thin scrollbar */
+.zigzag-content::-webkit-scrollbar {
+  width: 4px;
+}
+.zigzag-content::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.05);
+  border-radius: 10px;
+}
+.zigzag-content::-webkit-scrollbar-thumb {
+  background: rgba(10, 10, 10, 0.2);
+  border-radius: 10px;
+}
+.zigzag-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(10, 10, 10, 0.4);
 }
 
 .zigzag-text {
   font-size: 1.2rem; /* Slightly reduced for better balance */
-  color: #f1f5f9;
+  color: #C8001A;
   line-height: 1.6; /* Reduced line height */
-  font-weight: 300;
+  font-weight: 400;
   margin: 0;
-  opacity: 0.9;
 }
 
 @media (min-width: 481px) {
@@ -255,8 +272,17 @@
   }
 
   .zigzag-image-wrap {
-    max-width: 180px;
-    flex: 0 0 180px;
+    flex: 1;
+    max-width: 50%;
+    width: 100%;
+  }
+
+  .zigzag-content {
+    flex: 1;
+    max-width: 50%;
+    width: 100%;
+    max-height: 180px; /* Safeguard for mobile polaroid height */
+    overflow-y: auto;
   }
   
   .zigzag-text {
@@ -282,11 +308,12 @@
 .gallery-extra-text-list {
   width: 100%;
   max-width: 800px;
-  margin: 4rem auto;
+  margin: 2rem auto;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
-  text-align: center;
+  gap: 1.2rem;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
