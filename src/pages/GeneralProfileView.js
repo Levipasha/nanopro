@@ -984,7 +984,7 @@ function GeneralProfileView() {
 
 
         {/* HERO SECTION */}
-        <section className="hero" style={{ minHeight: (showPhotoEffectively && !isEmbed) ? '100vh' : 'auto' }}>
+        <section className="hero" style={{ minHeight: 'auto' }}>
           <div className="hero-bg-text">
             {profile.name ? profile.name.charAt(0).toUpperCase() : 'P'}
           </div>
