@@ -63,34 +63,34 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
         </div>
 
         {/* Rotate controls */}
-        <div className="crop-rotate-row px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between gap-4 shrink-0">
+        <div className="crop-rotate-row">
           <button
             type="button"
-            className="crop-rotate-btn flex-1 flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
+            className="crop-rotate-btn"
             onClick={rotateLeft}
             aria-label="Rotate left 90°"
             title="Rotate left"
           >
             {/* Counter-clockwise arrow */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
               <path d="M2.5 2v6h6" />
               <path d="M2.66 15.57a10 10 0 1 0 .57-8.38" />
             </svg>
           </button>
 
-          <span className="crop-rotation-badge text-sm font-bold text-slate-500 w-12 text-center select-none">{rotation}°</span>
+          <span className="crop-rotation-badge">{rotation}°</span>
 
           <button
             type="button"
-            className="crop-rotate-btn flex-1 flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
+            className="crop-rotate-btn"
             onClick={rotateRight}
             aria-label="Rotate right 90°"
             title="Rotate right"
           >
             {/* Clockwise arrow */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
               <path d="M21.5 2v6h-6" />
               <path d="M21.34 15.57a10 10 0 1 1-.57-8.38" />
             </svg>

@@ -119,13 +119,13 @@
 
 /* Rotate row */
 .crop-rotate-row {
-  padding: 14px 20px;
+  padding: 16px 24px;
   background: #ffffff;
   border-top: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center; /* Center the buttons instead of space-between */
+  gap: 24px; /* Balanced spacing between buttons and badge */
   flex-shrink: 0;
 }
 
@@ -133,40 +133,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
+  width: 44px; /* Fixed small width */
+  height: 44px; /* Fixed small height */
+  border-radius: 50%; /* Circle */
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   color: #334155;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   touch-action: manipulation;
-  white-space: nowrap;
+  flex-shrink: 0; /* Prevent resizing */
+  padding: 0; /* Clear default paddings */
 }
 
 .crop-rotate-btn:hover {
   background: #e0e7ff;
   border-color: #c7d2fe;
   color: #4f46e5;
+  transform: translateY(-1px);
 }
 
 .crop-rotate-btn:active {
-  transform: scale(0.96);
+  transform: translateY(0) scale(0.95);
 }
 
 .crop-rotation-badge {
   font-size: 0.875rem;
   font-weight: 700;
   color: #64748b;
-  min-width: 44px;
+  width: 48px; /* Fixed width so badge doesn't move items when changing digits */
   text-align: center;
   letter-spacing: 0.03em;
   flex-shrink: 0;
+  user-select: none;
 }
 
 /* Footer */
