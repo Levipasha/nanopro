@@ -373,7 +373,7 @@ export default function ProfileRestaurantController(props) {
       const payload = {
         username: (profileInput.username || '').toLowerCase().trim(),
         name: profileInput.name || '',
-        title: profileInput.tagline || '',
+        title: '',
         bio: bioParts.filter(Boolean).join('\n'),
         photo: photoUrl || undefined,
         banner: bannerUrl || undefined,
@@ -481,7 +481,7 @@ export default function ProfileRestaurantController(props) {
           const base = window.location.origin;
           const initializePayload = {
             name: 'Sakura Kitchen',
-            title: 'Modern Japanese Cuisine',
+            title: '',
             bio: "Authentic Japanese flavors reimagined with local ingredients. From sushi to ramen, every dish tells a story of tradition meeting innovation.\n📞 +9183746501\n✉ SakuraKitchen@mock.com",
             photo: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&h=500&fit=crop',
             theme: 'mint',
@@ -558,7 +558,7 @@ export default function ProfileRestaurantController(props) {
             ...prev,
             name: genData.name || '',
             username: genData.username || '',
-            tagline: genData.title || '',
+            tagline: '',
             bio: stripPhoneEmailLinesFromBioString(bioRaw) || '',
             phone: genData.phone || extractPhoneFromBioString(bioRaw) || '',
             email: genData.email || user.email || '',
