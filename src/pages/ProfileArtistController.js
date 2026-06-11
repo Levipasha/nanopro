@@ -288,6 +288,10 @@ export default function ProfileArtistController(props) {
         } else {
           updatedLinks = existingLinks.filter(l => (l.platform || '').toLowerCase() !== platform.toLowerCase());
         }
+        const hasRemaining = updatedLinks.some(l => (l.platform || '').toLowerCase() === platform.toLowerCase());
+        if (!hasRemaining) {
+          setVisiblePlatforms(prev => prev.filter(p => p !== platform));
+        }
       } else {
         let idx = -1;
         if (linkId) {
