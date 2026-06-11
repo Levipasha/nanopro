@@ -66,37 +66,37 @@ export default function ImageCropperModal({ image, aspect = 1, onSave, onCancel 
         <div className="crop-rotate-row px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between gap-4 shrink-0">
           <button
             type="button"
-            className="crop-rotate-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm font-semibold hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
+            className="crop-rotate-btn flex-1 flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
             onClick={rotateLeft}
             aria-label="Rotate left 90°"
             title="Rotate left"
           >
+            {/* Counter-clockwise arrow */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 .49-4" />
+                 strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+              <path d="M2.5 2v6h6" />
+              <path d="M2.66 15.57a10 10 0 1 0 .57-8.38" />
             </svg>
-            <span className="sm:inline hidden">Rotate Left</span>
           </button>
 
           <span className="crop-rotation-badge text-sm font-bold text-slate-500 w-12 text-center select-none">{rotation}°</span>
 
           <button
             type="button"
-            className="crop-rotate-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm font-semibold hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
+            className="crop-rotate-btn flex-1 flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all duration-200 active:scale-95 cursor-pointer"
             onClick={rotateRight}
             aria-label="Rotate right 90°"
             title="Rotate right"
           >
-            <span className="sm:inline hidden">Rotate Right</span>
+            {/* Clockwise arrow */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                 strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"
-                 style={{ transform: 'scaleX(-1)' }}>
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 .49-4" />
+                 strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+              <path d="M21.5 2v6h-6" />
+              <path d="M21.34 15.57a10 10 0 1 1-.57-8.38" />
             </svg>
           </button>
         </div>
+
 
         {/* Footer actions */}
         <div className="crop-modal-footer p-6 flex gap-4 shrink-0 bg-slate-50/50 border-t border-slate-100 rounded-b-3xl">
