@@ -424,81 +424,16 @@ export default function Profile() {
           }}>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{headerTitle}</h1>
           </header>
-          <div style={{ flex: 1, overflowY: 'auto', background: '#F7F3EE', position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: 0, background: '#F7F3EE', overflowY: 'auto', fontFamily: "'Syne', sans-serif", color: '#0A0A0A' }}>
-              <style>{`
-                @keyframes skshimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
-                .skb { background: linear-gradient(90deg,#EDE8E2 25%,#F7F3EE 50%,#EDE8E2 75%); background-size: 600px 100%; animation: skshimmer 1.4s ease-in-out infinite; border-radius: 4px; }
-                .skb-red { background: linear-gradient(90deg,#C8001A 25%,#ff4d66 50%,#C8001A 75%); background-size: 600px 100%; animation: skshimmer 1.4s ease-in-out infinite; border-radius: 4px; }
-              `}</style>
-              
-              {/* Topbar */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 20px',
-                height: '56px',
-                background: 'rgba(247,243,238,0.88)',
-                backdropFilter: 'blur(24px)',
-                borderBottom: '1px solid rgba(10,10,10,0.1)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-              }}>
-                <div style={{ fontSize: '11px', letterSpacing: '4px', fontWeight: 700, color: '#9A9490' }}>
-                  <b style={{ color: '#C8001A' }}>NANO</b>PROFILES
-                </div>
-                <div style={{ fontSize: '11px', fontFamily: "monospace", color: '#9A9490', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#C8001A' }}></span>
-                  @profile
-                </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+            <style>{`
+              @keyframes nanoSpinM { to { transform: rotate(360deg); } }
+              .nano-load-spinner-m { width: 36px; height: 36px; border: 3px solid rgba(200,0,26,0.15); border-top-color: #C8001A; border-radius: 50%; animation: nanoSpinM 0.85s linear infinite; }
+            `}</style>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
+              <div style={{ fontSize: '12px', letterSpacing: '5px', fontWeight: 700, color: '#9A9490', fontFamily: "'Syne', sans-serif" }}>
+                <b style={{ color: '#C8001A' }}>NANO</b>PROFILES
               </div>
-
-              {/* Main Content (Hero) */}
-              <div style={{ padding: '80px 24px 40px', position: 'relative', borderLeft: '4px solid #C8001A', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="skb" style={{ width: 110, height: 28 }} />
-                  <div className="skb" style={{ width: 80, height: 16 }} />
-                </div>
-                <div className="skb" style={{ width: '100%', aspectRatio: '1/1', maxHeight: '380px', borderRadius: 2 }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px 0' }}>
-                  <div className="skb-red" style={{ width: 120, height: 12 }} />
-                  <div className="skb" style={{ width: '80%', height: 48 }} />
-                  <div className="skb" style={{ width: '60%', height: 48 }} />
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <div className="skb" style={{ width: 90, height: 32, borderRadius: 0 }} />
-                  <div className="skb" style={{ width: 110, height: 32, borderRadius: 0 }} />
-                  <div className="skb" style={{ width: 80, height: 32, borderRadius: 0 }} />
-                </div>
-              </div>
-
-              {/* Section 01: About */}
-              <div style={{ padding: '40px 24px', borderTop: '1px solid rgba(10,10,10,0.1)', borderLeft: '4px solid #C8001A', background: '#0A0A0A', color: '#F7F3EE' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                  <div className="skb-red" style={{ width: 32, height: 20 }} />
-                  <div className="skb" style={{ width: 80, height: 12 }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div className="skb" style={{ width: '90%', height: 20 }} />
-                  <div className="skb" style={{ width: '85%', height: 16 }} />
-                  <div className="skb" style={{ width: '70%', height: 16 }} />
-                </div>
-              </div>
-
-              {/* Section 02: Connect */}
-              <div style={{ padding: '40px 24px', borderTop: '1px solid rgba(10,10,10,0.1)', borderLeft: '4px solid #C8001A', background: '#111' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                  <div className="skb-red" style={{ width: 32, height: 20 }} />
-                  <div className="skb" style={{ width: 80, height: 12 }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="skb" style={{ width: '100%', height: 68, borderRadius: 16 }} />
-                  ))}
-                </div>
-              </div>
+              <div className="nano-load-spinner-m" />
             </div>
           </div>
         </div>
