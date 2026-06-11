@@ -252,8 +252,12 @@ export default function Profile() {
       setProfileLock(lock);
       if (lock === 'artist') setProfileMode('artist');
       else if (lock === 'general_restaurant') {
-        const flow = getStoredValue(user, GENERAL_FLOW_MODE_KEY, 'general');
-        setProfileMode(flow);
+        const flow = getStoredValue(user, GENERAL_FLOW_MODE_KEY, null);
+        if (flow) {
+          setProfileMode(flow);
+        } else {
+          setProfileMode('choice');
+        }
       }
       setChoiceSource('automatic');
     } else {
@@ -314,7 +318,7 @@ export default function Profile() {
         return;
       }
       if (lock === 'general_restaurant') {
-        const preferredGeneralMode = localStorage.getItem(GENERAL_FLOW_MODE_KEY) || 'general';
+        const preferredGeneralMode = getStoredValue(user, GENERAL_FLOW_MODE_KEY) || 'general';
         const likelyRestaurant = generalProfile?.profileType === 'restaurant' || !!(generalProfile?.menuPdf && String(generalProfile.menuPdf).trim());
         if (restaurantProfile || preferredGeneralMode === 'restaurant' || likelyRestaurant) {
           handleSelectRestaurantMode();
@@ -356,8 +360,8 @@ export default function Profile() {
   const displayEmail = user?.email || '';
 
   const getSkeletonUI = (mode, isMobile) => {
-    const headerTitle = mode === 'artist' ? 'Artist Editor' : 'General Editor';
-    const desktopTitle = mode === 'artist' ? 'Artist Profile' : 'General Profile';
+    const headerTitle = mode === 'artist' ? 'Artist Editor' : mode === 'restaurant' ? 'Restaurant Editor' : 'General Editor';
+    const desktopTitle = mode === 'artist' ? 'Artist Profile' : mode === 'restaurant' ? 'Restaurant Profile' : 'General Profile';
 
     if (mode === 'choice') {
       // Neutral brand loading splash screen while checking profile existence
