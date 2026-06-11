@@ -151,13 +151,6 @@ export default function ProfileRestaurantDashboard(props) {
                 Profile &amp; Menu
               </button>
               <button
-                className={`dash-nav-item ${restaurantActiveTab === 'design' ? 'dash-nav-active' : ''}`}
-                onClick={() => setRestaurantActiveTab('design')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                Design
-              </button>
-              <button
                 className={`dash-nav-item ${restaurantActiveTab === 'menu' ? 'dash-nav-active' : ''}`}
                 onClick={() => setRestaurantActiveTab('menu')}
               >
@@ -196,123 +189,156 @@ export default function ProfileRestaurantDashboard(props) {
 
         {/* Main */}
         <main className="dash-main">
-          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 1.5rem' }}>
+          <header className="dash-main-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem', padding: '1.25rem 2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}>
               <h1 className="dash-main-title" style={{ margin: 0, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1.5rem' }}>
-                {restaurantActiveTab === 'design' ? 'Design' : restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}
+                {restaurantActiveTab === 'menu' ? 'Menu' : 'Restaurant Dashboard'}
               </h1>
 
-              <button
-                onClick={() => {
-                  persistRestaurant(restaurantProfile);
-                  setRestaurantChanged(false);
-                }}
-                disabled={restaurantSaving}
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  borderRadius: '12px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  background: restaurantChanged ? '#0070f3' : '#ffffff',
-                  color: restaurantChanged ? '#ffffff' : '#000000',
-                  border: restaurantChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
-                  cursor: restaurantSaving ? 'wait' : 'pointer',
-                  opacity: restaurantSaving ? 0.7 : 1,
-                  transition: 'all 0.2s',
-                  boxShadow: restaurantChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {restaurantSaving ? '...' : 'Save Changes'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = restaurantProfile?.username ? `${frontendBase}/link/${restaurantProfile.username}` : frontendBase;
+                    navigator.clipboard.writeText(url);
+                    setLinkCopiedRest(true);
+                    setTimeout(() => setLinkCopiedRest(false), 2000);
+                  }}
+                  className="dash-icon-pill"
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                  aria-label={linkCopiedRest ? 'Copied' : 'Copy profile link'}
+                >
+                  {linkCopiedRest ? (
+                    <>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={restaurantProfile.username ? `${frontendBase}/link/${restaurantProfile.username}` : '#'}
+                  target={restaurantProfile.username ? "_blank" : undefined}
+                  rel="noreferrer"
+                  className="dash-icon-pill"
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '12px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                  aria-label="Open profile link"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M7 17L17 7" /><path d="M7 7h10v10" />
+                  </svg>
+                  <span>Go to Profile</span>
+                </a>
+
+                <button
+                  onClick={() => {
+                    persistRestaurant(restaurantProfile);
+                    setRestaurantChanged(false);
+                  }}
+                  disabled={restaurantSaving}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '12px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    background: restaurantChanged ? '#0070f3' : '#ffffff',
+                    color: restaurantChanged ? '#ffffff' : '#000000',
+                    border: restaurantChanged ? '1px solid #0070f3' : '1px solid #e2e8f0',
+                    cursor: restaurantSaving ? 'wait' : 'pointer',
+                    opacity: restaurantSaving ? 0.7 : 1,
+                    transition: 'all 0.2s',
+                    boxShadow: restaurantChanged ? '0 4px 12px 0 rgba(0,118,243,0.3)' : 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {restaurantSaving ? '...' : 'Save Changes'}
+                </button>
+              </div>
             </div>
             <p className="dash-main-subtitle" style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>
-              {restaurantActiveTab === 'design' ? 'Customize your restaurant profile theme and font' : restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact information'}
+              {restaurantActiveTab === 'menu' ? 'Upload and manage your restaurant menu PDF' : 'Manage your restaurant profile and contact information'}
             </p>
           </header>
 
           <div className="dash-content">
             {/* ── PROFILE & MENU TAB ── */}
             {restaurantActiveTab === 'info' && (
-              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden', minHeight: '0' }}>
                 {/* Left: profile info */}
-                <div className="dash-single-profile" style={{ padding: '1.5rem 1.25rem', overflowY: 'auto' }}>
-                  {/* Copy Profile Link */}
-                  <div style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', background: 'var(--dash-bg-card)', border: '1px solid var(--dash-border)', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Profile Link</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{`${frontendBase}/link/${restaurantProfile.username || ''}`}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const url = restaurantProfile?.username ? `${frontendBase}/link/${restaurantProfile.username}` : frontendBase;
-                          navigator.clipboard.writeText(url);
-                          setLinkCopiedRest(true);
-                          setTimeout(() => setLinkCopiedRest(false), 2000);
-                        }}
-                        className="dash-icon-pill"
-                        aria-label={linkCopiedRest ? 'Copied' : 'Copy profile link'}
-                      >
-                        {linkCopiedRest ? (
-                          <>
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <rect x="9" y="9" width="13" height="13" rx="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                            <span>Copy Link</span>
-                          </>
-                        )}
-                      </button>
-                      <a
-                        href={restaurantProfile.username ? `${frontendBase}/link/${restaurantProfile.username}` : '#'}
-                        target={restaurantProfile.username ? "_blank" : undefined}
-                        rel="noreferrer"
-                        className="dash-icon-pill"
-                        aria-label="Open profile link"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M7 17L17 7" /><path d="M7 7h10v10" />
-                        </svg>
-                        <span>Go to Profile</span>
-                      </a>
-                    </div>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--dash-subtext)' }}>
-                      Link goes live automatically after creating your restaurant profile.
-                    </p>
-                  </div>
+                <div className="dash-single-profile" style={{ padding: '1.5rem 0', overflowY: 'auto' }}>
+                  <div style={{ padding: isMobileViewport ? '0' : '0 2.5rem' }}>
+
 
                   <div
                     className="dash-profile-hero dash-profile-hero--restaurant"
                     style={{
-                      aspectRatio: '16/9',
-                      height: 'auto',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      background: 'transparent'
+                      display: 'flex',
+                      flexDirection: isMobileViewport ? 'column' : 'row',
+                      gap: '2rem',
+                      background: 'var(--dash-bg-card)',
+                      border: '1px solid var(--dash-border)',
+                      borderRadius: '20px',
+                      padding: '1.5rem',
+                      alignItems: 'stretch',
+                      position: 'relative'
                     }}
                   >
-                    {restaurantProfile.banner ? (
-                      <img
-                        src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner}
-                        alt=""
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          zIndex: 1
-                        }}
-                      />
-                    ) : (
-                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', zIndex: 1 }} />
-                    )}
+                    {/* Left Column: Banner Image */}
+                    <div
+                      style={{
+                        flex: '1.2',
+                        width: '100%',
+                        aspectRatio: '16/9',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        borderRadius: '12px',
+                        border: '1px solid var(--dash-border)'
+                      }}
+                    >
+                      {restaurantProfile.banner ? (
+                        <img
+                          src={fixImageUrl(restaurantProfile.banner) || restaurantProfile.banner}
+                          alt="Restaurant Banner"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            zIndex: 1
+                          }}
+                        />
+                      ) : (
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg,#fceabb,#f8b500)', zIndex: 1 }} />
+                      )}
+                      <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
+                    </div>
 
                     <input
                       ref={restaurantBannerInputRef}
@@ -322,76 +348,151 @@ export default function ProfileRestaurantDashboard(props) {
                       onChange={(e) => { if (!restaurantBannerUploading) handlePickAndCrop(e, 16 / 9, handleRestaurantBannerChangeDashboard); }}
                     />
 
-                    <div className="dash-profile-hero-content" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '2rem', zIndex: 2, position: 'relative' }}>
-                      <div className="dash-hero-text" style={{ background: 'transparent' }}>
-                        {rHeroEditingField === 'name' ? (
-                          <div className="dash-hero-editable-wrapper">
-                            <div className="dash-hero-edit-row">
-                              <input
-                                className="dash-hero-inline-input name"
-                                autoFocus
-                                value={rHeroDraftName}
-                                onChange={(e) => setRHeroDraftName(e.target.value)}
-                                style={{ background: 'rgba(255,255,255,0.9)', color: '#000', borderRadius: '8px' }}
-                              />
-                              <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
-                                Save
-                              </button>
-                            </div>
+                    {/* Right Column: Name, Username, Change Banner, Tagline */}
+                    <div
+                      style={{
+                        flex: '1',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        gap: '0.85rem',
+                        alignItems: 'flex-start'
+                      }}
+                    >
+                      {/* Name */}
+                      {rHeroEditingField === 'name' ? (
+                        <div className="dash-hero-editable-wrapper" style={{ width: '100%' }}>
+                          <div className="dash-hero-edit-row" style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                            <input
+                              className="dash-hero-inline-input name"
+                              autoFocus
+                              value={rHeroDraftName}
+                              onChange={(e) => setRHeroDraftName(e.target.value)}
+                              style={{
+                                flex: 1,
+                                background: 'var(--dash-bg)',
+                                color: 'var(--dash-text)',
+                                border: '1px solid var(--dash-border)',
+                                borderRadius: '8px',
+                                padding: '0.5rem'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={saveRestaurantHeroEdit}
+                              style={{
+                                background: '#6366f1',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.5rem 1rem',
+                                cursor: 'pointer',
+                                fontWeight: 700
+                              }}
+                            >
+                              Save
+                            </button>
                           </div>
-                        ) : (
-                          <h2
-                            className="dash-restaurant-hero-name"
-                            onClick={() => startRestaurantHeroEdit('name')}
-                            style={{ cursor: 'pointer', fontSize: '2.5rem', fontWeight: 800, color: '#fff', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.5)', background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
-                          >
-                            <span>{restaurantProfile.name || 'Add restaurant name'}</span>
-                          </h2>
-                        )}
-                        <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: 700, marginTop: '0.5rem', textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{restaurantProfile.username}</p>
-
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            className="dash-icon-pill upload-trigger-btn"
-                            style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', background: 'rgba(0,0,0,0.6)', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', backdropFilter: 'blur(10px)' }}
-                            onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="17 8 12 3 7 8" />
-                              <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Change Banner
-                          </button>
                         </div>
+                      ) : (
+                        <h2
+                          className="dash-restaurant-hero-name"
+                          onClick={() => startRestaurantHeroEdit('name')}
+                          style={{
+                            cursor: 'pointer',
+                            fontSize: '1.75rem',
+                            fontWeight: 800,
+                            color: 'var(--dash-text)',
+                            margin: 0,
+                            background: 'transparent',
+                            border: 'none',
+                            boxShadow: 'none',
+                            padding: 0
+                          }}
+                        >
+                          <span style={{ borderBottom: '1px dashed var(--dash-accent)' }}>{restaurantProfile.name || 'Add restaurant name'}</span>
+                        </h2>
+                      )}
 
-                        {rHeroEditingField === 'tagline' ? (
-                          <div className="dash-hero-editable-wrapper" style={{ marginTop: '1rem' }}>
-                            <div className="dash-hero-edit-row">
-                              <input
-                                className="dash-hero-inline-input tagline"
-                                autoFocus
-                                value={rHeroDraftTagline}
-                                onChange={(e) => setRHeroDraftTagline(e.target.value)}
-                                style={{ background: 'rgba(255,255,255,0.9)', color: '#000', borderRadius: '8px' }}
-                              />
-                              <button type="button" onClick={saveRestaurantHeroEdit} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
-                                Save
-                              </button>
-                            </div>
+                      {/* Username */}
+                      <p style={{ color: 'var(--dash-subtext)', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
+                        @{restaurantProfile.username}
+                      </p>
+
+                      {/* Change Banner Button */}
+                      <button
+                        type="button"
+                        className="dash-icon-pill upload-trigger-btn"
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onClick={() => { if (restaurantBannerInputRef.current) { restaurantBannerInputRef.current.value = ''; restaurantBannerInputRef.current.click(); } }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Change Banner
+                      </button>
+
+                      {/* Tagline */}
+                      {rHeroEditingField === 'tagline' ? (
+                        <div className="dash-hero-editable-wrapper" style={{ width: '100%', marginTop: '0.25rem' }}>
+                          <div className="dash-hero-edit-row" style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                            <input
+                              className="dash-hero-inline-input tagline"
+                              autoFocus
+                              value={rHeroDraftTagline}
+                              onChange={(e) => setRHeroDraftTagline(e.target.value)}
+                              style={{
+                                flex: 1,
+                                background: 'var(--dash-bg)',
+                                color: 'var(--dash-text)',
+                                border: '1px solid var(--dash-border)',
+                                borderRadius: '8px',
+                                padding: '0.5rem'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={saveRestaurantHeroEdit}
+                              style={{
+                                background: '#6366f1',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.5rem 1rem',
+                                cursor: 'pointer',
+                                fontWeight: 700
+                              }}
+                            >
+                              Save
+                            </button>
                           </div>
-                        ) : (
-                          <p
-                            onClick={() => startRestaurantHeroEdit('tagline')}
-                            style={{ cursor: 'pointer', marginTop: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}
-                          >
-                            {restaurantProfile.tagline || 'Add tagline...'}
-                          </p>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <p
+                          onClick={() => startRestaurantHeroEdit('tagline')}
+                          style={{
+                            cursor: 'pointer',
+                            margin: '0.25rem 0 0 0',
+                            color: 'var(--dash-subtext)',
+                            fontSize: '0.95rem',
+                            fontWeight: 500
+                          }}
+                        >
+                          <span style={{ borderBottom: '1px dashed var(--dash-accent)' }}>{restaurantProfile.tagline || 'Add tagline...'}</span>
+                        </p>
+                      )}
                     </div>
-                    <LivePreviewSyncOverlay show={restaurantBannerUploading} message="Uploading banner…" />
                   </div>
 
 
@@ -626,6 +727,7 @@ export default function ProfileRestaurantDashboard(props) {
                       ))}
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 {/* Right: live preview = same public page as /link/:username (desktop only) */}
@@ -637,125 +739,14 @@ export default function ProfileRestaurantDashboard(props) {
               </div>
             )}
 
-            {/* ── DESIGN TAB ── */}
-            {restaurantActiveTab === 'design' && (
-              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
-                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
 
-                  {/* Profile Theme — applies to public page */}
-                  <section className="dash-design-section" style={{ marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Profile Theme</h2>
-                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Choose a look for your public restaurant page</p>
-                    <div className="dash-design-grid dash-themes-grid">
-                      {GENERAL_THEMES.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => {
-                            const updated = { ...restaurantProfile, theme: t.id };
-                            setRestaurantProfile(updated);
-                            persistRestaurant(updated);
-                          }}
-                          className={`dash-design-card ${restaurantProfile.theme === t.id ? 'active' : ''}`}
-                          style={{
-                            border: '2px solid ' + (restaurantProfile.theme === t.id ? 'var(--dash-accent)' : 'var(--dash-border)'),
-                            boxShadow: restaurantProfile.theme === t.id ? '0 10px 25px rgba(0,0,0,0.1)' : 'none'
-                          }}
-                        >
-                          <div className={`dash-theme-indicator ${t.isAnimated ? t.className : ''}`} style={{ background: t.isAnimated ? undefined : t.bg }} />
-                          <h3 className="dash-design-card-label">{t.label}</h3>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Font — applies to public page */}
-                  <section className="dash-design-section">
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--dash-text)' }}>Font</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--dash-subtext)' }}>
-                        <input
-                          type="checkbox"
-                          checked={rSyncFonts}
-                          onChange={e => {
-                            setRSyncFonts(e.target.checked);
-                            if (e.target.checked) {
-                              const tf = restaurantProfile.titleFont || 'outfit';
-                              const updated = { ...restaurantProfile, bodyFont: tf };
-                              setRestaurantProfile(updated);
-                              persistRestaurant(updated);
-                            }
-                          }}
-                          style={{ width: 16, height: 16, accentColor: 'var(--dash-accent)' }}
-                        />
-                        Use same font for all
-                      </label>
-                    </div>
-                    <p style={{ color: 'var(--dash-subtext)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select fonts that match your restaurant brand</p>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Heading Font (Name &amp; Tagline)</h3>
-                      <div className="dash-design-grid dash-fonts-grid">
-                        {AVAILABLE_FONTS.map(f => (
-                          <button
-                            key={`rtitle-${f.id}`}
-                            onClick={() => {
-                              const update = rSyncFonts
-                                ? { ...restaurantProfile, titleFont: f.id, bodyFont: f.id }
-                                : { ...restaurantProfile, titleFont: f.id };
-                              setRestaurantProfile(update);
-                              persistRestaurant(update);
-                            }}
-                            className={`dash-design-card ${(restaurantProfile.titleFont || 'outfit') === f.id ? 'active' : ''}`}
-                            style={{ border: '2px solid ' + ((restaurantProfile.titleFont || 'outfit') === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
-                          >
-                            <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
-                            <h3 className="dash-design-card-label">{f.label}</h3>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {!rSyncFonts && (
-                      <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--dash-text)' }}>Body Font (Bio &amp; Descriptions)</h3>
-                        <div className="dash-design-grid dash-fonts-grid">
-                          {AVAILABLE_FONTS.map(f => (
-                            <button
-                              key={`rbody-${f.id}`}
-                              onClick={() => {
-                                const update = { ...restaurantProfile, bodyFont: f.id };
-                                setRestaurantProfile(update);
-                                persistRestaurant(update);
-                              }}
-                              className={`dash-design-card ${(restaurantProfile.bodyFont || 'outfit') === f.id ? 'active' : ''}`}
-                              style={{ border: '2px solid ' + ((restaurantProfile.bodyFont || 'outfit') === f.id ? 'var(--dash-accent)' : 'var(--dash-border)') }}
-                            >
-                              <p style={{ fontSize: '1.5rem', margin: '0 0 0.75rem 0', color: 'var(--dash-text)', fontFamily: resolveFontFamily(f.id) }}>{f.sample}</p>
-                              <h3 className="dash-design-card-label">{f.label}</h3>
-                              <p style={{ fontSize: '0.75rem', color: 'var(--dash-subtext)', margin: 0 }}>{f.desc}</p>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                </div>
-
-                {/* Right: live preview = same public page (desktop only) */}
-                {!isMobileViewport && (
-                  <div className="dash-preview-panel">
-                    <RestaurantPublicPreviewIframe username={restaurantProfile.username} previewKey={previewKey} bannerSyncing={restaurantBannerUploading} />
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* ── MENU TAB ── */}
             {restaurantActiveTab === 'menu' && (
-              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden' }}>
+              <div className="dash-profile-layout" style={{ flex: 1, overflow: 'hidden', minHeight: '0' }}>
                 {/* Left: PDF upload & viewer */}
-                <div className="dash-single-profile" style={{ padding: '2.5rem', overflowY: 'auto' }}>
+                <div className="dash-single-profile" style={{ padding: '2.5rem 0', overflowY: 'auto' }}>
+                  <div style={{ padding: isMobileViewport ? '0' : '0 2.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                     <div>
                       <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--dash-text)', margin: 0 }}>Menu PDF</h2>
@@ -849,6 +840,7 @@ export default function ProfileRestaurantDashboard(props) {
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
 
                 {/* Right: full live public page preview (desktop only) */}
@@ -891,16 +883,6 @@ export default function ProfileRestaurantDashboard(props) {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 </div>
                 <span>Profile</span>
-              </button>
-              <button
-                type="button"
-                className={`dash-mobile-bottom-btn ${restaurantActiveTab === 'design' ? 'dash-mobile-bottom-btn-active' : ''}`}
-                onClick={() => setRestaurantActiveTab('design')}
-              >
-                <div className="dash-mobile-bottom-btn-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                </div>
-                <span>Design</span>
               </button>
               <button
                 type="button"

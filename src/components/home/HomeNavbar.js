@@ -109,7 +109,7 @@ export default function HomeNavbar() {
                             aria-current={isProfessionalActive ? 'page' : undefined}
                             onClick={() => setMobileMenuOpen(false)}
                         >
-                            PROFESSIONAL
+                            GENERAL
                         </Link>
                         <Link
                             to="/restaurant-showcase"

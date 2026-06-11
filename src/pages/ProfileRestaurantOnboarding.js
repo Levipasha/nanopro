@@ -243,31 +243,11 @@ export default function ProfileRestaurantOnboarding(props) {
                       type="button"
                       onClick={removePdf}
                       aria-label="Remove PDF"
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        zIndex: 10,
-                        background: 'none',
-                        border: 'none',
-                        borderRadius: 0,
-                        boxShadow: 'none',
-                        padding: '4px 6px',
-                        margin: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#111827',
-                        fontSize: '1.25rem',
-                        lineHeight: 1,
-                        fontWeight: 400,
-                        fontFamily: 'system-ui, -apple-system, sans-serif'
-                      }}
+                      className="dash-pdf-remove-btn"
                     >
                       ×
                     </button>
-                    <div style={{ maxHeight: 400, overflowY: 'auto', background: '#f1f5f9', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div className="hide-scrollbar" style={{ maxHeight: 400, overflowY: 'auto', background: '#f1f5f9', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                       <Document
                         file={restaurantForm.menuPdf}
                         onLoadSuccess={onPdfLoadSuccess}

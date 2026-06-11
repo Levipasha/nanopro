@@ -13,8 +13,6 @@ export default function HomeFooter() {
                 <div className="footer-links">
                     <h4>Quick Links</h4>
                     <a href="#home">Home</a>
-                    <a href="#about">About</a>
-                    <a href="#testimonials">Testimonials</a>
                     <a href="#contact">Contact</a>
                 </div>
 

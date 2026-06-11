@@ -1015,7 +1015,7 @@ function GeneralProfileView() {
             <div style={{
               position: 'relative',
               width: '100%',
-              marginTop: '0px',
+              marginTop: '16px',
               marginBottom: '20px',
               ...(profile.showPhoto === false ? { border: '2px dashed #ef4444', borderRadius: '4px', padding: '4px', boxSizing: 'border-box' } : {})
             }}>
@@ -1223,7 +1223,7 @@ function GeneralProfileView() {
           <section 
             className="section about-section" 
             style={{ 
-              paddingTop: '50px',
+              paddingTop: '36px',
               position: 'relative',
               ...(profile.showAbout === false ? { 
                 opacity: 0.65, 

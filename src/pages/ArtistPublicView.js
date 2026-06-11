@@ -739,7 +739,9 @@ function ArtistPublicView() {
           '--red': themeLinkBg,
           '--red2': themeLinkBg,
           '--border': isTextDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
-          '--border-light': isTextDark ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'
+          '--border-light': isTextDark ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+          '--font-heading': resolveFontFamily(artist.profileFont || 'syne'),
+          '--font-body': resolveFontFamily(artist.profileFont || 'syne')
         }}
       >
 
@@ -777,7 +779,7 @@ function ArtistPublicView() {
           <div style={{
             position: 'relative',
             width: '100%',
-            marginTop: '0px',
+            marginTop: '16px',
             marginBottom: '20px',
             ...(artist.showPhoto === false ? { border: '2px dashed #ef4444', borderRadius: '4px', padding: '4px', boxSizing: 'border-box' } : {})
           }}>
@@ -985,7 +987,7 @@ function ArtistPublicView() {
         <section 
           className="section about-section" 
           style={{ 
-            paddingTop: '50px',
+            paddingTop: '36px',
             position: 'relative',
             ...(artist.showAbout === false ? { 
               opacity: 0.65, 

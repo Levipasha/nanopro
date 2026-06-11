@@ -322,11 +322,12 @@
 .artist-public-wrapper .about-section {
   background: var(--ink);
   color: var(--cream);
+  padding-top: 36px;
 }
 .artist-public-wrapper .about-inner {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 20px;
 }
 .artist-public-wrapper .about-section .section-num {
   color: var(--red);
@@ -347,12 +348,12 @@
   font-style: italic;
 }
 .artist-public-wrapper .about-body {
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-size: 18px;
-  font-weight: 400;
-  color: rgba(247,243,238,.95);
-  line-height: 1.75;
+  font-family: var(--font-body, "Outfit", sans-serif) !important;
+  font-style: normal;
+  font-size: 16px;
+  color: rgba(247,243,238,.9);
+  line-height: 1.6;
+  text-align: justify;
   padding-top: 4px;
 }
 .artist-public-wrapper .about-body strong {
@@ -423,6 +424,7 @@
   line-height: 1.9;
   color: var(--muted);
   letter-spacing: .3px;
+  text-align: justify;
 }
 
 /* ── CONNECT ── */
