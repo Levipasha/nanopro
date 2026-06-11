@@ -105,7 +105,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 80px 24px 40px;
+  padding: 56px 24px 40px;
   position: relative;
   overflow: hidden;
   animation: heroIn .8s ease both;
@@ -563,7 +563,7 @@
   right: auto;
   width: 100%;
   height: 400px;
-  margin-top: 40px;
+  margin-top: 16px;
   margin-bottom: 20px;
   z-index: 2;
   object-fit: cover;

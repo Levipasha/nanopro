@@ -777,7 +777,7 @@ function ArtistPublicView() {
           <div style={{
             position: 'relative',
             width: '100%',
-            marginTop: '40px',
+            marginTop: '0px',
             marginBottom: '20px',
             ...(artist.showPhoto === false ? { border: '2px dashed #ef4444', borderRadius: '4px', padding: '4px', boxSizing: 'border-box' } : {})
           }}>
