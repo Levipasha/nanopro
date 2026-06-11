@@ -10,7 +10,7 @@ function isBot(userAgent) {
 }
 
 export const config = {
-  matcher: ['/link/:path*', '/artist'],
+  matcher: ['/link/:path*', '/artist', '/artist/:path*'],
 };
 
 export default async function middleware(request) {
@@ -32,9 +32,13 @@ export default async function middleware(request) {
     return serveOgHtml(ogUrl, request);
   }
 
-  // 2. Artist Profiles: /artist?id=<artistId>
-  if (url.pathname === '/artist') {
-    const artistId = url.searchParams.get('id');
+  // 2. Artist Profiles: /artist/:artistId OR /artist?id=<artistId>
+  if (url.pathname.startsWith('/artist')) {
+    let artistId = url.searchParams.get('id');
+    if (!artistId) {
+      const pathMatch = url.pathname.match(/^\/artist\/([^/]+)/);
+      artistId = pathMatch && pathMatch[1] ? pathMatch[1] : null;
+    }
     if (!artistId) return fetch(request);
 
     const ogUrl = `${origin}/api/og-artist?id=${encodeURIComponent(artistId)}`;
