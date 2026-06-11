@@ -7,7 +7,6 @@ import { getThemeById, resolveFontFamily } from '../constants/generalThemes';
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
 import { Helmet } from 'react-helmet-async';
 import { fixImageUrl } from '../utils/imageHelper';
-import SkyToggle from '../components/ui/SkyToggle';
 
 /**
  * Public artist profile route used for share links.

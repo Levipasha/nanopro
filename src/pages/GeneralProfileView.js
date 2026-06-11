@@ -9,7 +9,6 @@ import { Helmet } from 'react-helmet-async';
 import './GeneralProfileView.css';
 
 import { useShowcaseEmbedHeight } from '../hooks/useShowcaseEmbedHeight';
-import SkyToggle from '../components/ui/SkyToggle';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -537,21 +536,6 @@ function GeneralProfileView() {
 
           {/* Banner Section */}
           <div className="gp-photo-header">
-            <div className="gp-artist-hero-toggle-wrap" style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 10 }}>
-              <SkyToggle
-                checked={theme.isDark}
-                onChange={(e) => {
-                  const wantDark = e.target.checked;
-                  const profileThemeObj = getThemeById(profile.theme || 'midnight');
-
-                  if (profileThemeObj.isDark === wantDark) {
-                    setThemeOverride(null);
-                  } else {
-                    setThemeOverride(wantDark ? 'midnight' : 'light');
-                  }
-                }}
-              />
-            </div>
             <img
               src={fixImageUrl(profile.banner || profile.photo) || profile.banner || profile.photo}
               alt=""
