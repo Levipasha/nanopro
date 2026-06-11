@@ -198,6 +198,7 @@ export default function ProfileGeneralController(props) {
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [tempPlatforms, setTempPlatforms] = useState([]);
   const [syncFonts, setSyncFonts] = useState(true);
+  const [loadedArtistId, setLoadedArtistId] = useState(null);
 
 
   useEffect(() => {
@@ -212,24 +213,22 @@ export default function ProfileGeneralController(props) {
   useEffect(() => {
     if (!myArtists || myArtists.length === 0) return;
     const artist = myArtists[0];
-    const isNonEmpty = (v) => {
-      if (v === undefined || v === null) return false;
-      if (typeof v === 'string') return v.trim() !== '';
-      return true;
-    };
-    const active = ALL_PLATFORMS
-      .filter((p) =>
-        isNonEmpty(artist[p.id]) ||
-        isNonEmpty(pendingLinks[p.id]) ||
-        (visiblePlatforms && visiblePlatforms.includes(p.id)) ||
-        (Array.isArray(artist.links) && artist.links.some(l => (l.platform || '').toLowerCase() === p.id.toLowerCase()))
-      )
-      .map((p) => p.id);
-
-    if (JSON.stringify(active) !== JSON.stringify(visiblePlatforms)) {
+    if (artist && artist.artistId !== loadedArtistId) {
+      const isNonEmpty = (v) => {
+        if (v === undefined || v === null) return false;
+        if (typeof v === 'string') return v.trim() !== '';
+        return true;
+      };
+      const active = ALL_PLATFORMS
+        .filter((p) =>
+          isNonEmpty(artist[p.id]) ||
+          (Array.isArray(artist.links) && artist.links.some(l => (l.platform || '').toLowerCase() === p.id.toLowerCase()))
+        )
+        .map((p) => p.id);
       setVisiblePlatforms(active);
+      setLoadedArtistId(artist.artistId);
     }
-  }, [myArtists, pendingLinks, visiblePlatforms]);
+  }, [myArtists, loadedArtistId]);
 
   useEffect(() => {
     if (isMobileViewport) {
