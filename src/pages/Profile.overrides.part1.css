@@ -1,4 +1,4 @@
-﻿/* Must be imported LAST (after Profile.part*.css).
+/* Must be imported LAST (after Profile.part*.css).
    Forces black/white dashboard and removes gradient layers everywhere. */
 
 /* Remove gradients only from dashboard â€œboxesâ€, not from theme preview swatches. */
@@ -194,8 +194,8 @@
   padding: 0 !important;
   display: block !important;
   width: 100% !important;
-  color: #fff !important;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
+  color: var(--dash-text) !important;
+  text-shadow: none !important;
 }
 
 /* Redesigned Sidebar and Navigation for Light Mode */
