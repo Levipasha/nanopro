@@ -1392,6 +1392,263 @@ export default function ProfileGeneralDashboard(props) {
             </div>
           </div>
         , document.body)}
+
+        {isSelectorOpen && ReactDOM.createPortal(
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}>
+            <style>{`
+              @keyframes modalIn {
+                from { opacity: 0; }
+                to   { opacity: 1; }
+              }
+              .plt-row { transition: background 0.15s; box-sizing: border-box; }
+              .plt-row:hover { background: #f8fafc !important; }
+              .plt-row.plt-active { background: #f0fdf4 !important; }
+              .plt-row.plt-active:hover { background: #dcfce7 !important; }
+              .plt-search:focus { border-color: #2563eb !important; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1) !important; }
+              .plt-cancel:hover { background: #f1f5f9 !important; }
+              .plt-done:hover { filter: brightness(1.08); }
+              .plt-list::-webkit-scrollbar { width: 4px; }
+              .plt-list::-webkit-scrollbar-track { background: transparent; }
+              .plt-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+              .plt-list { overflow-x: hidden !important; }
+            `}</style>
+
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '18px',
+              width: '400px',
+              maxWidth: 'calc(100vw - 32px)',
+              maxHeight: 'calc(100vh - 48px)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+              animation: 'modalIn 0.18s ease',
+            }}>
+
+              {/* Header */}
+              <div style={{ padding: '1.5rem 1.5rem 1.2rem', borderBottom: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>Add Platforms</div>
+                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '3px', fontWeight: 500 }}>
+                      {tempPlatforms.length === 0
+                        ? 'Choose platforms for your profile'
+                        : `${tempPlatforms.length} platform${tempPlatforms.length > 1 ? 's' : ''} selected`}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsSelectorOpen(false)}
+                    style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', background: '#f1f5f9', color: '#64748b', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 }}
+                  >×</button>
+                </div>
+
+                {/* Search */}
+                <div style={{ position: 'relative' }}>
+                  <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    className="plt-search"
+                    type="text"
+                    placeholder="Search..."
+                    onChange={e => {
+                      const q = e.target.value.toLowerCase();
+                      document.querySelectorAll('.plt-row').forEach(r => {
+                        r.style.display = (r.dataset.name || '').includes(q) ? 'flex' : 'none';
+                      });
+                    }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.65rem 1rem 0.65rem 2.4rem', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', fontSize: '0.88rem', color: '#0f172a', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                  />
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="plt-list" style={{ overflowY: 'auto', overflowX: 'hidden', flex: 1 }}>
+                {ALL_PLATFORMS.map((p, idx) => {
+                  const isActive = tempPlatforms.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      data-name={p.label.toLowerCase()}
+                      className={`plt-row${isActive ? ' plt-active' : ''}`}
+                      type="button"
+                      onClick={() => togglePlatformInSelector(p.id)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center',
+                        gap: '12px', padding: '9px 18px',
+                        border: 'none',
+                        boxSizing: 'border-box',
+                        borderBottom: idx < ALL_PLATFORMS.length - 1 ? '1px solid #f8fafc' : 'none',
+                        background: isActive ? '#f0fdf4' : 'transparent',
+                        cursor: 'pointer', textAlign: 'left',
+                      }}
+                    >
+                      {/* Icon */}
+                      <div style={{
+                        width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                        background: p.gradient || p.color || '#6366f1',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#ffffff', fontSize: '16px',
+                        boxShadow: `0 2px 6px ${(p.color || '#6366f1')}30`
+                      }}>
+                        {getLinkIcon({ platform: p.id })}
+                      </div>
+
+                      {/* Label + desc */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1e293b' }}>{p.label}</div>
+                        <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>
+                      </div>
+
+                      {/* Toggle */}
+                      {isActive ? (
+                        <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 3px 8px rgba(34,197,94,0.35)' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                      ) : (
+                        <div style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '10px', background: '#fafbfd' }}>
+                <button
+                  type="button"
+                  className="plt-cancel"
+                  onClick={() => setIsSelectorOpen(false)}
+                  style={{ flex: 1, padding: '0.8rem', borderRadius: '11px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', transition: 'background 0.15s' }}
+                >Cancel</button>
+                <button
+                  type="button"
+                  className="plt-done"
+                  onClick={handlePlatformDone}
+                  style={{
+                    flex: 2, padding: '0.8rem', borderRadius: '11px', border: 'none',
+                    background: tempPlatforms.length > 0 ? '#2563eb' : '#cbd5e1',
+                    color: '#fff', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
+                    transition: 'filter 0.15s',
+                    boxShadow: tempPlatforms.length > 0 ? '0 4px 14px rgba(37,99,235,0.3)' : 'none'
+                  }}
+                >
+                  {tempPlatforms.length > 0 ? `Add ${tempPlatforms.length} Platform${tempPlatforms.length > 1 ? 's' : ''}` : 'Select Platforms'}
+                </button>
+              </div>
+            </div>
+          </div>
+        , document.body)}
+
+        {mobileLinkEditPlatform && ReactDOM.createPortal(
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+          onClick={() => {
+            setMobileLinkEditPlatform(null);
+            if (setMobileLinkEditId) setMobileLinkEditId(null);
+          }}>
+            <div
+              className="dash-mobile-edit-modal"
+              aria-label={`Edit ${mobileLinkEditLabel}`}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#ffffff',
+                borderRadius: '18px',
+                width: '400px',
+                maxWidth: 'calc(100vw - 32px)',
+                padding: '1.5rem',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div className="dash-mobile-edit-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="dash-mobile-edit-title" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+                  {mobileLinkEditMode === 'title' ? `Edit Label` : `Edit ${mobileLinkEditLabel}`}
+                </div>
+                <button
+                  type="button"
+                  className="dash-mobile-edit-close"
+                  onClick={() => {
+                    setMobileLinkEditPlatform(null);
+                    if (setMobileLinkEditId) setMobileLinkEditId(null);
+                  }}
+                  aria-label="Close"
+                  style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: '#f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="dash-mobile-edit-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input
+                  autoFocus
+                  value={mobileLinkEditValue}
+                  placeholder={
+                    mobileLinkEditMode === 'title' ? 'e.g. My Instagram' :
+                    mobileLinkEditPlatform === 'instagram' ? '@handle' :
+                    mobileLinkEditPlatform === 'whatsapp' ? 'Phone number' :
+                    'Enter URL / handle'
+                  }
+                  onChange={(e) => setMobileLinkEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setMobileLinkEditPlatform(null);
+                      if (setMobileLinkEditId) setMobileLinkEditId(null);
+                    }
+                    if (e.key === 'Enter') saveMobileLinkField();
+                  }}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '0.75rem 1rem', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.95rem', outline: 'none' }}
+                />
+                <div className="dash-mobile-edit-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="dash-mobile-edit-btn ghost"
+                    onClick={() => {
+                      setMobileLinkEditPlatform(null);
+                      if (setMobileLinkEditId) setMobileLinkEditId(null);
+                    }}
+                    style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="dash-mobile-edit-btn primary"
+                    onClick={saveMobileLinkField}
+                    disabled={savingLink === mobileLinkEditPlatform || (mobileLinkEditId && savingLink === mobileLinkEditId)}
+                    style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer' }}
+                  >
+                    {savingLink === mobileLinkEditPlatform || (mobileLinkEditId && savingLink === mobileLinkEditId) ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        , document.body)}
       </div>
     );
   }
