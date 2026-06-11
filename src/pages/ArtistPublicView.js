@@ -769,7 +769,7 @@ function ArtistPublicView() {
       </div>
 
       {/* HERO */}
-      <section className="hero" style={{ minHeight: (showPhotoEffectively && !isEmbed) ? '100vh' : 'auto' }}>
+      <section className="hero" style={{ minHeight: 'auto' }}>
         <div className="hero-bg-text">
           {artist.name ? artist.name.charAt(0).toUpperCase() : 'A'}
         </div>

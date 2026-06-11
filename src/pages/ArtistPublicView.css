@@ -102,10 +102,10 @@
 
 /* ── HERO ── */
 .artist-public-wrapper .hero {
-  min-height: 100vh;
+  min-height: auto;
   display: flex;
   flex-direction: column;
-  padding: 56px 24px 24px;
+  padding: 56px 24px 40px;
   position: relative;
   overflow: hidden;
   animation: heroIn .8s ease both;
