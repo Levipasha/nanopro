@@ -1147,41 +1147,7 @@ export default function ProfileArtistDashboard(props) {
                 </>
               );
             })()}
-            {setProfileMode && (
-              <button
-                onClick={() => {
-                  try {
-                    localStorage.removeItem('profile_type_lock');
-                    localStorage.removeItem('profile_mode');
-                  } catch (e) {}
-                  if (setProfileLock) setProfileLock(null);
-                  if (setChoiceSource) setChoiceSource('manual');
-                  setProfileMode('choice');
-                }}
-                title="Switch Profile Type"
-                aria-label="Switch Profile Type"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: '#ffffff',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 2.1l4 4-4 4" />
-                  <path d="M3 12.2v-2a4 4 0 0 1 4-4h14" />
-                  <path d="M7 21.9l-4-4 4-4" />
-                  <path d="M21 11.8v2a4 4 0 0 1-4 4H3" />
-                </svg>
-              </button>
-            )}
+
             <button
               onClick={handleLogout}
               title="Sign Out"
@@ -1556,35 +1522,7 @@ export default function ProfileArtistDashboard(props) {
             );
           })()}
 
-          {setProfileMode && (
-            <button
-              onClick={() => {
-                try {
-                  localStorage.removeItem('profile_type_lock');
-                  localStorage.removeItem('profile_mode');
-                } catch (e) {}
-                if (setProfileLock) setProfileLock(null);
-                if (setChoiceSource) setChoiceSource('manual');
-                setProfileMode('choice');
-              }}
-              style={{
-                background: 'transparent',
-                color: '#475569',
-                border: '1px solid #cbd5e1',
-                padding: '0.55rem 1.1rem',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                marginRight: '0.5rem'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              Switch Profile
-            </button>
-          )}
+
 
           <button
             onClick={handleLogout}

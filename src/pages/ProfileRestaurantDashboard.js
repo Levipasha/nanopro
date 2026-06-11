@@ -161,28 +161,7 @@ export default function ProfileRestaurantDashboard(props) {
           </nav>
 
           <div className="dash-sidebar-bottom" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            {setProfileMode && (
-              <button
-                className="dash-sidebar-signout-btn"
-                style={{
-                  background: '#f1f5f9',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  marginBottom: '0.25rem'
-                }}
-                onClick={() => {
-                  try {
-                    localStorage.removeItem('profile_type_lock');
-                    localStorage.removeItem('profile_mode');
-                  } catch (e) {}
-                  if (setProfileLock) setProfileLock(null);
-                  if (setChoiceSource) setChoiceSource('manual');
-                  setProfileMode('choice');
-                }}
-              >
-                Switch Profile Type
-              </button>
-            )}
+
             <button className="dash-sidebar-signout-btn" onClick={handleLogout}>Sign out</button>
           </div>
         </aside>
@@ -858,29 +837,7 @@ export default function ProfileRestaurantDashboard(props) {
                 </div>
                 <span>Preview</span>
               </button>
-              {setProfileMode && (
-                <button
-                  type="button"
-                  className="dash-mobile-bottom-btn"
-                  onClick={() => {
-                    try {
-                      localStorage.removeItem('profile_type_lock');
-                      localStorage.removeItem('profile_mode');
-                    } catch (e) {}
-                    if (setProfileLock) setProfileLock(null);
-                    if (setChoiceSource) setChoiceSource('manual');
-                    setProfileMode('choice');
-                  }}
-                >
-                  <div className="dash-mobile-bottom-btn-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 2.1l4 4-4 4" />
-                      <path d="M3 12.2v-2a4 4 0 0 1 4-4h14" />
-                    </svg>
-                  </div>
-                  <span>Switch</span>
-                </button>
-              )}
+
               <button
                 type="button"
                 className="dash-mobile-bottom-btn"
