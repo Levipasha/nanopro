@@ -105,7 +105,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 56px 24px 40px;
+  padding: 56px 24px 24px;
   position: relative;
   overflow: hidden;
   animation: heroIn .8s ease both;
@@ -179,7 +179,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 40px 0;
+  padding: 24px 0 0;
 }
 .artist-public-wrapper .name-eyebrow {
   font-family: 'JetBrains Mono', monospace;
@@ -294,7 +294,7 @@
 
 /* ── SECTION ── */
 .artist-public-wrapper .section {
-  padding: 60px 24px;
+  padding: 48px 24px;
 }
 .artist-public-wrapper .section-head {
   display: flex;
