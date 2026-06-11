@@ -148,10 +148,6 @@ export default function ProfileRestaurantOnboarding(props) {
                 <small className="onboarding-tip">Your link: <b>{process.env.REACT_APP_DOMAIN || 'nanoprofile.com'}/link/{restaurantForm.username || 'username'}</b></small>
               </div>
               <div className="onboarding-field">
-                <label>Tagline</label>
-                <input type="text" className="onboarding-input" value={restaurantForm.tagline} onChange={e => setRestaurantForm(prev => ({ ...prev, tagline: e.target.value }))} placeholder="e.g. Fresh food, fast" />
-              </div>
-              <div className="onboarding-field">
                 <label>Bio / Description</label>
                 <textarea className="onboarding-textarea" rows={3} value={restaurantForm.bio} onChange={e => setRestaurantForm(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell customers about your restaurant..." />
               </div>

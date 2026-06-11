@@ -547,18 +547,12 @@ function GeneralProfileView() {
             <h1 className="gp-name">{profile.name}</h1>
             <div className="gp-username-row">
               <span className="gp-username-display">@{profile?.username || username}</span>
-              {profile.title && (
-                <>
-                  <span className="gp-sep">/</span>
-                  <span className="gp-tagline">{profile.title.replace('|', ' ')}</span>
-                </>
-              )}
             </div>
           </div>
 
           <div className="gp-content-wrap">
             {/* About section */}
-            {(cleanBio || profile.title) && (
+            {cleanBio && (
               <div className="gp-section gp-about-section" style={{ paddingLeft: 0, paddingRight: 0, marginTop: '0' }}>
                 <div className="gp-about-header">
                   <h2 className="gp-section-title">About</h2>

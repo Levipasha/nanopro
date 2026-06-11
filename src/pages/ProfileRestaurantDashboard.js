@@ -443,55 +443,6 @@ export default function ProfileRestaurantDashboard(props) {
                         Change Banner
                       </button>
 
-                      {/* Tagline */}
-                      {rHeroEditingField === 'tagline' ? (
-                        <div className="dash-hero-editable-wrapper" style={{ width: '100%', marginTop: '0.25rem' }}>
-                          <div className="dash-hero-edit-row" style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                            <input
-                              className="dash-hero-inline-input tagline"
-                              autoFocus
-                              value={rHeroDraftTagline}
-                              onChange={(e) => setRHeroDraftTagline(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: 'var(--dash-bg)',
-                                color: 'var(--dash-text)',
-                                border: '1px solid var(--dash-border)',
-                                borderRadius: '8px',
-                                padding: '0.5rem'
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={saveRestaurantHeroEdit}
-                              style={{
-                                background: '#6366f1',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '0.5rem 1rem',
-                                cursor: 'pointer',
-                                fontWeight: 700
-                              }}
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p
-                          onClick={() => startRestaurantHeroEdit('tagline')}
-                          style={{
-                            cursor: 'pointer',
-                            margin: '0.25rem 0 0 0',
-                            color: 'var(--dash-subtext)',
-                            fontSize: '0.95rem',
-                            fontWeight: 500
-                          }}
-                        >
-                          <span style={{ borderBottom: '1px dashed var(--dash-accent)' }}>{restaurantProfile.tagline || 'Add tagline...'}</span>
-                        </p>
-                      )}
                     </div>
                   </div>
 
