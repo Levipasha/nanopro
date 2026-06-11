@@ -38,7 +38,7 @@ export default function ProfileGeneralDashboard(props) {
     getIdToken, getFirebaseUser, setMyArtists, setPreviewKey,
     editingHeroField, setEditingHeroField, heroUpdates, setHeroUpdates,
     isAddingTag, setIsAddingTag, handleAddTag, handleDeleteTag,
-    newTagText, setNewTagText, handleUploadField, handlePickAndCrop, handleUpdateHeroField,
+    newTagText, setNewTagText, handleUploadField, handlePickAndCrop, handleUpdateHeroField, isUploading,
 
     // link edit popup props
     mobileLinkEditPlatform, setMobileLinkEditPlatform,
@@ -653,19 +653,70 @@ export default function ProfileGeneralDashboard(props) {
       <div style={{ marginBottom: '1rem' }}>
         <h4 style={{ color: '#475569', fontSize: '1rem', margin: '0 0 1rem 0' }}>Profile Avatar</h4>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ 
+            width: '80px', 
+            height: '80px', 
+            borderRadius: '50%', 
+            overflow: 'hidden', 
+            background: '#e2e8f0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            position: 'relative'
+          }}>
             {artist?.photo ? (
               <img src={artist.photo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ fontSize: '2rem', color: '#64748b' }}>{avatarLetter}</span>
             )}
+            
+            {isUploading === 'photo' && (
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'rgba(15, 23, 42, 0.65)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="3" fill="none" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" fill="none">
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      from="0 12 12"
+                      to="360 12 12"
+                      dur="1s"
+                      repeatCount="indefinite"
+                    />
+                  </path>
+                </svg>
+              </div>
+            )}
           </div>
-          <label style={{ background: '#2563eb', color: '#fff', padding: '0.6rem 1.2rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
-            Choose New Avatar
+          <label style={{ 
+            background: isUploading === 'photo' ? '#94a3b8' : '#2563eb', 
+            color: '#fff', 
+            padding: '0.6rem 1.2rem', 
+            borderRadius: '8px', 
+            fontWeight: 600, 
+            cursor: isUploading === 'photo' ? 'not-allowed' : 'pointer', 
+            fontSize: '0.85rem',
+            pointerEvents: isUploading === 'photo' ? 'none' : 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            {isUploading === 'photo' ? 'Uploading...' : 'Choose New Avatar'}
             <input
               type="file"
               accept="image/*"
               style={{ display: 'none' }}
+              disabled={isUploading === 'photo'}
               onChange={(e) => handlePickAndCrop(e, 1, (file) => handleUploadField('photo', file))}
             />
           </label>
