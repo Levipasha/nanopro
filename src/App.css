@@ -46,6 +46,15 @@ body {
   color: #0f172a !important;
 }
 
+@media (max-width: 768px) {
+  .home-hero-section {
+    padding-top: 90px !important;
+  }
+  .home-hero-section .hero-content {
+    padding-top: 0 !important;
+  }
+}
+
 /* Particle adjustments: make sure they blend nicely */
 .hero-particles-bg {
   opacity: 0.65;
