@@ -1272,7 +1272,7 @@ export default function ProfileGeneralDashboard(props) {
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: '0 16px calc(16px + env(safe-area-inset-bottom)) 16px',
+            padding: '0 16px calc(80px + env(safe-area-inset-bottom)) 16px',
             boxSizing: 'border-box'
           }} onClick={() => setActiveEditor('default')}>
             <div style={{
