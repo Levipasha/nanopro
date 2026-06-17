@@ -235,13 +235,13 @@ function ArtistPublicView() {
       }
 
       // 9. Design Customization (Hero empty space)
-      const heroEl = e.target.closest('.hero');
-      if (heroEl) {
-        e.preventDefault();
-        e.stopPropagation();
-        window.parent.postMessage({ type: 'PREVIEW_CLICK', field: 'design' }, '*');
-        return;
-      }
+      // const heroEl = e.target.closest('.hero');
+      // if (heroEl) {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   window.parent.postMessage({ type: 'PREVIEW_CLICK', field: 'design' }, '*');
+      //   return;
+      // }
     };
 
     // Use capturing phase so we intercept before standard navigation or click handlers
@@ -870,7 +870,7 @@ function ArtistPublicView() {
                   Hidden
                 </div>
               )}
-              {artist.name ? (
+              {artist.name && artist.name.split('|').join('').trim() ? (
                 <>
                   {(() => {
                     // Support both old "FIRST LAST" (space) and new "FIRST|LAST" (pipe) formats
@@ -917,11 +917,11 @@ function ArtistPublicView() {
                     );
                   })()}
                 </>
-              ) : 'ARTIST'}
+              ) : 'NAME'}
             </h1>
           )}
 
-          {showSpecializationEffectively && artist.specialization && (
+          {showSpecializationEffectively && (artist.specialization || isPreview) && (
             <div 
               className="roles" 
               style={{ 
@@ -956,25 +956,29 @@ function ArtistPublicView() {
                   Hidden
                 </div>
               )}
-              {artist.specialization.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
-                <div
-                  className="role-pill"
-                  key={i}
-                  style={{
-                    textTransform: 'none',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    padding: '4px 12px',
-                    letterSpacing: '0.5px',
-                    background: '#000000',
-                    color: '#ffffff',
-                    border: '1.5px solid #000000',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                  }}
-                >
-                  {tag}
-                </div>
-              ))}
+              {artist.specialization ? (
+                artist.specialization.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
+                  <div
+                    className="role-pill"
+                    key={i}
+                    style={{
+                      textTransform: 'none',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      padding: '4px 12px',
+                      letterSpacing: '0.5px',
+                      background: '#000000',
+                      color: '#ffffff',
+                      border: '1.5px solid #000000',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    {tag}
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>No Specialization Badges</span>
+              )}
             </div>
           )}
         </div>
@@ -1016,7 +1020,7 @@ function ArtistPublicView() {
             </div>
           )}
           <div className="section-head" style={{ marginBottom: '20px' }}>
-            <div className="section-title" style={{ color: 'rgba(247,243,238,.6)', fontSize: '11px', letterSpacing: '4px' }}>About</div>
+            <div className="section-title" style={{ color: 'rgba(247,243,238,.85)', fontSize: '11px', letterSpacing: '4px' }}>About</div>
           </div>
           <div className="about-inner">
             <div className="about-label">

@@ -202,7 +202,7 @@
   color: var(--ink);
 }
 .artist-public-wrapper h1 em {
-  font-style: italic;
+  font-style: normal;
   color: var(--red);
 }
 
@@ -315,7 +315,7 @@
   letter-spacing: 4px;
   text-transform: uppercase;
   font-weight: 700;
-  color: var(--muted);
+  color: rgba(10,10,10,0.6);
 }
 
 /* ── ABOUT BLOCK ── */
@@ -436,7 +436,7 @@
   border-color: rgba(200,0,26,.4);
 }
 .artist-public-wrapper .connect-section .section-title {
-  color: rgba(247,243,238,.3);
+  color: rgba(247,243,238,.75);
 }
 
 .artist-public-wrapper .connect-cards {

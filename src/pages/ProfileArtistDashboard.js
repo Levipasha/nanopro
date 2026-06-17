@@ -461,6 +461,7 @@ export default function ProfileArtistDashboard(props) {
     const handleMessage = (event) => {
       if (event.data && event.data.type === 'PREVIEW_CLICK') {
         let field = event.data.field;
+        if (field === 'design') return;
         if (field === 'links') field = 'platforms';
         if (field === 'suggestions') field = 'what-i-do';
         if (field === 'gallery') field = 'link-art';
@@ -517,9 +518,19 @@ export default function ProfileArtistDashboard(props) {
           <button
             onClick={() => {
               const nameVal = heroUpdates.name !== undefined ? heroUpdates.name : (artist?.name || '');
-              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { name: nameVal }, () => getIdToken(), getFirebaseUser)
+              const isNameEmpty = !nameVal.split('|').join('').trim();
+              const payload = { name: nameVal };
+              const stateUpdates = { name: nameVal };
+              if (isNameEmpty) {
+                payload.showName = false;
+                stateUpdates.showName = false;
+              } else {
+                payload.showName = true;
+                stateUpdates.showName = true;
+              }
+              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser)
                 .then(res => {
-                  setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, name: nameVal } : a));
+                  setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, ...stateUpdates } : a));
                   setHeroUpdates({});
                   setActiveEditor('default');
                 });
@@ -567,12 +578,22 @@ export default function ProfileArtistDashboard(props) {
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
           <button
             onClick={() => {
-              const c = heroUpdates.city !== undefined ? heroUpdates.city : artist.city;
-              const s = heroUpdates.state !== undefined ? heroUpdates.state : artist.state;
-              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { city: c, state: s }, () => getIdToken(), getFirebaseUser)
+              const c = heroUpdates.city !== undefined ? heroUpdates.city : (artist.city || '');
+              const s = heroUpdates.state !== undefined ? heroUpdates.state : (artist.state || '');
+              const isLocationEmpty = !c.trim() && !s.trim();
+              const payload = { city: c, state: s };
+              const stateUpdates = { city: c, state: s };
+              if (isLocationEmpty) {
+                payload.showLocation = false;
+                stateUpdates.showLocation = false;
+              } else {
+                payload.showLocation = true;
+                stateUpdates.showLocation = true;
+              }
+              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser)
                 .then(res => {
                   if (res.success) {
-                    setMyArtists(prev => prev.map((a, idx) => idx === 0 ? res.data : a));
+                    setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, ...stateUpdates } : a));
                     setHeroUpdates({});
                     setActiveEditor('default');
                   }
@@ -812,9 +833,22 @@ export default function ProfileArtistDashboard(props) {
             onClick={() => {
               const expVal = heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '');
               const bioVal = heroUpdates.bio !== undefined ? heroUpdates.bio : (artist.bio || '');
-              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, { experience: expVal, bio: bioVal }, () => getIdToken(), getFirebaseUser)
+              
+              const isHeadlineEmpty = !expVal.split('|').join('').trim();
+              const isBioEmpty = !bioVal.trim();
+              const payload = { experience: expVal, bio: bioVal };
+              const stateUpdates = { experience: expVal, bio: bioVal };
+              if (isHeadlineEmpty && isBioEmpty) {
+                payload.showAbout = false;
+                stateUpdates.showAbout = false;
+              } else {
+                payload.showAbout = true;
+                stateUpdates.showAbout = true;
+              }
+
+              landingArtistAPI.updateMyProfile(artist.artistId || artist._id, payload, () => getIdToken(), getFirebaseUser)
                 .then(res => {
-                  setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, experience: expVal, bio: bioVal } : a));
+                  setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, ...stateUpdates } : a));
                   setHeroUpdates({});
                   setActiveEditor('default');
                 });
@@ -1042,7 +1076,7 @@ export default function ProfileArtistDashboard(props) {
         return renderPlatformsEditor();
 
       case 'design':
-        return renderDesignEditor();
+        return null;
       case 'what-i-do':
         return renderWhatIDoEditor();
       case 'link-art':
@@ -1059,7 +1093,7 @@ export default function ProfileArtistDashboard(props) {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100dvh',
         width: '100vw',
         overflow: 'hidden',
         background: '#ffffff',
@@ -1276,7 +1310,7 @@ export default function ProfileArtistDashboard(props) {
         {/* Bottom Sheet / Modal Overlay for Editor panels */}
         {activeEditor !== 'default' && (
           <div style={{
-            position: 'absolute',
+            position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
             zIndex: 10000,
             background: 'rgba(15, 23, 42, 0.4)',
@@ -1284,14 +1318,14 @@ export default function ProfileArtistDashboard(props) {
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: '0 16px 16px 16px',
+            padding: '0 16px calc(16px + env(safe-area-inset-bottom)) 16px',
             boxSizing: 'border-box'
           }} onClick={() => setActiveEditor('default')}>
             <div style={{
               background: '#ffffff',
               width: '100%',
               maxWidth: '450px',
-              maxHeight: '80vh',
+              maxHeight: '80dvh',
               borderRadius: '24px',
               padding: '1.5rem',
               boxSizing: 'border-box',

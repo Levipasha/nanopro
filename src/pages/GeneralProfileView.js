@@ -304,13 +304,13 @@ function GeneralProfileView() {
       }
 
       // 9. Design Customization (Hero empty space)
-      const heroEl = e.target.closest('.hero');
-      if (heroEl) {
-        e.preventDefault();
-        e.stopPropagation();
-        window.parent.postMessage({ type: 'PREVIEW_CLICK', field: 'design' }, '*'); // Open Design tab
-        return;
-      }
+      // const heroEl = e.target.closest('.hero');
+      // if (heroEl) {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   window.parent.postMessage({ type: 'PREVIEW_CLICK', field: 'design' }, '*'); // Open Design tab
+      //   return;
+      // }
     };
 
     document.addEventListener('click', handleIframeClick, true);
@@ -1086,7 +1086,7 @@ function GeneralProfileView() {
                     Hidden
                   </div>
                 )}
-                {profile.name ? (
+                {profile.name && profile.name.split('|').join('').trim() ? (
                   <>
                     {(() => {
                       let first, last;
@@ -1132,12 +1132,12 @@ function GeneralProfileView() {
                       );
                     })()}
                   </>
-                ) : 'PROFILE'}
+                ) : 'NAME'}
               </h1>
             )}
 
             {/* Tag pills */}
-            {showSpecializationEffectively && profile.specialization && (
+            {showSpecializationEffectively && (profile.specialization || isPreview) && (
               <div 
                 className="roles" 
                 style={{ 
@@ -1172,32 +1172,36 @@ function GeneralProfileView() {
                     Hidden
                   </div>
                 )}
-                {profile.specialization.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
-                  <div
-                    className="role-pill"
-                    key={i}
-                    style={{
-                      textTransform: 'none',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      padding: '4px 12px',
-                      letterSpacing: '0.5px',
-                      background: '#000000',
-                      color: '#ffffff',
-                      border: '1.5px solid #000000',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }}
-                  >
-                    {tag}
-                  </div>
-                ))}
+                {profile.specialization ? (
+                  profile.specialization.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
+                    <div
+                      className="role-pill"
+                      key={i}
+                      style={{
+                        textTransform: 'none',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        padding: '4px 12px',
+                        letterSpacing: '0.5px',
+                        background: '#000000',
+                        color: '#ffffff',
+                        border: '1.5px solid #000000',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      {tag}
+                    </div>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>No Specialization Badges</span>
+                )}
               </div>
             )}
           </div>
         </section>
 
         {/* ABOUT */}
-        {showAboutEffectively && cleanBio && (
+        {showAboutEffectively && (cleanBio || isPreview) && (
           <section 
             className="section about-section" 
             style={{ 
@@ -1231,7 +1235,7 @@ function GeneralProfileView() {
               </div>
             )}
             <div className="section-head" style={{ marginBottom: '20px' }}>
-              <div className="section-title" style={{ color: 'rgba(247,243,238,.6)', fontSize: '11px', letterSpacing: '4px' }}>About</div>
+              <div className="section-title" style={{ color: 'rgba(247,243,238,.85)', fontSize: '11px', letterSpacing: '4px' }}>About</div>
             </div>
             <div className="about-inner">
             <div className="about-label">
@@ -1257,15 +1261,15 @@ function GeneralProfileView() {
               )}
             </div>
               <div className="about-body">
-                {cleanBio}
+                {cleanBio || <span style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.4)' }}>No biography description set.</span>}
               </div>
             </div>
           </section>
         )}
-        {showAboutEffectively && cleanBio && <div className="divider"></div>}
+        {showAboutEffectively && (cleanBio || isPreview) && <div className="divider"></div>}
 
         {/* WHAT I DO (Suggestions) */}
-        {showWhatIDoEffectively && Array.isArray(suggestions) && suggestions.length > 0 && (
+        {showWhatIDoEffectively && (Array.isArray(suggestions) && (suggestions.length > 0 || isPreview)) && (
           <section 
             className="section" 
             style={{ 
@@ -1302,29 +1306,33 @@ function GeneralProfileView() {
               <div className="section-title" style={{ fontSize: '11px', letterSpacing: '4px' }}>{profile.suggestionsTitle || 'What I Do'}</div>
             </div>
             <div className="services-grid">
-              {suggestions.map((sug, i) => {
-                if (!sug) return null;
-                const displayDesc = sug.description || (sug.link ? 'Click to visit' : 'View details');
-                return (
-                  <div 
-                    className={`service-card ${!sug.link ? 'non-clickable' : ''}`}
-                    key={i} 
-                    onClick={sug.link ? () => {
-                      window.open(sug.link.startsWith('http') ? sug.link : `https://${sug.link}`, '_blank');
-                    } : undefined}
-                  >
-                    {sug.url && (
-                      <img src={fixImageUrl(sug.url)} className="service-img-preview" alt="" />
-                    )}
-                    <div className="service-name">{sug.caption || 'Untitled'}</div>
-                    <div className="service-desc">{displayDesc}</div>
-                  </div>
-                );
-              })}
+              {suggestions && suggestions.length > 0 ? (
+                suggestions.map((sug, i) => {
+                  if (!sug) return null;
+                  const displayDesc = sug.description || (sug.link ? 'Click to visit' : 'View details');
+                  return (
+                    <div 
+                      className={`service-card ${!sug.link ? 'non-clickable' : ''}`}
+                      key={i} 
+                      onClick={sug.link ? () => {
+                        window.open(sug.link.startsWith('http') ? sug.link : `https://${sug.link}`, '_blank');
+                      } : undefined}
+                    >
+                      {sug.url && (
+                        <img src={fixImageUrl(sug.url)} className="service-img-preview" alt="" />
+                      )}
+                      <div className="service-name">{sug.caption || 'Untitled'}</div>
+                      <div className="service-desc">{displayDesc}</div>
+                    </div>
+                  );
+                })
+              ) : (
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>No Services or Offerings</span>
+              )}
             </div>
           </section>
         )}
-        {showWhatIDoEffectively && suggestions && suggestions.length > 0 && <div className="divider"></div>}
+        {showWhatIDoEffectively && (suggestions && (suggestions.length > 0 || isPreview)) && <div className="divider"></div>}
 
         {/* CONNECT */}
         {showConnectEffectively && primaryLinks.length > 0 && (

@@ -280,7 +280,12 @@ export default function ProfileGeneralController(props) {
     try {
       let finalValue = value;
       if (platform === 'whatsapp' && value && !value.includes('http')) {
-        const cleanNumber = value.replace('+', '').replace(/\s/g, '');
+        let cleanNumber = value.replace(/\D/g, '');
+        if (cleanNumber.length === 10) {
+          cleanNumber = '91' + cleanNumber;
+        } else if (cleanNumber.length === 11 && cleanNumber.startsWith('0')) {
+          cleanNumber = '91' + cleanNumber.substring(1);
+        }
         finalValue = `https://wa.me/${cleanNumber}`;
       }
 
@@ -404,7 +409,7 @@ export default function ProfileGeneralController(props) {
     }
 
     const updatedTags = [...currentTags, cleanTag];
-    await handleUpdateHeroField('specialization', updatedTags.join(','));
+    await handleUpdateHeroField('specialization', updatedTags.join(','), { showSpecialization: true });
     setIsAddingTag(false);
     setNewTagText('');
   };
@@ -418,7 +423,13 @@ export default function ProfileGeneralController(props) {
       : [];
 
     const updatedTags = currentTags.filter(t => t !== tagToDelete);
-    await handleUpdateHeroField('specialization', updatedTags.join(','));
+    const newVal = updatedTags.join(',');
+    const extraPayload = {};
+    if (!newVal) {
+      extraPayload.showSpecialization = false;
+      setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showSpecialization: false } : a));
+    }
+    await handleUpdateHeroField('specialization', newVal, extraPayload);
   };
 
   const openHeroEditor = (field, artist) => {
@@ -434,7 +445,39 @@ export default function ProfileGeneralController(props) {
   const saveMobileHeroField = async () => {
     const artist = myArtists[0];
     if (!artist || !mobileHeroEditField) return;
-    await handleUpdateHeroField(mobileHeroEditField, mobileHeroDraft);
+    const newVal = mobileHeroDraft;
+    const extraPayload = {};
+    if (mobileHeroEditField === 'name') {
+      const isNameEmpty = !newVal.split('|').join('').trim();
+      if (isNameEmpty) {
+        extraPayload.showName = false;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showName: false } : a));
+      } else {
+        extraPayload.showName = true;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showName: true } : a));
+      }
+    }
+    if (mobileHeroEditField === 'specialization') {
+      const isSpecEmpty = !newVal.trim();
+      if (isSpecEmpty) {
+        extraPayload.showSpecialization = false;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showSpecialization: false } : a));
+      } else {
+        extraPayload.showSpecialization = true;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showSpecialization: true } : a));
+      }
+    }
+    if (mobileHeroEditField === 'experience') {
+      const isAboutEmpty = !newVal.split('|').join('').trim();
+      if (isAboutEmpty) {
+        extraPayload.showAbout = false;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showAbout: false } : a));
+      } else {
+        extraPayload.showAbout = true;
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showAbout: true } : a));
+      }
+    }
+    await handleUpdateHeroField(mobileHeroEditField, newVal, extraPayload);
     setMobileHeroEditField(null);
   };
 

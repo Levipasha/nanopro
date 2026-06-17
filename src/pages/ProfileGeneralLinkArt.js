@@ -34,7 +34,8 @@ export default function ProfileGeneralLinkArt({
   handleUpdateHeroField,
   isMobileViewport,
   setArtQrModal,
-  hidePreview
+  hidePreview,
+  setMyArtists
 }) {
   if (!myArtists || !myArtists[0]) return null;
   const artist = myArtists[0];
@@ -81,7 +82,19 @@ export default function ProfileGeneralLinkArt({
       }
       const artId = Date.now();
       const newItem = { id: artId, title, description: desc || '', theme: newArtTheme, images: uploadedUrls, itemType: label };
-      await handleUpdateHeroField('artLinks', [...allItems, newItem]);
+      const extraPayload = {};
+      if (activeTab === 'what-i-do') {
+        extraPayload.showWhatIDo = true;
+        if (setMyArtists) {
+          setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showWhatIDo: true } : a));
+        }
+      } else {
+        extraPayload.showArtPortfolio = true;
+        if (setMyArtists) {
+          setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showArtPortfolio: true } : a));
+        }
+      }
+      await handleUpdateHeroField('artLinks', [...allItems, newItem], extraPayload);
       
       const titleInput = document.getElementById('art-title-input');
       if (titleInput) titleInput.value = '';
@@ -98,7 +111,16 @@ export default function ProfileGeneralLinkArt({
   };
 
   const handleRemoveArt = async (itemId) => {
-    await handleUpdateHeroField('artLinks', allItems.filter(i => i.id !== itemId));
+    const updatedItems = allItems.filter(i => i.id !== itemId);
+    const extraPayload = {};
+    const remainingServices = updatedItems.filter(i => i.itemType === 'service');
+    if (activeTab === 'what-i-do' && remainingServices.length === 0) {
+      extraPayload.showWhatIDo = false;
+      if (setMyArtists) {
+        setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showWhatIDo: false } : a));
+      }
+    }
+    await handleUpdateHeroField('artLinks', updatedItems, extraPayload);
   };
 
   const handleSetPrimaryArt = async (itemId) => {

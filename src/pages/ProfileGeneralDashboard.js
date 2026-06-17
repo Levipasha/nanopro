@@ -446,6 +446,7 @@ export default function ProfileGeneralDashboard(props) {
     const handleMessage = (event) => {
       if (event.data && event.data.type === 'PREVIEW_CLICK') {
         let field = event.data.field;
+        if (field === 'design') return;
         if (field === 'links') field = 'platforms';
         if (field === 'suggestions') field = 'what-i-do';
         if (field === 'gallery') field = 'what-i-do';
@@ -502,7 +503,16 @@ export default function ProfileGeneralDashboard(props) {
           <button
             onClick={() => {
               const nameVal = heroUpdates.name !== undefined ? heroUpdates.name : (artist?.name || '');
-              handleUpdateHeroField('name', nameVal).then(() => {
+              const isNameEmpty = !nameVal.split('|').join('').trim();
+              const extraUpdates = {};
+              if (isNameEmpty) {
+                extraUpdates.showName = false;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showName: false } : a));
+              } else {
+                extraUpdates.showName = true;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showName: true } : a));
+              }
+              handleUpdateHeroField('name', nameVal, extraUpdates).then(() => {
                 setActiveEditor('default');
               });
             }}
@@ -549,9 +559,18 @@ export default function ProfileGeneralDashboard(props) {
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
           <button
             onClick={() => {
-              const c = heroUpdates.city !== undefined ? heroUpdates.city : artist.city;
-              const s = heroUpdates.state !== undefined ? heroUpdates.state : artist.state;
-              handleUpdateHeroField('city', c, { state: s }).then(() => {
+              const c = heroUpdates.city !== undefined ? heroUpdates.city : (artist.city || '');
+              const s = heroUpdates.state !== undefined ? heroUpdates.state : (artist.state || '');
+              const isLocationEmpty = !c.trim() && !s.trim();
+              const extraUpdates = { state: s };
+              if (isLocationEmpty) {
+                extraUpdates.showLocation = false;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showLocation: false } : a));
+              } else {
+                extraUpdates.showLocation = true;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showLocation: true } : a));
+              }
+              handleUpdateHeroField('city', c, extraUpdates).then(() => {
                 setActiveEditor('default');
               });
             }}
@@ -789,7 +808,20 @@ export default function ProfileGeneralDashboard(props) {
             onClick={() => {
               const expVal = heroUpdates.experience !== undefined ? heroUpdates.experience : (artist.experience || '');
               const bioVal = heroUpdates.bio !== undefined ? heroUpdates.bio : (artist.bio || '');
-              handleUpdateHeroField('experience', expVal, { bio: bioVal }).then(() => {
+              
+              const isHeadlineEmpty = !expVal.split('|').join('').trim();
+              const isBioEmpty = !bioVal.trim();
+              
+              const extraUpdates = { bio: bioVal };
+              if (isHeadlineEmpty && isBioEmpty) {
+                extraUpdates.showAbout = false;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showAbout: false } : a));
+              } else {
+                extraUpdates.showAbout = true;
+                setMyArtists(prev => prev.map((a, idx) => idx === 0 ? { ...a, showAbout: true } : a));
+              }
+
+              handleUpdateHeroField('experience', expVal, extraUpdates).then(() => {
                 setActiveEditor('default');
               });
             }}
@@ -1000,7 +1032,7 @@ export default function ProfileGeneralDashboard(props) {
         return renderPlatformsEditor();
 
       case 'design':
-        return renderDesignEditor();
+        return null;
       case 'what-i-do':
         return renderWhatIDoEditor();
       default:
@@ -1015,7 +1047,7 @@ export default function ProfileGeneralDashboard(props) {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100dvh',
         width: '100vw',
         overflow: 'hidden',
         background: '#ffffff',
@@ -1232,7 +1264,7 @@ export default function ProfileGeneralDashboard(props) {
         {/* Bottom Sheet / Modal Overlay for Editor panels */}
         {activeEditor !== 'default' && (
           <div style={{
-            position: 'absolute',
+            position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
             zIndex: 10000,
             background: 'rgba(15, 23, 42, 0.4)',
@@ -1240,14 +1272,14 @@ export default function ProfileGeneralDashboard(props) {
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: '0 16px 16px 16px',
+            padding: '0 16px calc(16px + env(safe-area-inset-bottom)) 16px',
             boxSizing: 'border-box'
           }} onClick={() => setActiveEditor('default')}>
             <div style={{
               background: '#ffffff',
               width: '100%',
               maxWidth: '450px',
-              maxHeight: '80vh',
+              maxHeight: '80dvh',
               borderRadius: '24px',
               padding: '1.5rem',
               boxSizing: 'border-box',
