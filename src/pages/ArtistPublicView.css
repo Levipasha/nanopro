@@ -424,7 +424,7 @@
   line-height: 1.9;
   color: var(--muted);
   letter-spacing: .3px;
-  text-align: justify;
+  text-align: left;
 }
 
 /* ── CONNECT ── */
